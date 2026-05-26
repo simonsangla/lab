@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A/B Verdict &mdash; lab.</title>
+<meta name="app-name" content="A/B Verdict">
+<meta name="app-description" content="Paste control and variant numbers — get statistical significance, p-value, confidence interval and a ship/wait/kill verdict instantly.">
+<meta name="app-tags" content="analytics,statistics,ab-testing,tools">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="A/B Verdict">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #1e1e1e;
+    --accent: #29d8c7; --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --text: #e8e8e8; --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: max(60px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--accent); }
+  .wrap { max-width: 580px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--accent); margin: 0; }
+  header p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  .grid {
+    display: grid; grid-template-columns: max-content 1fr 1fr; gap: 10px 14px;
+    align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+  }
+  .col-head {
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    text-align: center; letter-spacing: 0.5px;
+  }
+  .row-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  input[type=number] {
+    width: 100%;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 16px;
+    border-radius: 6px; padding: 8px 10px; outline: none;
+    text-align: right;
+    transition: border-color 180ms ease;
+  }
+  input[type=number]:focus { border-color: var(--accent); }
+  input.invalid { border-color: var(--red); }
+  .warning {
+    font-family: var(--font-mono); font-size: 12px; color: var(--red);
+    grid-column: 1 / -1; text-align: center;
+  }
+  .rates { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: center; }
+  .rates .sep { color: var(--muted); margin: 0 8px; }
+  .verdict {
+    display: block; text-align: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 22px;
+    padding: 12px 28px; border-radius: 8px;
+    margin: 0 auto; max-width: 260px;
+    letter-spacing: 1px;
+  }
+  .verdict.ship { background: var(--green); color: #0a0a0a; }
+  .verdict.kill { background: var(--red); color: #ffffff; }
+  .verdict.wait { background: var(--yellow); color: #0a0a0a; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .pill {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--font-mono); font-size: 12px;
+    padding: 4px 12px; border-radius: 99px;
+  }
+  .interp {
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--muted); font-style: italic;
+    text-align: center; line-height: 1.5;
+  }
+  .empty {
+    color: var(--muted); font-style: italic; text-align: center;
+    font-size: 14px;
+  }
+  @media (min-width: 640px) {
+    header h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <h1>A/B Verdict</h1>
+      <p>Statistical significance in seconds.</p>
+    </header>
+    <div class="grid">
+      <span></span>
+      <span class="col-head">Control</span>
+      <span class="col-head">Variant</span>
+
+      <span class="row-label">Visitors</span>
+      <input id="cV" type="number" min="1" value="1000" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input id="vV" type="number" min="1" value="1050" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+      <span class="row-label">Conversions</span>
+      <input id="cC" type="number" min="0" value="50" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input id="vC" type="number" min="0" value="70" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+      <div id="warning" class="warning" style="display:none"></div>
+    </div>
+    <div id="out">
+      <p class="empty">Enter visitors and conversions to compute.</p>
+    </div>
+  </div>
+<script>
+(function () {
+  var cV = document.getElementById('cV');
+  var cC = document.getElementById('cC');
+  var vV = document.getElementById('vV');
+  var vC = document.getElementById('vC');
+  var warn = document.getElementById('warning');
+  var out = document.getElementById('out');
+
+  function normalCDF(x) {
+    var sign = x < 0 ? -1 : 1;
+    var ax = Math.abs(x);
+    var t = 1 / (1 + 0.2316419 * ax);
+    var d = 0.3989423 * Math.exp(-ax * ax / 2);
+    var p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+    var cdf = 1 - p;
+    return sign === 1 ? cdf : 1 - cdf;
+  }
+
+  function zTest(cVisit, cConv, vVisit, vConv) {
+    var p1 = cConv / cVisit;
+    var p2 = vConv / vVisit;
+    var pPool = (cConv + vConv) / (cVisit + vVisit);
+    var sePool = Math.sqrt(pPool * (1 - pPool) * (1 / cVisit + 1 / vVisit));
+    var z = sePool === 0 ? 0 : (p2 - p1) / sePool;
+    var pValue = 2 * (1 - normalCDF(Math.abs(z)));
+    var seDelta = Math.sqrt(p1 * (1 - p1) / cVisit + p2 * (1 - p2) / vVisit);
+    var ciLow = (p2 - p1) - 1.96 * seDelta;
+    var ciHigh = (p2 - p1) + 1.96 * seDelta;
+    return { p1: p1, p2: p2, z: z, pValue: pValue, ciLow: ciLow, ciHigh: ciHigh };
+  }
+
+  function requiredSampleSize(p1, mde) {
+    if (mde <= 0 || p1 <= 0) return Infinity;
+    var p1mde = p1 * (1 + mde);
+    var pBar = (p1 + p1mde) / 2;
+    var num = 1.96 * Math.sqrt(2 * pBar * (1 - pBar)) + 0.84 * Math.sqrt(p1 * (1 - p1) + p1mde * (1 - p1mde));
+    var denom = (p1mde - p1);
+    return Math.ceil(Math.pow(num / denom, 2));
+  }
+
+  function fmtPct(x, sign) {
+    var s = (x * 100).toFixed(2) + '%';
+    if (sign && x > 0) s = '+' + s;
+    return s;
+  }
+  function fmtDelta(x) {
+    var pct = (x * 100).toFixed(2);
+    return (x >= 0 ? '+' : '') + pct + '%';
+  }
+
+  function validate() {
+    var ok = true;
+    [cV, vV].forEach(function (el) {
+      el.classList.toggle('invalid', !(parseFloat(el.value) > 0));
+    });
+    [cC, vC].forEach(function (el) {
+      el.classList.toggle('invalid', !(parseFloat(el.value) >= 0));
+    });
+    var cVN = parseFloat(cV.value), cCN = parseFloat(cC.value);
+    var vVN = parseFloat(vV.value), vCN = parseFloat(vC.value);
+    if (!(cVN > 0 && vVN > 0) || isNaN(cCN) || isNaN(vCN) || cCN < 0 || vCN < 0) {
+      warn.style.display = 'none';
+      return null;
+    }
+    if (cCN > cVN || vCN > vVN) {
+      warn.textContent = 'Conversions cannot exceed visitors.';
+      warn.style.display = 'block';
+      cC.classList.toggle('invalid', cCN > cVN);
+      vC.classList.toggle('invalid', vCN > vVN);
+      return null;
+    }
+    warn.style.display = 'none';
+    return { cVN: cVN, cCN: cCN, vVN: vVN, vCN: vCN };
+  }
+
+  function compute() {
+    var v = validate();
+    if (!v) {
+      out.innerHTML = '<p class="empty">Enter valid visitors and conversions.</p>';
+      return;
+    }
+    var r = zTest(v.cVN, v.cCN, v.vVN, v.vCN);
+    var delta = r.p2 - r.p1;
+    var significant = r.pValue < 0.05;
+    var verdictClass, verdictLabel;
+    if (significant && delta > 0) { verdictClass = 'ship'; verdictLabel = 'SHIP IT'; }
+    else if (significant && delta < 0) { verdictClass = 'kill'; verdictLabel = 'KILL IT'; }
+    else { verdictClass = 'wait'; verdictLabel = 'KEEP TESTING'; }
+
+    var rates =
+      '<div class="rates">' +
+        'Control: ' + fmtPct(r.p1) +
+        ' <span class="sep">&middot;</span> ' +
+        'Variant: ' + fmtPct(r.p2) +
+        ' <span class="sep">&middot;</span> ' +
+        'Delta: ' + fmtDelta(delta) +
+      '</div>';
+
+    var stats =
+      '<div class="stats">' +
+        '<span class="pill">p-value: ' + r.pValue.toFixed(4) + '</span>' +
+        '<span class="pill">Z-score: ' + r.z.toFixed(2) + '</span>' +
+        '<span class="pill">95% CI: [' + fmtDelta(r.ciLow) + ', ' + fmtDelta(r.ciHigh) + ']</span>' +
+      '</div>';
+
+    var interpText;
+    if (verdictClass === 'ship') {
+      interpText = 'Variant is ' + fmtDelta(delta) + ' better with 95% confidence. ' +
+        'Sample of ' + (v.cVN + v.vVN).toLocaleString() + ' visitors is sufficient.';
+    } else if (verdictClass === 'kill') {
+      interpText = 'Variant is ' + fmtDelta(delta) + ' worse with 95% confidence. Do not ship.';
+    } else {
+      var mde = 0.05;
+      var perArm = requiredSampleSize(r.p1, mde);
+      var needed = isFinite(perArm) ? (2 * perArm) : null;
+      var have = v.cVN + v.vVN;
+      if (needed !== null && needed > have) {
+        interpText = 'Not enough evidence yet. Need ~' + needed.toLocaleString() +
+          ' total visitors (have ' + have.toLocaleString() + ') for 80% power on a 5% MDE.';
+      } else {
+        interpText = 'Not enough evidence yet. Result is within noise.';
+      }
+    }
+
+    out.innerHTML =
+      rates +
+      '<div class="verdict ' + verdictClass + '">' + verdictLabel + '</div>' +
+      stats +
+      '<p class="interp">' + interpText + '</p>';
+  }
+
+  [cV, cC, vV, vC].forEach(function (el) {
+    el.addEventListener('input', compute);
+  });
+  compute();
+})();
+</script>
+</body>
+</html>

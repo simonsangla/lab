@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cohort Grid &mdash; lab.</title>
+<meta name="app-name" content="Cohort Grid">
+<meta name="app-description" content="Paste a retention CSV — get a color-coded cohort heatmap instantly. Hover for exact %. Download as PNG.">
+<meta name="app-tags" content="analytics,retention,cohort,visualization">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cohort Grid">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #1e1e1e;
+    --accent: #29d8c7; --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --text: #e8e8e8; --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: max(60px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--accent); }
+  .wrap { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--accent); margin: 0; }
+  header p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  textarea {
+    width: 100%; min-height: 120px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 16px;
+    line-height: 1.5;
+    border-radius: 8px; padding: 14px; resize: vertical;
+    outline: none;
+    transition: border-color 180ms ease;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .error {
+    font-family: var(--font-mono); font-size: 13px; color: var(--red);
+    margin: -8px 0 0;
+  }
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap {
+    display: grid; gap: 2px;
+    background: var(--bg);
+    width: max-content;
+    margin: 0 auto;
+  }
+  .cell {
+    min-width: 48px; min-height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px;
+    border-radius: 3px; padding: 4px 6px;
+    border: 1px solid transparent;
+    transition: border-color 120ms ease;
+    cursor: default;
+  }
+  .cell:hover { border-color: #ffffff; }
+  .cell.header {
+    background: transparent; color: var(--muted);
+    border-radius: 0;
+  }
+  .cell.label {
+    background: transparent; color: var(--muted);
+    width: 90px; min-width: 90px; justify-content: flex-end;
+    padding-right: 10px;
+  }
+  .stats { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; }
+  .stat {
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  }
+  .stat strong { color: var(--text); font-weight: 400; }
+  .download {
+    align-self: center;
+    background: var(--surface); border: 1px solid var(--accent);
+    color: var(--accent); font-family: var(--font-display); font-size: 14px;
+    border-radius: 6px; padding: 10px 22px; cursor: pointer;
+    min-height: 44px;
+    transition: background 180ms ease, color 180ms ease;
+  }
+  .download:hover, .download:active { background: var(--accent); color: var(--bg); }
+  .tooltip {
+    position: fixed; z-index: 100;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 12px;
+    padding: 6px 10px; border-radius: 6px;
+    pointer-events: none;
+    opacity: 0; transition: opacity 120ms ease;
+    white-space: nowrap;
+  }
+  .tooltip.show { opacity: 1; }
+  @media (max-width: 480px) {
+    .cell { min-width: 42px; font-size: 10px; }
+    .cell.label { width: 70px; min-width: 70px; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <h1>Cohort Grid</h1>
+      <p>Paste retention CSV. See the heatmap.</p>
+    </header>
+    <textarea id="csv"
+      placeholder="Week 0,Week 1,Week 2,Week 3
+2026-01-01,100,72,58,41
+2026-01-08,120,88,61,49
+2026-01-15,95,67,44,30"
+      autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+    <div id="err" class="error" style="display:none"></div>
+    <div class="heatmap-wrap">
+      <div id="heatmap" class="heatmap"></div>
+    </div>
+    <div id="stats" class="stats"></div>
+    <button id="dl" class="download" type="button" style="display:none">Download PNG</button>
+  </div>
+  <div id="tooltip" class="tooltip"></div>
+<script>
+(function () {
+  var csvEl = document.getElementById('csv');
+  var errEl = document.getElementById('err');
+  var heatmap = document.getElementById('heatmap');
+  var statsEl = document.getElementById('stats');
+  var dlEl = document.getElementById('dl');
+  var tip = document.getElementById('tooltip');
+
+  var timer = null;
+  var lastGrid = null;
+
+  function parseCsv(text) {
+    var lines = text.trim().split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+    if (lines.length < 2) return null;
+    var rows = lines.map(function (l) { return l.split(',').map(function (c) { return c.trim(); }); });
+    var headers = rows[0];
+    if (headers.length < 2) return null;
+    var dataRows = rows.slice(1);
+    var grid = [];
+    for (var i = 0; i < dataRows.length; i++) {
+      var r = dataRows[i];
+      if (r.length < 2) return null;
+      var label = r[0];
+      var nums = [];
+      for (var j = 1; j < r.length; j++) {
+        var n = parseFloat(r[j]);
+        if (isNaN(n)) return null;
+        nums.push(n);
+      }
+      if (nums.length < 1) return null;
+      grid.push({ label: label, values: nums });
+    }
+    return { headers: headers, rows: grid };
+  }
+
+  function toPercentages(rows) {
+    var anyAbsolute = false;
+    for (var i = 0; i < rows.length; i++) {
+      for (var j = 0; j < rows[i].values.length; j++) {
+        if (rows[i].values[j] > 1) { anyAbsolute = true; break; }
+      }
+      if (anyAbsolute) break;
+    }
+    var out = [];
+    for (var k = 0; k < rows.length; k++) {
+      var v = rows[k].values;
+      var base = anyAbsolute ? v[0] : 1;
+      var pcts = v.map(function (x, idx) {
+        if (idx === 0) return 1;
+        if (base === 0) return 0;
+        return anyAbsolute ? x / base : x;
+      });
+      out.push({ label: rows[k].label, pcts: pcts });
+    }
+    return out;
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function colorFor(pct) {
+    var p = Math.max(0, Math.min(1, pct));
+    var r, g, b;
+    if (p >= 0.5) {
+      var t = (p - 0.5) / 0.5;
+      r = lerp(0xfa, 0x22, t);
+      g = lerp(0xcc, 0xc5, t);
+      b = lerp(0x15, 0x5e, t);
+    } else {
+      var t2 = p / 0.5;
+      r = lerp(0xef, 0xfa, t2);
+      g = lerp(0x44, 0xcc, t2);
+      b = lerp(0x44, 0x15, t2);
+    }
+    return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+  }
+  function rgbToCss(c) { return 'rgb(' + c.r + ',' + c.g + ',' + c.b + ')'; }
+  function luminance(c) {
+    return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+  }
+
+  function render(parsed) {
+    heatmap.innerHTML = '';
+    statsEl.innerHTML = '';
+    dlEl.style.display = 'none';
+    if (!parsed) return;
+    var headers = parsed.headers;
+    var pctRows = toPercentages(parsed.rows);
+    var cols = pctRows[0].pcts.length;
+
+    heatmap.style.gridTemplateColumns = '90px repeat(' + cols + ', minmax(48px, 1fr))';
+
+    var corner = document.createElement('div');
+    corner.className = 'cell header label';
+    corner.textContent = '';
+    heatmap.appendChild(corner);
+    for (var h = 1; h < headers.length && h <= cols; h++) {
+      var hc = document.createElement('div');
+      hc.className = 'cell header';
+      hc.textContent = headers[h];
+      heatmap.appendChild(hc);
+    }
+    for (var h2 = headers.length; h2 - 1 < cols; h2++) {
+      var hc2 = document.createElement('div');
+      hc2.className = 'cell header';
+      hc2.textContent = 'Wk ' + (h2 - 1);
+      heatmap.appendChild(hc2);
+    }
+
+    pctRows.forEach(function (row) {
+      var lab = document.createElement('div');
+      lab.className = 'cell label';
+      lab.textContent = row.label;
+      heatmap.appendChild(lab);
+      row.pcts.forEach(function (pct, idx) {
+        var cell = document.createElement('div');
+        cell.className = 'cell value';
+        var col = colorFor(pct);
+        cell.style.background = rgbToCss(col);
+        cell.style.color = luminance(col) > 0.55 ? '#0a0a0a' : '#ffffff';
+        cell.textContent = (pct * 100).toFixed(0) + '%';
+        cell.dataset.tip = row.label + ' &middot; ' + (headers[idx + 1] || ('Wk ' + idx)) + ' &middot; ' + (pct * 100).toFixed(2) + '%';
+        cell.addEventListener('mouseenter', showTip);
+        cell.addEventListener('mousemove', moveTip);
+        cell.addEventListener('mouseleave', hideTip);
+        heatmap.appendChild(cell);
+      });
+    });
+
+    lastGrid = { headers: headers, pctRows: pctRows, cols: cols };
+
+    var wk1 = pctRows.map(function (r) { return r.pcts[1] || 0; });
+    var avg = wk1.reduce(function (a, b) { return a + b; }, 0) / wk1.length;
+    var bestIdx = 0, worstIdx = 0;
+    var lastVals = pctRows.map(function (r) { return r.pcts[r.pcts.length - 1]; });
+    for (var i = 1; i < lastVals.length; i++) {
+      if (lastVals[i] > lastVals[bestIdx]) bestIdx = i;
+      if (lastVals[i] < lastVals[worstIdx]) worstIdx = i;
+    }
+    statsEl.innerHTML =
+      '<span class="stat">Avg Week 1 retention: <strong>' + (avg * 100).toFixed(1) + '%</strong></span>' +
+      '<span class="stat">Best cohort: <strong>' + pctRows[bestIdx].label + '</strong></span>' +
+      '<span class="stat">Worst cohort: <strong>' + pctRows[worstIdx].label + '</strong></span>';
+
+    dlEl.style.display = 'inline-flex';
+  }
+
+  function showTip(e) {
+    var html = e.currentTarget.dataset.tip;
+    tip.innerHTML = html;
+    tip.classList.add('show');
+    moveTip(e);
+  }
+  function moveTip(e) {
+    var x = e.clientX + 12;
+    var y = e.clientY + 12;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+  function hideTip() {
+    tip.classList.remove('show');
+  }
+
+  function refresh() {
+    var text = csvEl.value;
+    if (!text.trim()) {
+      errEl.style.display = 'none';
+      heatmap.innerHTML = '';
+      statsEl.innerHTML = '';
+      dlEl.style.display = 'none';
+      lastGrid = null;
+      return;
+    }
+    var parsed = parseCsv(text);
+    if (!parsed) {
+      errEl.textContent = 'Could not parse CSV. Check format.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (parsed.headers.length < 2 || parsed.rows[0].values.length < 1) {
+      errEl.textContent = 'Need at least 2 columns (cohort label + one period).';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    render(parsed);
+  }
+
+  csvEl.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, 400);
+  });
+
+  dlEl.addEventListener('click', function () {
+    if (!lastGrid) return;
+    var headers = lastGrid.headers;
+    var pctRows = lastGrid.pctRows;
+    var cols = lastGrid.cols;
+    var cellW = 96, cellH = 44, labelW = 110, headerH = 30;
+    var w = labelW + cols * cellW + 40;
+    var h = headerH + pctRows.length * cellH + 40;
+    var canvas = document.createElement('canvas');
+    canvas.width = w * 2;
+    canvas.height = h * 2;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, w, h);
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#5a5a5a';
+    ctx.textBaseline = 'middle';
+    for (var c = 0; c < cols; c++) {
+      var hx = 20 + labelW + c * cellW + cellW / 2;
+      var label = headers[c + 1] || ('Wk ' + c);
+      ctx.textAlign = 'center';
+      ctx.fillText(label, hx, 20 + headerH / 2);
+    }
+    for (var r = 0; r < pctRows.length; r++) {
+      var row = pctRows[r];
+      var ry = 20 + headerH + r * cellH;
+      ctx.fillStyle = '#5a5a5a';
+      ctx.textAlign = 'right';
+      ctx.fillText(row.label, 20 + labelW - 12, ry + cellH / 2);
+      for (var cc = 0; cc < row.pcts.length; cc++) {
+        var pct = row.pcts[cc];
+        var col = colorFor(pct);
+        ctx.fillStyle = rgbToCss(col);
+        ctx.fillRect(20 + labelW + cc * cellW + 2, ry + 2, cellW - 4, cellH - 4);
+        ctx.fillStyle = luminance(col) > 0.55 ? '#0a0a0a' : '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText((pct * 100).toFixed(0) + '%', 20 + labelW + cc * cellW + cellW / 2, ry + cellH / 2);
+      }
+    }
+    canvas.toBlob(function (blob) {
+      if (!blob) return;
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'cohort-grid.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }, 'image/png');
+  });
+
+  csvEl.value = 'Week 0,Week 1,Week 2,Week 3\n2026-01-01,100,72,58,41\n2026-01-08,120,88,61,49\n2026-01-15,95,67,44,30';
+  refresh();
+})();
+</script>
+</body>
+</html>

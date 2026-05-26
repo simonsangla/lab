@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meeting Cost Clock &mdash; lab.</title>
+<meta name="app-name" content="Meeting Cost Clock">
+<meta name="app-description" content="How much is this meeting costing right now? Add people, set hourly rates, watch money disappear in real time.">
+<meta name="app-tags" content="fun,productivity,tools,daily">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meeting Cost">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #1e1e1e;
+    --accent: #29d8c7; --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --text: #e8e8e8; --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: max(60px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--accent); }
+  .wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--accent); margin: 0; text-align: center; }
+  header p { color: var(--muted); font-size: 14px; margin: 6px 0 0; text-align: center; }
+  .controls { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: end; }
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stepper { display: flex; align-items: stretch; gap: 0; }
+  .stepper button {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--accent); font-family: var(--font-display); font-size: 18px;
+    min-width: 36px; min-height: 36px; padding: 0;
+    cursor: pointer;
+  }
+  .stepper button:first-child { border-radius: 6px 0 0 6px; border-right: 0; }
+  .stepper button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+  .stepper input {
+    width: 60px; text-align: center;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 16px;
+    border-radius: 0; padding: 6px 4px; outline: none;
+  }
+  input[type=number] {
+    width: 90px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 16px;
+    border-radius: 6px; padding: 8px 10px; outline: none;
+    text-align: center;
+  }
+  input[type=number]:focus, .stepper input:focus { border-color: var(--accent); }
+  .hero {
+    text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px 16px;
+  }
+  .cost {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(52px, 11vw, 88px);
+    color: var(--red); line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .per-min, .duration { font-family: var(--font-mono); color: var(--muted); }
+  .per-min { font-size: 14px; margin-top: 8px; }
+  .duration { font-size: 13px; margin-top: 4px; }
+  .buttons { display: flex; gap: 12px; justify-content: center; }
+  .btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--accent); font-family: var(--font-display); font-size: 15px;
+    border-radius: 6px; padding: 10px 22px; cursor: pointer;
+    min-height: 44px;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .btn:hover, .btn:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .milestone {
+    text-align: center;
+    font-family: var(--font-display); font-weight: 600; font-size: 15px;
+    color: var(--accent);
+    min-height: 24px;
+    opacity: 0;
+    transition: opacity 400ms ease;
+  }
+  .milestone.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .milestone { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <h1>Meeting Cost Clock</h1>
+      <p>Is this meeting worth it?</p>
+    </header>
+    <div class="controls">
+      <div class="control">
+        <label>Attendees</label>
+        <div class="stepper">
+          <button type="button" id="minus" aria-label="decrement">&minus;</button>
+          <input id="attendees" type="number" min="1" max="100" value="6" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button type="button" id="plus" aria-label="increment">+</button>
+        </div>
+      </div>
+      <div class="control">
+        <label for="rate">Avg hourly rate ($)</label>
+        <input id="rate" type="number" min="1" value="85" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="hero">
+      <div class="cost" id="cost">$0.00</div>
+      <div class="per-min" id="perMin">burning $0.00 / minute</div>
+      <div class="duration" id="duration">00:00:00</div>
+    </div>
+    <div class="buttons">
+      <button class="btn" id="toggle" type="button">&#9654; Start</button>
+      <button class="btn" id="reset" type="button">Reset</button>
+    </div>
+    <div class="milestone" id="milestone"></div>
+  </div>
+<script>
+(function () {
+  var attendeesEl = document.getElementById('attendees');
+  var rateEl = document.getElementById('rate');
+  var costEl = document.getElementById('cost');
+  var perMinEl = document.getElementById('perMin');
+  var durEl = document.getElementById('duration');
+  var toggleEl = document.getElementById('toggle');
+  var resetEl = document.getElementById('reset');
+  var minusEl = document.getElementById('minus');
+  var plusEl = document.getElementById('plus');
+  var milestoneEl = document.getElementById('milestone');
+
+  var running = false;
+  var lastStart = null;
+  var accumulated = 0;
+  var accDuration = 0;
+  var tickHandle = null;
+  var firedThresholds = {};
+  var milestoneTimer = null;
+
+  var THRESHOLDS = [
+    { v: 10, t: "That's a coffee for everyone." },
+    { v: 50, t: "You could've bought lunch instead." },
+    { v: 100, t: "A nice team dinner. Just saying." },
+    { v: 250, t: "That's a flight to somewhere fun." },
+    { v: 500, t: "Half a Snowflake credit. Congrats." },
+    { v: 1000, t: "You've spent four figures talking." }
+  ];
+
+  function attendees() {
+    var n = parseInt(attendeesEl.value, 10);
+    if (isNaN(n) || n < 1) return 1;
+    if (n > 100) return 100;
+    return n;
+  }
+  function rate() {
+    var r = parseFloat(rateEl.value);
+    return isNaN(r) || r < 0 ? 0 : r;
+  }
+  function ratePerSec() { return (attendees() * rate()) / 3600; }
+  function elapsed() {
+    return running && lastStart !== null ? (Date.now() - lastStart) / 1000 : 0;
+  }
+  function currentCost() { return accumulated + elapsed() * ratePerSec(); }
+  function currentDuration() { return accDuration + elapsed(); }
+
+  function pad(n) { n = Math.floor(n); return n < 10 ? '0' + n : '' + n; }
+  function formatDuration(sec) {
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = Math.floor(sec % 60);
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+
+  function showMilestone(text) {
+    milestoneEl.textContent = text;
+    milestoneEl.classList.add('show');
+    clearTimeout(milestoneTimer);
+    milestoneTimer = setTimeout(function () {
+      milestoneEl.classList.remove('show');
+    }, 3000);
+  }
+
+  function checkMilestones(cost) {
+    for (var i = 0; i < THRESHOLDS.length; i++) {
+      var th = THRESHOLDS[i];
+      if (!firedThresholds[th.v] && cost >= th.v) {
+        firedThresholds[th.v] = true;
+        showMilestone(th.t);
+        break;
+      }
+    }
+  }
+
+  function render() {
+    var c = currentCost();
+    costEl.textContent = '$' + c.toFixed(2);
+    perMinEl.textContent = 'burning $' + (ratePerSec() * 60).toFixed(2) + ' / minute';
+    durEl.textContent = formatDuration(currentDuration());
+    checkMilestones(c);
+  }
+
+  function start() {
+    if (running) return;
+    lastStart = Date.now();
+    running = true;
+    toggleEl.innerHTML = '&#9208; Pause';
+    tickHandle = setInterval(render, 250);
+  }
+  function pause() {
+    if (!running) return;
+    var dt = elapsed();
+    accumulated += dt * ratePerSec();
+    accDuration += dt;
+    running = false;
+    lastStart = null;
+    toggleEl.innerHTML = '&#9654; Resume';
+    clearInterval(tickHandle);
+    tickHandle = null;
+    render();
+  }
+  function reset() {
+    if (running) {
+      running = false;
+      clearInterval(tickHandle);
+      tickHandle = null;
+    }
+    accumulated = 0;
+    accDuration = 0;
+    lastStart = null;
+    firedThresholds = {};
+    clearTimeout(milestoneTimer);
+    milestoneEl.classList.remove('show');
+    toggleEl.innerHTML = '&#9654; Start';
+    render();
+  }
+
+  toggleEl.addEventListener('click', function () {
+    if (running) pause(); else start();
+  });
+  resetEl.addEventListener('click', reset);
+
+  function onControlChange() {
+    if (running) {
+      pause();
+      start();
+    } else {
+      render();
+    }
+  }
+
+  attendeesEl.addEventListener('input', onControlChange);
+  rateEl.addEventListener('input', onControlChange);
+  minusEl.addEventListener('click', function () {
+    var n = attendees();
+    if (n > 1) { attendeesEl.value = n - 1; onControlChange(); }
+  });
+  plusEl.addEventListener('click', function () {
+    var n = attendees();
+    if (n < 100) { attendeesEl.value = n + 1; onControlChange(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

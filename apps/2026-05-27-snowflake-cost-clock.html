@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snowflake Cost Clock &mdash; lab.</title>
+<meta name="app-name" content="Snowflake Cost Clock">
+<meta name="app-description" content="Live dollar-per-second counter for any Snowflake warehouse size. Watch your credits burn in real time.">
+<meta name="app-tags" content="snowflake,cost,realtime,tools">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cost Clock">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #1e1e1e;
+    --accent: #29d8c7; --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --text: #e8e8e8; --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: max(60px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--accent); }
+  .wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 24px; color: var(--accent); margin: 0; text-align: center; }
+  .controls { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type=number], select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 16px;
+    border-radius: 6px; padding: 8px 12px; outline: none;
+    transition: border-color 180ms ease;
+  }
+  input[type=number]:focus, select:focus { border-color: var(--accent); }
+  .price-input { width: 110px; }
+  .wh-select { min-width: 180px; }
+  .hero {
+    text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 16px;
+  }
+  .cost {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(48px, 10vw, 80px);
+    color: var(--red); line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .per-sec, .duration { font-family: var(--font-mono); color: var(--muted); margin-top: 4px; }
+  .per-sec { font-size: 13px; }
+  .duration { font-size: 14px; }
+  .buttons { display: flex; gap: 12px; justify-content: center; }
+  button {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--accent); font-family: var(--font-display); font-size: 15px;
+    border-radius: 6px; padding: 10px 20px; cursor: pointer;
+    min-height: 44px;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  button:hover, button:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .pill {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--font-mono); font-size: 11px;
+    padding: 4px 12px; border-radius: 99px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cost { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <h1>Snowflake Cost Clock</h1>
+    <div class="controls">
+      <div class="control">
+        <label for="price">Credit price ($)</label>
+        <input class="price-input" id="price" type="number" step="0.01" min="0.01" value="3.00" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="control">
+        <label for="wh">Warehouse</label>
+        <select class="wh-select" id="wh">
+          <option value="1">XS &mdash; 1 credit/hr</option>
+          <option value="2">S &mdash; 2 credits/hr</option>
+          <option value="4" selected>M &mdash; 4 credits/hr</option>
+          <option value="8">L &mdash; 8 credits/hr</option>
+          <option value="16">XL &mdash; 16 credits/hr</option>
+          <option value="32">2XL &mdash; 32 credits/hr</option>
+          <option value="64">3XL &mdash; 64 credits/hr</option>
+          <option value="128">4XL &mdash; 128 credits/hr</option>
+        </select>
+      </div>
+    </div>
+    <div class="hero">
+      <div class="cost" id="cost">$0.000000</div>
+      <div class="per-sec" id="perSec">per second: $0.003333</div>
+      <div class="duration" id="duration">00:00:00</div>
+    </div>
+    <div class="buttons">
+      <button id="toggle" type="button">&#9654; Start</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+    <div class="stats">
+      <span class="pill" id="ph">Credits/hr: 4</span>
+      <span class="pill" id="pm">Credits/min: 0.0667</span>
+      <span class="pill" id="ps">Credits/sec: 0.001111</span>
+    </div>
+  </div>
+<script>
+(function () {
+  var priceEl = document.getElementById('price');
+  var whEl = document.getElementById('wh');
+  var costEl = document.getElementById('cost');
+  var perSecEl = document.getElementById('perSec');
+  var durEl = document.getElementById('duration');
+  var toggleEl = document.getElementById('toggle');
+  var resetEl = document.getElementById('reset');
+  var phEl = document.getElementById('ph');
+  var pmEl = document.getElementById('pm');
+  var psEl = document.getElementById('ps');
+
+  var running = false;
+  var lastStart = null;
+  var accumulated = 0;
+  var accDuration = 0;
+  var tickHandle = null;
+
+  function priceVal() {
+    var v = parseFloat(priceEl.value);
+    return isNaN(v) || v <= 0 ? 0 : v;
+  }
+  function creditsPerHour() { return parseFloat(whEl.value) || 0; }
+  function ratePerSec() { return (priceVal() * creditsPerHour()) / 3600; }
+
+  function elapsed() {
+    return running && lastStart !== null ? (Date.now() - lastStart) / 1000 : 0;
+  }
+  function currentCost(rateOverride) {
+    var r = rateOverride === undefined ? ratePerSec() : rateOverride;
+    return accumulated + elapsed() * r;
+  }
+  function currentDuration() {
+    return accDuration + elapsed();
+  }
+
+  function pad(n) { n = Math.floor(n); return n < 10 ? '0' + n : '' + n; }
+  function formatDuration(sec) {
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = Math.floor(sec % 60);
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+
+  function updateStats() {
+    var cph = creditsPerHour();
+    phEl.textContent = 'Credits/hr: ' + cph;
+    pmEl.textContent = 'Credits/min: ' + (cph / 60).toFixed(4);
+    psEl.textContent = 'Credits/sec: ' + (cph / 3600).toFixed(6);
+    perSecEl.textContent = 'per second: $' + ratePerSec().toFixed(6);
+  }
+
+  function render() {
+    costEl.textContent = '$' + currentCost().toFixed(6);
+    durEl.textContent = formatDuration(currentDuration());
+  }
+
+  function start() {
+    if (running) return;
+    lastStart = Date.now();
+    running = true;
+    toggleEl.innerHTML = '&#9208; Pause';
+    tickHandle = setInterval(render, 100);
+  }
+
+  function pause() {
+    if (!running) return;
+    var dt = elapsed();
+    accumulated += dt * ratePerSec();
+    accDuration += dt;
+    running = false;
+    lastStart = null;
+    toggleEl.innerHTML = '&#9654; Resume';
+    clearInterval(tickHandle);
+    tickHandle = null;
+    render();
+  }
+
+  function reset() {
+    if (running) {
+      running = false;
+      clearInterval(tickHandle);
+      tickHandle = null;
+    }
+    accumulated = 0;
+    accDuration = 0;
+    lastStart = null;
+    toggleEl.innerHTML = '&#9654; Start';
+    render();
+  }
+
+  toggleEl.addEventListener('click', function () {
+    if (running) pause(); else start();
+  });
+  resetEl.addEventListener('click', reset);
+
+  function onControlChange() {
+    if (running) {
+      var oldRate = ratePerSec();
+      pause();
+      updateStats();
+      start();
+    } else {
+      updateStats();
+      render();
+    }
+  }
+  priceEl.addEventListener('input', onControlChange);
+  whEl.addEventListener('change', onControlChange);
+
+  updateStats();
+  render();
+})();
+</script>
+</body>
+</html>
