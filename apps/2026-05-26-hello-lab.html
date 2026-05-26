@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Pulse &mdash; lab.</title>
+<meta name="app-name" content="SQL Pulse">
+<meta name="app-description" content="Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.">
+<meta name="app-tags" content="snowflake,sql,analytics,tools">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #1e1e1e;
+    --accent: #29d8c7;
+    --accent2: #6366f1;
+    --text: #e8e8e8;
+    --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .back {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--muted); text-decoration: none;
+    display: inline-block; margin-bottom: 24px;
+  }
+  .back:hover { color: var(--accent); }
+  h1 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 28px; color: var(--accent); margin: 0;
+  }
+  .subtitle { color: var(--muted); font-size: 14px; margin: 6px 0 24px; }
+  textarea {
+    width: 100%; min-height: 180px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono);
+    font-size: 16px; line-height: 1.5;
+    border-radius: 6px; padding: 14px; resize: vertical;
+    outline: none;
+    transition: border-color 180ms ease;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .results { margin-top: 28px; }
+  .tier-badge {
+    display: block; text-align: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 20px;
+    padding: 12px 24px; border-radius: 99px;
+    margin: 0 auto 24px; max-width: 220px;
+    color: #0a0a0a; letter-spacing: 1px;
+  }
+  .dim { margin-bottom: 14px; }
+  .dim-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--muted); margin-bottom: 4px;
+  }
+  .dim-row .count { color: var(--accent); font-weight: 700; }
+  .bar { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; width: 0; border-radius: 3px;
+    transition: width 300ms ease, background-color 300ms ease;
+  }
+  .diagnosis {
+    margin-top: 18px; font-family: var(--font-mono);
+    font-size: 13px; color: var(--muted);
+    font-style: italic; text-align: center;
+  }
+  .copy-btn {
+    display: block; margin: 22px auto 0;
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--accent); padding: 8px 18px;
+    font-family: var(--font-display); font-size: 14px;
+    border-radius: 99px; cursor: pointer;
+    transition: background 180ms ease, color 180ms ease;
+  }
+  .copy-btn:hover { background: var(--accent); color: var(--bg); }
+  .empty-state {
+    text-align: center; color: var(--muted);
+    margin-top: 40px; font-size: 14px;
+  }
+  @media (max-width: 480px) {
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/">&larr; lab.</a>
+    <h1>SQL Pulse</h1>
+    <p class="subtitle">Snowflake query complexity scorer</p>
+    <textarea id="sql"
+      placeholder="-- paste your Snowflake SQL here"
+      inputmode="text"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"></textarea>
+    <div id="out">
+      <p class="empty-state">Paste a query above to analyse it.</p>
+    </div>
+  </div>
+<script>
+(function () {
+  var ta = document.getElementById('sql');
+  var out = document.getElementById('out');
+  var timer = null;
+
+  function score(sql) {
+    var up = sql.toUpperCase();
+    var joins = (up.match(/\bJOIN\b/g) || []).length;
+    var subqueries = Math.max(0, (up.match(/\bSELECT\b/g) || []).length - 1);
+    var windowFns = (up.match(/\bOVER\s*\(/g) || []).length;
+    var ctes = /\bWITH\b/.test(up) ? (up.match(/\bAS\s*\(/g) || []).length : 0;
+    var groupBy = (up.match(/\bGROUP\s+BY\b/g) || []).length;
+    var having = (up.match(/\bHAVING\b/g) || []).length;
+    return { joins: joins, subqueries: subqueries, windowFns: windowFns, ctes: ctes, groupBy: groupBy, having: having };
+  }
+
+  function tierFor(total) {
+    if (total === 0) return { name: 'SIMPLE', color: '#29d8c7' };
+    if (total <= 4) return { name: 'MODERATE', color: '#facc15' };
+    if (total <= 9) return { name: 'COMPLEX', color: '#f97316' };
+    return { name: 'BEAST', color: '#ef4444' };
+  }
+
+  function barColor(n) {
+    if (n === 0) return '#29d8c7';
+    if (n <= 2) return '#84cc16';
+    if (n <= 4) return '#facc15';
+    return '#ef4444';
+  }
+
+  function diagnose(tier, s, total) {
+    if (tier.name === 'SIMPLE') return 'Clean and efficient. Snowflake will love you.';
+    var labels = { joins: 'JOIN', subqueries: 'subquery', windowFns: 'window function', ctes: 'CTE', groupBy: 'GROUP BY' };
+    var keys = Object.keys(labels);
+    keys.sort(function (a, b) { return s[b] - s[a]; });
+    var top = labels[keys[0]];
+    if (tier.name === 'MODERATE') return 'Readable but watch those ' + top + 's.';
+    if (tier.name === 'COMPLEX') return total + ' moving parts. Add a comment block before someone cries.';
+    return 'This query has seen things. Break it into CTEs before it breaks you.';
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function render(sql) {
+    if (sql.trim().length <= 10) {
+      out.innerHTML = '<p class="empty-state">Paste a query above to analyse it.</p>';
+      return;
+    }
+    var s = score(sql);
+    var total = s.joins + s.subqueries + s.windowFns + s.ctes + s.groupBy + s.having;
+    var groupHaving = s.groupBy + s.having;
+    var t = tierFor(total);
+    var d = diagnose(t, s, total);
+    var dims = [
+      ['Joins', s.joins],
+      ['Subqueries', s.subqueries],
+      ['Window Functions', s.windowFns],
+      ['CTEs', s.ctes],
+      ['Group By / Having', groupHaving]
+    ];
+    var bars = dims.map(function (row) {
+      var label = row[0];
+      var count = row[1];
+      var pct = Math.min(count / 5 * 100, 100);
+      return (
+        '<div class="dim">' +
+          '<div class="dim-row"><span>' + esc(label) + '</span><span class="count">' + count + '</span></div>' +
+          '<div class="bar"><div class="bar-fill" style="width:' + pct + '%; background:' + barColor(count) + '"></div></div>' +
+        '</div>'
+      );
+    }).join('');
+    out.innerHTML =
+      '<div class="results">' +
+        '<div class="tier-badge" style="background:' + t.color + '">' + t.name + '</div>' +
+        bars +
+        '<p class="diagnosis">' + esc(d) + '</p>' +
+        '<button class="copy-btn" id="copy" type="button">Copy summary</button>' +
+      '</div>';
+    var btn = document.getElementById('copy');
+    btn.addEventListener('click', function () {
+      var lines = [
+        'SQL Pulse — ' + t.name,
+        '  Joins: ' + s.joins,
+        '  Subqueries: ' + s.subqueries,
+        '  Window Functions: ' + s.windowFns,
+        '  CTEs: ' + s.ctes,
+        '  Group By / Having: ' + groupHaving,
+        '',
+        d
+      ].join('\n');
+      var done = function () {
+        var orig = 'Copy summary';
+        btn.textContent = 'Copied ✓';
+        setTimeout(function () { btn.textContent = orig; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(lines).then(done, done);
+      } else {
+        var ta2 = document.createElement('textarea');
+        ta2.value = lines;
+        document.body.appendChild(ta2);
+        ta2.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta2);
+        done();
+      }
+    });
+  }
+
+  ta.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { render(ta.value); }, 300);
+  });
+})();
+</script>
+</body>
+</html>

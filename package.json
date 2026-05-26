@@ -1,0 +1,7 @@
+{
+  "name": "lab",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": { "gen": "node scripts/gen-index.mjs" }
+}
