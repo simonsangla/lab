@@ -3,8 +3,10 @@ import { join } from 'node:path';
 
 const APPS_DIR = 'apps';
 const OUT = 'index.html';
+const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 
 function parseMeta(html, name) {
+  if (!META_KEYS.includes(name)) return null;
   const re = new RegExp(
     '<meta\\s+name=["\']' + name + '["\']\\s+content=["\']([^"\']*)["\']',
     'i'
@@ -60,7 +62,7 @@ const cardsHtml = apps
     return (
       '<a class="card" href="apps/' +
       escapeHtml(app.filename) +
-      '" target="_blank" rel="noopener" style="animation-delay: ' +
+      '" style="animation-delay: ' +
       delay +
       'ms">\n' +
       '        <div class="date">' +
@@ -94,9 +96,16 @@ const html =
   '<html lang="en">\n' +
   '<head>\n' +
   '<meta charset="utf-8">\n' +
-  '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
   '<title>lab. &mdash; Simon Sangla</title>\n' +
   '<meta name="description" content="One day. One app. No excuses.">\n' +
+  '<link rel="manifest" href="/manifest.webmanifest">\n' +
+  '<meta name="theme-color" content="#29d8c7">\n' +
+  '<link rel="icon" type="image/png" href="/icons/icon-192.png">\n' +
+  '<link rel="apple-touch-icon" href="/icons/icon-192.png">\n' +
+  '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
+  '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n' +
+  '<meta name="apple-mobile-web-app-title" content="lab.">\n' +
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
   '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">\n' +
@@ -114,50 +123,55 @@ const html =
   '  }\n' +
   '  * { box-sizing: border-box; }\n' +
   '  html, body { margin: 0; padding: 0; }\n' +
+  '  html { -webkit-text-size-adjust: 100%; }\n' +
   '  body {\n' +
   '    background: var(--bg);\n' +
   '    color: var(--text);\n' +
   '    font-family: var(--font-display);\n' +
   '    min-height: 100dvh;\n' +
-  '    padding: 40px 24px 80px;\n' +
+  '    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));\n' +
   '    position: relative;\n' +
+  '    overscroll-behavior-y: contain;\n' +
   '  }\n' +
+  '  a, button { -webkit-tap-highlight-color: transparent; }\n' +
   '  .grain {\n' +
   '    position: fixed; inset: 0; pointer-events: none;\n' +
   '    width: 100%; height: 100%;\n' +
   '    opacity: 0.03; z-index: 0;\n' +
   '  }\n' +
   '  .wrap { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }\n' +
-  '  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }\n' +
-  '  .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }\n' +
-  '  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 32px; color: var(--accent); line-height: 1; }\n' +
-  '  .brand .tagline { color: var(--muted); font-size: 14px; }\n' +
+  '  header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }\n' +
+  '  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }\n' +
+  '  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; }\n' +
+  '  .brand .tagline { color: var(--muted); font-size: 13px; }\n' +
   '  .pill-link {\n' +
+  '    display: inline-block; min-height: 36px; line-height: 24px;\n' +
   '    border: 1px solid var(--accent); color: var(--accent);\n' +
   '    padding: 6px 14px; border-radius: 99px; font-size: 13px;\n' +
   '    text-decoration: none; font-family: var(--font-display);\n' +
   '    transition: background 180ms ease, color 180ms ease;\n' +
   '  }\n' +
-  '  .pill-link:hover { background: var(--accent); color: var(--bg); }\n' +
+  '  .pill-link:hover, .pill-link:active { background: var(--accent); color: var(--bg); }\n' +
   '  .counter {\n' +
-  '    display: inline-block; margin: 24px 0 32px;\n' +
+  '    display: inline-block; margin: 20px 0 24px;\n' +
   '    background: var(--surface); border: 1px solid var(--border);\n' +
   '    color: var(--muted); font-family: var(--font-mono); font-size: 12px;\n' +
   '    padding: 6px 12px; border-radius: 99px;\n' +
   '  }\n' +
-  '  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }\n' +
+  '  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }\n' +
   '  .card {\n' +
   '    background: var(--surface); border: 1px solid var(--border);\n' +
-  '    border-radius: 8px; padding: 20px; cursor: pointer;\n' +
+  '    border-radius: 10px; padding: 18px;\n' +
   '    text-decoration: none; color: inherit; display: block;\n' +
   '    transition: border-color 180ms ease, transform 180ms ease;\n' +
   '    animation: fadeUp 400ms ease both;\n' +
   '  }\n' +
-  '  .card:hover { border-color: var(--accent); transform: translateY(-2px); }\n' +
+  '  .card:hover, .card:active { border-color: var(--accent); }\n' +
+  '  @media (hover: hover) { .card:hover { transform: translateY(-2px); } }\n' +
   '  .card .date { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }\n' +
-  '  .card .name { font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--text); margin: 8px 0 0; }\n' +
+  '  .card .name { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); margin: 8px 0 0; }\n' +
   '  .card .desc {\n' +
-  '    font-size: 14px; color: var(--muted); margin: 6px 0 0;\n' +
+  '    font-size: 14px; color: var(--muted); margin: 6px 0 0; line-height: 1.45;\n' +
   '    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;\n' +
   '  }\n' +
   '  .card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }\n' +
@@ -167,20 +181,32 @@ const html =
   '    padding: 3px 8px; border-radius: 4px;\n' +
   '  }\n' +
   '  .card .arrow { color: var(--accent); font-size: 18px; text-align: right; margin-top: 12px; }\n' +
-  '  .empty { text-align: center; padding: 80px 0; }\n' +
+  '  .empty { text-align: center; padding: 64px 0; }\n' +
   '  .empty p { color: var(--muted); font-style: italic; }\n' +
-  '  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 64px; }\n' +
+  '  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 56px; line-height: 1.5; }\n' +
   '  footer a { color: var(--text); text-decoration: none; }\n' +
-  '  footer a:hover { color: var(--accent); }\n' +
+  '  footer a:hover, footer a:active { color: var(--accent); }\n' +
   '  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }\n' +
-  '  @media (max-width: 480px) {\n' +
-  '    .grid { grid-template-columns: 1fr; }\n' +
-  '    body { padding: 24px 16px 64px; }\n' +
+  '  @media (prefers-reduced-motion: reduce) {\n' +
+  '    .card { animation: none; transition: none; }\n' +
+  '  }\n' +
+  '  @media (min-width: 640px) {\n' +
+  '    body { padding-top: max(32px, env(safe-area-inset-top)); padding-left: 20px; padding-right: 20px; }\n' +
+  '    header { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }\n' +
+  '    .brand .logo { font-size: 32px; }\n' +
+  '    .brand .tagline { font-size: 14px; }\n' +
+  '    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }\n' +
+  '    .card { padding: 20px; }\n' +
+  '    .card .name { font-size: 18px; }\n' +
+  '  }\n' +
+  '  @media (min-width: 960px) {\n' +
+  '    body { padding-left: 24px; padding-right: 24px; padding-top: 40px; padding-bottom: 80px; }\n' +
+  '    .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }\n' +
   '  }\n' +
   '</style>\n' +
   '</head>\n' +
   '<body>\n' +
-  '  <svg class="grain" xmlns="http://www.w3.org/2000/svg">\n' +
+  '  <svg class="grain" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">\n' +
   '    <filter id="grain">\n' +
   '      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>\n' +
   '      <feColorMatrix type="saturate" values="0"/>\n' +
@@ -201,6 +227,13 @@ const html =
   '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant\n' +
   '    </footer>\n' +
   '  </div>\n' +
+  '  <script>\n' +
+  "    if ('serviceWorker' in navigator) {\n" +
+  "      window.addEventListener('load', function () {\n" +
+  "        navigator.serviceWorker.register('/sw.js').catch(function () {});\n" +
+  '      });\n' +
+  '    }\n' +
+  '  </script>\n' +
   '</body>\n' +
   '</html>\n';
 

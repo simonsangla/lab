@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>lab. &mdash; Simon Sangla</title>
 <meta name="description" content="One day. One app. No excuses.">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="lab.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -22,50 +29,55 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-display);
     min-height: 100dvh;
-    padding: 40px 24px 80px;
+    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     position: relative;
+    overscroll-behavior-y: contain;
   }
+  a, button { -webkit-tap-highlight-color: transparent; }
   .grain {
     position: fixed; inset: 0; pointer-events: none;
     width: 100%; height: 100%;
     opacity: 0.03; z-index: 0;
   }
   .wrap { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 32px; color: var(--accent); line-height: 1; }
-  .brand .tagline { color: var(--muted); font-size: 14px; }
+  header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; }
+  .brand .tagline { color: var(--muted); font-size: 13px; }
   .pill-link {
+    display: inline-block; min-height: 36px; line-height: 24px;
     border: 1px solid var(--accent); color: var(--accent);
     padding: 6px 14px; border-radius: 99px; font-size: 13px;
     text-decoration: none; font-family: var(--font-display);
     transition: background 180ms ease, color 180ms ease;
   }
-  .pill-link:hover { background: var(--accent); color: var(--bg); }
+  .pill-link:hover, .pill-link:active { background: var(--accent); color: var(--bg); }
   .counter {
-    display: inline-block; margin: 24px 0 32px;
+    display: inline-block; margin: 20px 0 24px;
     background: var(--surface); border: 1px solid var(--border);
     color: var(--muted); font-family: var(--font-mono); font-size: 12px;
     padding: 6px 12px; border-radius: 99px;
   }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
   .card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 20px; cursor: pointer;
+    border-radius: 10px; padding: 18px;
     text-decoration: none; color: inherit; display: block;
     transition: border-color 180ms ease, transform 180ms ease;
     animation: fadeUp 400ms ease both;
   }
-  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card:hover, .card:active { border-color: var(--accent); }
+  @media (hover: hover) { .card:hover { transform: translateY(-2px); } }
   .card .date { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-  .card .name { font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--text); margin: 8px 0 0; }
+  .card .name { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); margin: 8px 0 0; }
   .card .desc {
-    font-size: 14px; color: var(--muted); margin: 6px 0 0;
+    font-size: 14px; color: var(--muted); margin: 6px 0 0; line-height: 1.45;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
@@ -75,20 +87,32 @@
     padding: 3px 8px; border-radius: 4px;
   }
   .card .arrow { color: var(--accent); font-size: 18px; text-align: right; margin-top: 12px; }
-  .empty { text-align: center; padding: 80px 0; }
+  .empty { text-align: center; padding: 64px 0; }
   .empty p { color: var(--muted); font-style: italic; }
-  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 64px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 56px; line-height: 1.5; }
   footer a { color: var(--text); text-decoration: none; }
-  footer a:hover { color: var(--accent); }
+  footer a:hover, footer a:active { color: var(--accent); }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-  @media (max-width: 480px) {
-    .grid { grid-template-columns: 1fr; }
-    body { padding: 24px 16px 64px; }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; transition: none; }
+  }
+  @media (min-width: 640px) {
+    body { padding-top: max(32px, env(safe-area-inset-top)); padding-left: 20px; padding-right: 20px; }
+    header { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .brand .logo { font-size: 32px; }
+    .brand .tagline { font-size: 14px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card { padding: 20px; }
+    .card .name { font-size: 18px; }
+  }
+  @media (min-width: 960px) {
+    body { padding-left: 24px; padding-right: 24px; padding-top: 40px; padding-bottom: 80px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   }
 </style>
 </head>
 <body>
-  <svg class="grain" xmlns="http://www.w3.org/2000/svg">
+  <svg class="grain" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <filter id="grain">
       <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
       <feColorMatrix type="saturate" values="0"/>
@@ -105,7 +129,7 @@
     </header>
     <p class="counter">1 experiments shipped</p>
     <section class="grid">
-      <a class="card" href="apps/2026-05-26-hello-lab.html" target="_blank" rel="noopener" style="animation-delay: 0ms">
+      <a class="card" href="apps/2026-05-26-hello-lab.html" style="animation-delay: 0ms">
         <div class="date">2026-05-26</div>
         <h3 class="name">SQL Pulse</h3>
         <p class="desc">Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.</p>
@@ -117,5 +141,12 @@
       Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant
     </footer>
   </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

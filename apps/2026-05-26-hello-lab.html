@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SQL Pulse &mdash; lab.</title>
 <meta name="app-name" content="SQL Pulse">
 <meta name="app-description" content="Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.">
 <meta name="app-tags" content="snowflake,sql,analytics,tools">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SQL Pulse">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -24,44 +31,49 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-display);
     min-height: 100dvh;
-    padding: 24px 16px 80px;
+    padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
   }
+  a, button { -webkit-tap-highlight-color: transparent; }
   .wrap { max-width: 720px; margin: 0 auto; }
   .back {
-    font-family: var(--font-mono); font-size: 12px;
+    display: inline-flex; align-items: center; min-height: 36px;
+    font-family: var(--font-mono); font-size: 13px;
     color: var(--muted); text-decoration: none;
-    display: inline-block; margin-bottom: 24px;
+    margin-bottom: 16px;
   }
-  .back:hover { color: var(--accent); }
+  .back:hover, .back:active { color: var(--accent); }
   h1 {
     font-family: var(--font-display); font-weight: 700;
-    font-size: 28px; color: var(--accent); margin: 0;
+    font-size: 26px; color: var(--accent); margin: 0;
+    line-height: 1.15;
   }
-  .subtitle { color: var(--muted); font-size: 14px; margin: 6px 0 24px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin: 6px 0 20px; }
   textarea {
-    width: 100%; min-height: 180px;
+    width: 100%; min-height: 160px;
     background: var(--surface); border: 1px solid var(--border);
     color: var(--text); font-family: var(--font-mono);
     font-size: 16px; line-height: 1.5;
-    border-radius: 6px; padding: 14px; resize: vertical;
+    border-radius: 8px; padding: 14px; resize: vertical;
     outline: none;
     transition: border-color 180ms ease;
   }
   textarea:focus { border-color: var(--accent); }
-  .results { margin-top: 28px; }
+  .results { margin-top: 24px; }
   .tier-badge {
     display: block; text-align: center;
-    font-family: var(--font-display); font-weight: 700; font-size: 20px;
+    font-family: var(--font-display); font-weight: 700; font-size: 18px;
     padding: 12px 24px; border-radius: 99px;
-    margin: 0 auto 24px; max-width: 220px;
+    margin: 0 auto 20px; max-width: 220px;
     color: #0a0a0a; letter-spacing: 1px;
   }
-  .dim { margin-bottom: 14px; }
+  .dim { margin-bottom: 12px; }
   .dim-row {
     display: flex; justify-content: space-between;
     font-family: var(--font-mono); font-size: 12px;
@@ -74,25 +86,35 @@
     transition: width 300ms ease, background-color 300ms ease;
   }
   .diagnosis {
-    margin-top: 18px; font-family: var(--font-mono);
+    margin-top: 16px; font-family: var(--font-mono);
     font-size: 13px; color: var(--muted);
     font-style: italic; text-align: center;
+    line-height: 1.5;
   }
   .copy-btn {
-    display: block; margin: 22px auto 0;
+    display: block; margin: 20px auto 0;
+    min-height: 44px;
     background: transparent; color: var(--accent);
-    border: 1px solid var(--accent); padding: 8px 18px;
-    font-family: var(--font-display); font-size: 14px;
+    border: 1px solid var(--accent); padding: 8px 20px;
+    font-family: var(--font-display); font-size: 15px;
     border-radius: 99px; cursor: pointer;
     transition: background 180ms ease, color 180ms ease;
   }
-  .copy-btn:hover { background: var(--accent); color: var(--bg); }
+  .copy-btn:hover, .copy-btn:active { background: var(--accent); color: var(--bg); }
   .empty-state {
     text-align: center; color: var(--muted);
-    margin-top: 40px; font-size: 14px;
+    margin-top: 32px; font-size: 14px;
   }
-  @media (max-width: 480px) {
-    h1 { font-size: 24px; }
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill, textarea, .copy-btn { transition: none; }
+  }
+  @media (min-width: 640px) {
+    body { padding-left: 20px; padding-right: 20px; padding-top: max(24px, env(safe-area-inset-top)); }
+    h1 { font-size: 28px; }
+    .subtitle { font-size: 14px; margin-bottom: 24px; }
+    .back { font-size: 12px; margin-bottom: 24px; }
+    textarea { min-height: 180px; font-size: 14px; }
+    .tier-badge { font-size: 20px; max-width: 240px; }
   }
 </style>
 </head>
@@ -208,9 +230,8 @@
         d
       ].join('\n');
       var done = function () {
-        var orig = 'Copy summary';
         btn.textContent = 'Copied ✓';
-        setTimeout(function () { btn.textContent = orig; }, 1500);
+        setTimeout(function () { btn.textContent = 'Copy summary'; }, 1500);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(lines).then(done, done);
@@ -230,6 +251,12 @@
     clearTimeout(timer);
     timer = setTimeout(function () { render(ta.value); }, 300);
   });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 })();
 </script>
 </body>
