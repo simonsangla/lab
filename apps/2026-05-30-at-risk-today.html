@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>At Risk Today</title>
+
+  <meta name="app-name" content="At Risk Today">
+  <meta name="app-description" content="What you risk missing today and the one action to take now. Confirmed deadlines rank; Gmail and agent signals wait for your OK. Live GitHub CI source, demo fallback.">
+  <meta name="app-tags" content="attention, deadlines, live-source, pwa">
+
+  <meta name="theme-color" content="#FAF9F5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <style>
+    :root {
+      --bg: #FAF9F5;
+      --card: #FFFFFF;
+      --ink: #1F1E1D;
+      --muted: #6B6A65;
+      --faint: #9A9892;
+      --clay: #D97757;
+      --clay-deep: #C15F3C;
+      --on-clay: #FFFFFF;
+      --line: #ECEAE3;
+      --red: #B4432B;
+      --green: #3F7D4E;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100svh;
+      padding:
+        calc(env(safe-area-inset-top) + 18px)
+        calc(env(safe-area-inset-right) + 18px)
+        calc(env(safe-area-inset-bottom) + 24px)
+        calc(env(safe-area-inset-left) + 18px);
+    }
+
+    .wrap { max-width: 460px; margin: 0 auto; }
+
+    /* header */
+    .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .top .id { display: flex; align-items: center; gap: 10px; }
+    .mark {
+      width: 34px; height: 34px; border-radius: 10px; background: var(--clay);
+      display: flex; align-items: center; justify-content: center; flex: none;
+      box-shadow: 0 4px 12px rgba(193, 95, 60, 0.26);
+    }
+    .mark svg { width: 20px; height: 20px; display: block; }
+    .top h2 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: 0.02em; }
+    .top .date { font-size: 12px; color: var(--muted); margin: 1px 0 0; }
+    .badge {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--clay-deep); background: rgba(217, 119, 87, 0.12);
+      padding: 4px 8px; border-radius: 999px;
+    }
+
+    /* hero */
+    .hero { margin-bottom: 18px; }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--red); display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex: none;
+      animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .tag {
+      font-size: 11px; font-weight: 600; color: var(--muted); background: var(--bg);
+      border: 1px solid var(--line); padding: 3px 9px; border-radius: 999px; margin-left: auto;
+      text-transform: none; letter-spacing: 0; white-space: nowrap;
+    }
+    .hero h1 {
+      font-family: ui-serif, "New York", Georgia, "Times New Roman", serif;
+      font-weight: 600; font-size: 30px; line-height: 1.15; letter-spacing: -0.01em;
+      margin: 0 0 12px;
+    }
+    .when { font-size: 15px; line-height: 1.45; color: var(--ink); margin: 0 0 4px; }
+    .when b { color: var(--red); }
+    .why-line { font-size: 13px; color: var(--muted); margin: 0; }
+
+    /* action */
+    .action-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+      padding: 18px; margin: 18px 0; box-shadow: 0 8px 24px rgba(31,30,29,0.05);
+    }
+    .action-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--faint); margin: 0 0 8px;
+    }
+    .action-text { font-size: 17px; font-weight: 600; line-height: 1.3; margin: 0 0 16px; }
+    button {
+      appearance: none; border: 0; font: inherit; cursor: pointer;
+      transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-do {
+      width: 100%; background: var(--clay); color: var(--on-clay);
+      font-size: 17px; font-weight: 600; padding: 16px; border-radius: 14px;
+    }
+    .btn-do.done { background: var(--green); }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-ghost {
+      flex: 1; background: transparent; color: var(--muted); border: 1px solid var(--line);
+      font-size: 14px; font-weight: 600; padding: 11px; border-radius: 12px;
+    }
+
+    /* provenance */
+    .prov { margin: 0 2px 22px; }
+    .prov summary {
+      list-style: none; cursor: pointer; font-size: 12px; color: var(--faint);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .prov summary::-webkit-details-marker { display: none; }
+    .prov[open] summary { color: var(--muted); }
+    .prov .body { font-size: 13px; color: var(--muted); line-height: 1.55; margin-top: 10px; padding-left: 2px; }
+    .prov .body b { color: var(--ink); }
+    .chip {
+      display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;
+      background: rgba(63,125,78,0.12); color: var(--green); margin-right: 4px;
+    }
+    .chip.warn { background: rgba(180,67,43,0.1); color: var(--red); }
+
+    /* sections */
+    .sec-title {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--faint); margin: 0 2px 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .sec-title .n {
+      background: var(--line); color: var(--muted); font-size: 11px; padding: 1px 7px; border-radius: 999px;
+    }
+    .stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+    .item {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .item .meta { min-width: 0; flex: 1; }
+    .item .t { font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item .s { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+    .item .due { font-size: 12px; font-weight: 700; flex: none; }
+    .due.soon { color: var(--red); }
+    .due.ok { color: var(--muted); }
+    .item.cand { border-style: dashed; }
+    .item .src-pill {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--faint); border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; flex: none;
+    }
+    .btn-confirm {
+      flex: none; background: var(--bg); color: var(--clay-deep); border: 1px solid rgba(217,119,87,0.4);
+      font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 10px;
+    }
+    .cand-note { font-size: 12px; color: var(--faint); line-height: 1.5; margin: -10px 2px 22px; }
+
+    .foot { text-align: center; font-size: 11px; color: var(--faint); line-height: 1.6; margin-top: 8px; }
+
+    .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+    .empty .big {
+      font-family: ui-serif, "New York", Georgia, serif; font-size: 24px; color: var(--ink); margin-bottom: 8px;
+    }
+
+    /* origin badges */
+    .origin {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 6px; flex: none;
+    }
+    .origin.live { background: rgba(63,125,78,0.16); color: var(--green); }
+    .origin.demo { background: var(--bg); color: var(--faint); border: 1px solid var(--line); }
+    .origin.confirmed { background: rgba(217,119,87,0.14); color: var(--clay-deep); }
+    .eyebrow .origin { margin-left: 2px; }
+
+    /* settings / sources panel */
+    .settings { margin: 4px 2px 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .settings > summary {
+      list-style: none; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .settings > summary::-webkit-details-marker { display: none; }
+    .settings .gear { width: 14px; height: 14px; flex: none; opacity: 0.7; }
+    .src-row {
+      display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line);
+    }
+    .src-row:first-of-type { border-top: 0; margin-top: 6px; }
+    .src-row .sn { font-size: 14px; font-weight: 600; flex: 1; min-width: 0; }
+    .src-row .sn small { display: block; font-weight: 400; font-size: 11px; color: var(--faint); margin-top: 2px; }
+    .st {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 999px; flex: none;
+    }
+    .st.live { background: rgba(63,125,78,0.16); color: var(--green); }
+    .st.blocked { background: rgba(180,67,43,0.12); color: var(--red); }
+    .st.demo { background: var(--bg); color: var(--faint); border: 1px solid var(--line); }
+    .st.available { background: rgba(217,119,87,0.12); color: var(--clay-deep); }
+    .tg {
+      font-size: 12px; font-weight: 700; border: 1px solid var(--line); background: var(--bg);
+      color: var(--muted); padding: 6px 11px; border-radius: 9px; flex: none;
+    }
+    .tg.on { border-color: rgba(63,125,78,0.45); color: var(--green); }
+    .src-extra { padding: 0 0 4px; }
+    .blocker { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 2px 0 0; }
+    .repo-input {
+      width: 100%; font: inherit; font-size: 13px; padding: 9px 11px; border: 1px solid var(--line);
+      border-radius: 9px; background: var(--bg); color: var(--ink); margin-top: 8px;
+    }
+    .repo-input:focus { outline: none; border-color: var(--clay); }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1F1E1D; --card: #2A2927; --ink: #F5F4EF; --muted: #B0AEA6; --faint: #807E77;
+        --line: #3A3936; --red: #E8896F; --green: #6FB888;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="id">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <path d="M256 106 C270 220 292 242 406 256 C292 270 270 292 256 406 C242 292 220 270 106 256 C220 242 242 220 256 106 Z" fill="#FAF9F5"/>
+          </svg>
+        </div>
+        <div>
+          <h2>At Risk Today</h2>
+          <p class="date" id="date"></p>
+        </div>
+      </div>
+      <span class="badge">Demo data</span>
+    </header>
+
+    <main id="content"></main>
+
+    <p class="foot">One answer, ranked by what you can least afford to miss.<br>
+      Confirmed deadlines rank &middot; email &amp; agent signals wait for your OK.</p>
+  </div>
+
+  <script>
+    // ---- demo data: Simon's real domains, dates relative to "now" ----
+    // trust tiers: "deadline" / "calendar" / "github" rank directly;
+    // "gmail" / "agent" are SENSORS - they propose, never rank until confirmed.
+    var DAY = 86400000;
+    var now = new Date();
+    function inDays(n, h) { var d = new Date(now.getTime() + n * DAY); if (h != null) d.setHours(h, 0, 0, 0); return d.toISOString(); }
+
+    var ITEMS = [
+      { id: "ss",   domain: "Admin / taxes",    src: "deadline", consequence: "high",
+        title: "Declare quarterly income to Seg Social",
+        due: inDays(2, 23),
+        why: "Misses the trimestral window; penalty and it touches your subsidio calc.",
+        prov: "Confirmed deadline from the SSD e-Clic notice (primary source). Not inferred from an email subject line.",
+        action: "Open SSD e-Clic and submit the GD declaration" },
+
+      { id: "bike", domain: "Personal",         src: "deadline", consequence: "high",
+        title: "File the Engwe e-bike warranty claim",
+        due: inDays(4, 18),
+        why: "Coverage window closes; after this you eat the repair cost.",
+        prov: "Date taken from the purchase receipt (primary source).",
+        action: "Submit the warranty form to Engwe support" },
+
+      { id: "irs",  domain: "Admin / taxes",    src: "deadline", consequence: "high",
+        title: "Lock the IRS 2025 filing with Cristina",
+        due: inDays(31, 23),
+        why: "Hard deadline 30 Jun; your own target was today. Backup accountant on standby.",
+        prov: "Statutory deadline (AT). Self-set target lives in your markdown, flagged stale.",
+        action: "Reply to Cristina to confirm filing, else trigger backup" },
+
+      { id: "dent", domain: "Calendar",         src: "calendar", consequence: "med",
+        title: "Dentist appointment",
+        due: inDays(1, 9),
+        why: "You booked it; tomorrow morning. Low stakes but easy to no-show.",
+        prov: "From your Calendar. You placed it, so it is trusted as scheduled.",
+        action: "Confirm you are going, or reschedule now" },
+
+      { id: "radar", domain: "GitHub / agents", src: "github", consequence: "med",
+        title: "pipeline-radar production deploy is failing",
+        due: null,
+        why: "Build red on main for 2 days; the lead-scoring cron is not running.",
+        prov: "Factual machine state from the GitHub Actions run. State, not opinion.",
+        action: "Open the failing build log and redeploy" }
+    ];
+
+    // SENSORS - detected candidates. Cannot be the hero until you confirm.
+    var CANDIDATES = [
+      { id: "oj",  domain: "Freelance / revenue", src: "gmail",
+        title: "Oliver James lead (700/day) has gone quiet",
+        sub: "Bianca, last reply 25 days ago",
+        promotePrompt: "Confirm this is a live lead worth a nudge?",
+        action: "Send Bianca a short follow-up",
+        due: inDays(0, 20), consequence: "high", domainFull: "Freelance / revenue",
+        why: "A high-value lead is cooling; a nudge today could revive it.",
+        prov: "Surfaced from a Gmail thread. Email meaning is NOT trusted until you confirm - that is why it is not ranked." },
+
+      { id: "audit", domain: "GitHub / agents", src: "agent",
+        title: "Nightly agent flagged: pnpm audit is red on main",
+        sub: "3 advisories, agent-reported",
+        promotePrompt: "Confirm the agent's finding is real?",
+        action: "Review the audit and patch",
+        due: inDays(3, 23), consequence: "med", domainFull: "GitHub / agents",
+        why: "Dependency advisories on main; needs a look before next ship.",
+        prov: "Reported by a Claude agent. Agent output can hallucinate, so it waits for your confirmation." }
+    ];
+
+    // ---- blocked / demo sources (shown in Settings) ----
+    var SOURCES_BLOCKED = [
+      { label: "Calendar", sub: "obligations and deadlines",
+        blocker: "Needs Google OAuth plus a serverless token exchange - a backend and auth system, outside the current static-first scope. A build-time snapshot is also unsafe here: this deployment is public and would expose private events. Unblock: a private deployment, or a Vercel function holding the OAuth flow." },
+      { label: "Gmail", sub: "follow-ups",
+        blocker: "Same OAuth and privacy blocker as Calendar, and heavier (thread parsing). For now Gmail stays a demo signal you confirm by hand, so its meaning is never trusted automatically." }
+    ];
+
+    // ---- state (localStorage, never window.storage) ----
+    var KEY = "atrisk.v1";
+    var state = load();
+    function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    function done(id) { return state[id] === "done" || state[id] === "snooze"; }
+    function ghEnabled() { return state["gh.enabled"] !== false; }
+    function ghRepo() { return state["gh.repo"] || "simonsangla/portfolio-v2"; }
+
+    // ---- first real source: GitHub Actions (public repo, no auth, live on open) ----
+    var ghState = { status: "idle" };
+    function ghLiveActive() { return ghEnabled() && ghState.status === "live" && ghState.item; }
+    function fetchGitHub() {
+      if (!ghEnabled()) { ghState = { status: "off" }; render(); return; }
+      ghState = { status: "loading" }; render();
+      var repo = ghRepo();
+      fetch("https://api.github.com/repos/" + repo + "/actions/runs?per_page=1",
+            { headers: { "Accept": "application/vnd.github+json" } })
+        .then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status +
+            (res.status === 403 ? " (rate limit, 60/hr)" : res.status === 404 ? " (repo not found)" : ""));
+          return res.json();
+        })
+        .then(function (data) {
+          var run = (data.workflow_runs || [])[0];
+          if (!run) throw new Error("no workflow runs on this repo");
+          var complete = run.status === "completed";
+          var fail = complete && run.conclusion && ["success", "neutral", "skipped"].indexOf(run.conclusion) < 0;
+          var name = repo.split("/").pop();
+          ghState = { status: "live", lastRefresh: Date.now(), repo: repo,
+            item: { id: "gh-live", origin: "live", domain: "GitHub / agents", src: "github",
+              consequence: fail ? "high" : "low", due: null,
+              title: fail ? ("CI is failing on " + name) : !complete ? ("CI is running on " + name) : (name + " CI is green"),
+              why: 'Latest run "' + (run.name || "workflow") + '" ' + (run.conclusion || run.status) + " " + rel(run.updated_at) + ".",
+              prov: "Live from the GitHub Actions REST API (public repo, no auth, fetched on open). Objective machine state, not inferred.",
+              action: fail ? "Open the failing run and fix it" : "Nothing to act on - CI is green" } };
+          render();
+        })
+        .catch(function (e) { ghState = { status: "blocked", error: String(e.message || e), lastRefresh: Date.now() }; render(); });
+    }
+
+    // ---- ranking: rank-eligible items only, by risk of missing ----
+    function daysLeft(iso) { if (!iso) return 9999; return Math.ceil((new Date(iso).getTime() - Date.now()) / DAY); }
+    function score(it) {
+      var d = daysLeft(it.due);
+      var base = d <= 0 ? 1000 - d : Math.max(0, 200 - d * 6);   // sooner = higher; overdue tops out
+      var w = it.consequence === "high" ? 60 : it.consequence === "med" ? 25 : 0;
+      var snoozed = state[it.id] === "snooze" ? -500 : 0;          // snoozed sinks but can resurface
+      return base + w + snoozed;
+    }
+    function ranked() {
+      // demo items; live GitHub replaces the demo GitHub item when available
+      var base = ITEMS.map(function (it) { return Object.assign({}, it, { origin: "demo" }); });
+      if (ghLiveActive()) base = base.filter(function (it) { return it.id !== "radar"; }).concat([ghState.item]);
+      var promoted = CANDIDATES.filter(function (c) { return state["confirm:" + c.id] === 1; })
+        .map(function (c) { return { id: c.id, domain: c.domainFull, src: c.src, consequence: c.consequence,
+          title: c.title, due: c.due, why: c.why, prov: c.prov, action: c.action, origin: "confirmed" }; });
+      return base.concat(promoted)
+        .filter(function (it) { return state[it.id] !== "done"; })
+        .sort(function (a, b) { return score(b) - score(a); });
+    }
+    function pendingCandidates() {
+      return CANDIDATES.filter(function (c) { return state["confirm:" + c.id] !== 1 && state[c.id] !== "done"; });
+    }
+
+    // ---- helpers ----
+    function dueText(iso) {
+      if (!iso) return { txt: "ongoing", cls: "ok" };
+      var d = daysLeft(iso);
+      if (d < 0) return { txt: "OVERDUE", cls: "soon" };
+      if (d === 0) return { txt: "today", cls: "soon" };
+      if (d === 1) return { txt: "tomorrow", cls: "soon" };
+      return { txt: "in " + d + " days", cls: d <= 3 ? "soon" : "ok" };
+    }
+    function srcPill(s) {
+      return ({ deadline: "Deadline", calendar: "Calendar", github: "GitHub", gmail: "Gmail", agent: "Agent" })[s] || s;
+    }
+    function esc(t) { var e = document.createElement("div"); e.textContent = t; return e.innerHTML; }
+    function rel(iso) {
+      if (!iso) return "";
+      var min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+      if (min < 1) return "just now";
+      if (min < 60) return min + " min ago";
+      var hr = Math.round(min / 60);
+      if (hr < 24) return hr + (hr === 1 ? " hour ago" : " hours ago");
+      var d = Math.round(hr / 24);
+      return d + (d === 1 ? " day ago" : " days ago");
+    }
+    function originLabel(o) { return o === "live" ? "Live" : o === "confirmed" ? "Confirmed" : "Demo"; }
+
+    // ---- Settings / source-status surface ----
+    function settingsHtml() {
+      var en = ghEnabled();
+      var gstatus = !en ? "available" : (ghState.status === "live" ? "live" : ghState.status === "blocked" ? "blocked" : "available");
+      var glabel = !en ? "Off" : (ghState.status === "live" ? "Live" : ghState.status === "blocked" ? "Blocked" : "Connecting");
+      var gear = '<svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+      var h = '<details class="settings" id="settings"' + (state["ui.settings"] ? " open" : "") + '>';
+      h += '<summary>' + gear + 'Sources and status</summary>';
+
+      // GitHub - the one live source
+      h += '<div class="src-row"><div class="sn">GitHub<small>' +
+        (en ? esc(ghRepo()) + (ghState.status === "live" && ghState.lastRefresh ? ' &middot; last refresh ' + esc(rel(new Date(ghState.lastRefresh).toISOString())) : "")
+            : "disabled") + '</small></div>' +
+        '<span class="st ' + gstatus + '">' + glabel + '</span>' +
+        '<button class="tg ' + (en ? "on" : "") + '" data-gh-toggle>' + (en ? "On" : "Off") + '</button></div>';
+      if (en) {
+        h += '<div class="src-extra"><input class="repo-input" data-gh-repo value="' + esc(ghRepo()) +
+          '" placeholder="owner/repo" autocapitalize="off" autocorrect="off" spellcheck="false">';
+        if (ghState.status === "blocked" && ghState.error)
+          h += '<p class="blocker">Blocked: ' + esc(ghState.error) + '. Showing the demo GitHub item instead.</p>';
+        h += '</div>';
+      }
+
+      // blocked sources, with exact blocker text
+      SOURCES_BLOCKED.forEach(function (s) {
+        h += '<div class="src-row"><div class="sn">' + esc(s.label) + '<small>' + esc(s.sub) + '</small></div>' +
+          '<span class="st blocked">Blocked</span></div>';
+        h += '<div class="src-extra"><p class="blocker">' + esc(s.blocker) + '</p></div>';
+      });
+
+      // demo seed
+      h += '<div class="src-row"><div class="sn">Demo data<small>Taxes, personal and freelance seed items</small></div>' +
+        '<span class="st demo">Demo</span></div>';
+      h += '</details>';
+      return h;
+    }
+
+    // ---- render ----
+    var content = document.getElementById("content");
+    document.getElementById("date").textContent =
+      now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+
+    function render() {
+      var list = ranked();
+      var hero = list[0];
+      var behind = list.length - 1;
+      var cands = pendingCandidates();
+      var html = "";
+
+      if (!hero) {
+        html += '<div class="empty"><div class="big">Nothing at risk.</div>' +
+          '<p>Everything ranked is handled. Confirm a signal below if something needs to surface.</p></div>';
+      } else {
+        var d = dueText(hero.due);
+        html += '<section class="hero">';
+        html += '<div class="eyebrow"><span class="dot"></span>You risk missing<span class="origin ' + hero.origin + '">' + originLabel(hero.origin) + '</span><span class="tag">' + esc(hero.domain) + '</span></div>';
+        html += '<h1>' + esc(hero.title) + '</h1>';
+        html += '<p class="when"><b>' + d.txt + '</b>' + (hero.due ? ' &middot; ' : '') + esc(hero.why) + '</p>';
+        html += '</section>';
+
+        html += '<div class="action-card">';
+        html += '<p class="action-label">The one action</p>';
+        html += '<p class="action-text">' + esc(hero.action) + '</p>';
+        html += '<button class="btn-do" id="do">Mark this done</button>';
+        html += '<div class="row">';
+        html += '<button class="btn-ghost" id="snooze">Not today</button>';
+        html += '</div></div>';
+
+        html += '<details class="prov"><summary>Why this is #1 ' + String.fromCharCode(8595) + '</summary>';
+        html += '<div class="body"><span class="chip">' + srcPill(hero.src) + '</span>';
+        html += '<b>' + d.txt + (hero.due ? ' to act' : '') + '.</b> ' + esc(hero.prov) + '</div></details>';
+      }
+
+      if (behind > 0) {
+        html += '<p class="sec-title">Ranked behind it <span class="n">' + behind + '</span></p>';
+        html += '<div class="stack">';
+        for (var i = 1; i < list.length; i++) {
+          var it = list[i], dd = dueText(it.due);
+          html += '<div class="item"><span class="src-pill">' + srcPill(it.src) + '</span>';
+          html += '<div class="meta"><p class="t">' + esc(it.title) + '</p><p class="s">' + esc(it.domain) + ' &middot; ' + originLabel(it.origin) + '</p></div>';
+          html += '<span class="due ' + dd.cls + '">' + dd.txt + '</span></div>';
+        }
+        html += '</div>';
+      }
+
+      if (cands.length) {
+        html += '<p class="sec-title">Needs your confirmation <span class="n">' + cands.length + '</span></p>';
+        html += '<div class="stack">';
+        cands.forEach(function (c) {
+          html += '<div class="item cand"><span class="src-pill">' + srcPill(c.src) + '</span>';
+          html += '<div class="meta"><p class="t">' + esc(c.title) + '</p><p class="s">' + esc(c.sub) + '</p></div>';
+          html += '<button class="btn-confirm" data-confirm="' + c.id + '">Confirm</button></div>';
+        });
+        html += '</div>';
+        html += '<p class="cand-note">These came from Gmail and an agent. They will not rank, or become your #1, until you confirm them - signals are not treated as truth.</p>';
+      }
+
+      html += settingsHtml();
+      content.innerHTML = html;
+
+      var badge = document.querySelector(".badge");
+      if (badge) badge.textContent = ghLiveActive() ? "Live + demo" : "Demo data";
+      wire();
+    }
+
+    function flashThenRerender(btn, label) {
+      btn.classList.add("done");
+      btn.textContent = String.fromCharCode(10003) + " " + label;
+      btn.disabled = true;
+      setTimeout(render, 480);
+    }
+
+    function wire() {
+      var heroItem = ranked()[0];
+      var doBtn = document.getElementById("do");
+      if (doBtn) doBtn.onclick = function () { state[heroItem.id] = "done"; save(); flashThenRerender(doBtn, "Done"); };
+      var sn = document.getElementById("snooze");
+      if (sn) sn.onclick = function () { state[heroItem.id] = "snooze"; save(); render(); };
+      var cs = document.querySelectorAll("[data-confirm]");
+      for (var i = 0; i < cs.length; i++) {
+        cs[i].onclick = function () { state["confirm:" + this.getAttribute("data-confirm")] = 1; save(); render(); };
+      }
+      var setEl = document.getElementById("settings");
+      if (setEl) setEl.addEventListener("toggle", function () { state["ui.settings"] = setEl.open ? 1 : 0; save(); });
+      var ght = document.querySelector("[data-gh-toggle]");
+      if (ght) ght.onclick = function () { state["gh.enabled"] = !ghEnabled(); save(); fetchGitHub(); };
+      var ghr = document.querySelector("[data-gh-repo]");
+      if (ghr) ghr.addEventListener("change", function () {
+        state["gh.repo"] = this.value.trim() || "simonsangla/portfolio-v2"; save(); fetchGitHub();
+      });
+    }
+
+    render();        // instant first paint with demo data (keeps open fast)
+    fetchGitHub();   // then upgrade the GitHub item with live data
+  </script>
+</body>
+</html>
