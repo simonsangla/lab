@@ -174,7 +174,26 @@
     .origin.live { background: rgba(63,125,78,0.16); color: var(--green); }
     .origin.demo { background: var(--bg); color: var(--faint); border: 1px solid var(--line); }
     .origin.confirmed { background: rgba(217,119,87,0.14); color: var(--clay-deep); }
+    .origin.yours { background: var(--clay); color: var(--on-clay); }
     .eyebrow .origin { margin-left: 2px; }
+
+    /* add a deadline */
+    .btn-add {
+      width: 100%; margin: 2px 0 22px; background: var(--clay); color: var(--on-clay);
+      font-size: 15px; font-weight: 700; padding: 14px; border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(193,95,60,0.22);
+    }
+    .field-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--faint); margin: 14px 0 6px;
+    }
+    .cons-row { display: flex; gap: 8px; }
+    .cons {
+      flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--muted);
+      font-size: 13px; font-weight: 700; padding: 10px; border-radius: 10px;
+    }
+    .cons.on { border-color: var(--clay); color: var(--clay-deep); background: rgba(217,119,87,0.08); }
+    .rm { background: transparent; border: 0; color: var(--faint); font-size: 18px; line-height: 1; padding: 4px 8px; flex: none; }
 
     /* settings / sources panel */
     .settings { margin: 4px 2px 18px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -459,14 +478,30 @@
       var snoozed = state[it.id] === "snooze" ? -500 : 0;          // snoozed sinks but can resurface
       return base + w + snoozed;
     }
+    // ---- your own deadlines: entered by hand, stored ONLY in this browser ----
+    // Treated as confirmed (you set them). No private data lives in this public file.
+    function userDeadlines() {
+      var arr = state["user.deadlines"];
+      if (!Array.isArray(arr)) return [];
+      return arr.map(function (x) {
+        return { id: x.id, domain: "Your deadline", src: "deadline", consequence: x.cons || "high",
+          title: x.title, due: x.due, origin: "yours",
+          why: daysLeft(x.due) <= 0 ? "It is due. You set this date." : "Counts down to the date you set.",
+          prov: "Entered by you and stored only in this browser (localStorage), never sent anywhere. Treated as a confirmed deadline because you set it.",
+          action: 'Take the step that closes "' + x.title + '"' };
+      });
+    }
     function ranked() {
       // demo items; live monitoring (real GitHub Actions) supersedes the demo GitHub item
       var base = ITEMS.map(function (it) { return Object.assign({}, it, { origin: "demo" }); });
       if (monHasLive()) base = base.filter(function (it) { return it.id !== "radar"; }).concat(monAttentionItems());
+      var uds = userDeadlines();
+      // your real deadlines supersede the demo deadline seeds, same as live CI supersedes the demo radar
+      if (uds.length) base = base.filter(function (it) { return ["ss", "bike", "irs"].indexOf(it.id) < 0; });
       var promoted = CANDIDATES.filter(function (c) { return state["confirm:" + c.id] === 1; })
         .map(function (c) { return { id: c.id, domain: c.domainFull, src: c.src, consequence: c.consequence,
           title: c.title, due: c.due, why: c.why, prov: c.prov, action: c.action, origin: "confirmed" }; });
-      return base.concat(promoted)
+      return base.concat(uds).concat(promoted)
         .filter(function (it) { return state[it.id] !== "done"; })
         .sort(function (a, b) { return score(b) - score(a); });
     }
@@ -497,7 +532,7 @@
       var d = Math.round(hr / 24);
       return d + (d === 1 ? " day ago" : " days ago");
     }
-    function originLabel(o) { return o === "live" ? "Live" : o === "confirmed" ? "Confirmed" : "Demo"; }
+    function originLabel(o) { return o === "live" ? "Live" : o === "confirmed" ? "Confirmed" : o === "yours" ? "Yours" : "Demo"; }
 
     // ---- wizard state (not persisted; never holds a credential) ----
     var wizard = { open: false, view: "menu", error: "" };
@@ -520,6 +555,15 @@
           '<span class="st ' + (pend ? "available" : "blocked") + '">' + (pend ? "Pending" : "Needs approval") + '</span>' +
           '<button class="tg" data-wz="approval:' + s.key + '">Connect</button></div>';
       });
+      var mine = state["user.deadlines"];
+      if (Array.isArray(mine) && mine.length) {
+        mine.forEach(function (x) {
+          h += '<div class="src-row"><div class="sn">' + esc(x.title) +
+            '<small>' + esc(dueText(x.due).txt) + ' &middot; ' + esc(x.cons || "high") + ' cost</small></div>' +
+            '<span class="st live">Yours</span>' +
+            '<button class="rm" data-wz="deldl:' + esc(x.id) + '" aria-label="Remove deadline">' + String.fromCharCode(215) + '</button></div>';
+        });
+      }
       h += '<div class="src-row"><div class="sn">Demo data<small>Taxes, personal and freelance seed items</small></div>' +
         '<span class="st demo">Demo</span></div>';
       h += '</details>';
@@ -568,6 +612,20 @@
         h += '<input class="repo-input" id="wz-repo" placeholder="owner/repo" autocapitalize="off" autocorrect="off" spellcheck="false">';
         if (wizard.error) h += '<p class="blocker">' + esc(wizard.error) + '</p>';
         h += '<div class="row"><button class="btn-ghost" data-wz="menu">Back</button><button class="btn-do" data-wz="addrepo-go">Add and check</button></div>';
+      } else if (wizard.view === "adddeadline") {
+        h += '<p class="modal-sub">Stored only in this browser. It never leaves your device and is never sent anywhere.</p>';
+        h += '<input class="repo-input" id="dl-title" value="' + esc(wizard.title || "") + '" placeholder="What must you not miss?" autocapitalize="sentences">';
+        h += '<p class="field-label">Due date</p>';
+        h += '<input class="repo-input" id="dl-date" type="date" value="' + esc(wizard.date || "") + '">';
+        h += '<p class="field-label">Cost of missing</p>';
+        h += '<div class="cons-row">' +
+          '<button class="cons' + (wizard.cons === "high" ? " on" : "") + '" data-wz="cons:high">High</button>' +
+          '<button class="cons' + (wizard.cons === "med" ? " on" : "") + '" data-wz="cons:med">Medium</button>' +
+          '<button class="cons' + (wizard.cons === "low" ? " on" : "") + '" data-wz="cons:low">Low</button></div>';
+        if (wizard.error) h += '<p class="blocker">' + esc(wizard.error) + '</p>';
+        h += '<div class="row"><button class="btn-ghost" data-wz="close">Cancel</button>' +
+          '<button class="btn-do" data-wz="adddeadline-go">Add deadline</button></div>';
+        h += '<p class="modal-foot">Treated as a confirmed deadline because you set it.</p>';
       } else if (wizard.view.indexOf("approval:") === 0) {
         var key = wizard.view.slice(9);
         var s = APPROVAL_SOURCES.filter(function (x) { return x.key === key; })[0] || {};
@@ -582,10 +640,34 @@
       return h;
     }
 
+    // keep typed values across the wizard's re-render (chip taps re-render the form)
+    function captureForm() {
+      var t = document.getElementById("dl-title"); if (t) wizard.title = t.value;
+      var d = document.getElementById("dl-date"); if (d) wizard.date = d.value;
+    }
+
     function handleWz(v) {
       if (v === "close") { wizard.open = false; render(); return; }
       if (v === "open" || v === "menu") { wizard.open = true; wizard.view = "menu"; wizard.error = ""; render(); return; }
       if (v === "addrepo") { wizard.open = true; wizard.view = "addrepo"; wizard.error = ""; render(); return; }
+      if (v === "adddeadline") { wizard.open = true; wizard.view = "adddeadline"; wizard.title = ""; wizard.date = ""; wizard.cons = "high"; wizard.error = ""; render(); return; }
+      if (v.indexOf("cons:") === 0) { captureForm(); wizard.cons = v.slice(5); render(); return; }
+      if (v === "adddeadline-go") {
+        captureForm();
+        var title = (wizard.title || "").trim();
+        if (!title) { wizard.error = "Add a short title."; render(); return; }
+        if (!wizard.date) { wizard.error = "Pick a due date."; render(); return; }
+        var arr = Array.isArray(state["user.deadlines"]) ? state["user.deadlines"].slice() : [];
+        arr.push({ id: "ud:" + Date.now(), title: title, due: wizard.date, cons: wizard.cons || "high" });
+        state["user.deadlines"] = arr; save();
+        wizard.open = false; render(); return;
+      }
+      if (v.indexOf("deldl:") === 0) {
+        var did = v.slice(6);
+        var cur = Array.isArray(state["user.deadlines"]) ? state["user.deadlines"] : [];
+        state["user.deadlines"] = cur.filter(function (x) { return x.id !== did; });
+        delete state[did]; save(); render(); return;
+      }
       if (v === "addrepo-go") {
         var inp = document.getElementById("wz-repo");
         var val = inp ? inp.value.trim() : "";
@@ -659,13 +741,16 @@
         html += '<p class="cand-note">These came from Gmail and an agent. They will not rank, or become your #1, until you confirm them - signals are not treated as truth.</p>';
       }
 
+      html += '<button class="btn-add" data-wz="adddeadline">+ Add a deadline</button>';
       html += deckHtml();
       html += settingsHtml();
       html += wizardHtml();
       content.innerHTML = html;
 
       var badge = document.querySelector(".badge");
-      if (badge) badge.textContent = monHasLive() ? "Live + demo" : "Demo data";
+      if (badge) badge.textContent = userDeadlines().length
+        ? (monHasLive() ? "Yours + live" : "Your data")
+        : (monHasLive() ? "Live + demo" : "Demo data");
       wire();
     }
 
