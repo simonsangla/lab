@@ -194,6 +194,13 @@
     }
     .cons.on { border-color: var(--clay); color: var(--clay-deep); background: rgba(217,119,87,0.08); }
     .rm { background: transparent; border: 0; color: var(--faint); font-size: 18px; line-height: 1; padding: 4px 8px; flex: none; }
+    .item-cta {
+      flex: none; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); border: 1px solid var(--line); color: var(--muted); font-size: 15px; font-weight: 700;
+      text-decoration: none; cursor: pointer;
+    }
+    .item-cta:active { transform: scale(0.95); }
+    .src-open { display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none; }
 
     /* settings / sources panel */
     .settings { margin: 4px 2px 18px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -321,6 +328,7 @@
         due: inDays(2, 23),
         why: "Misses the trimestral window; penalty and it touches your subsidio calc.",
         prov: "Confirmed deadline from the SSD e-Clic notice (primary source). Not inferred from an email subject line.",
+        link: "https://app.seg-social.pt",
         action: "Open SSD e-Clic and submit the GD declaration" },
 
       { id: "bike", domain: "Personal",         src: "deadline", consequence: "high",
@@ -328,6 +336,7 @@
         due: inDays(4, 18),
         why: "Coverage window closes; after this you eat the repair cost.",
         prov: "Date taken from the purchase receipt (primary source).",
+        link: "https://engwe.com",
         action: "Submit the warranty form to Engwe support" },
 
       { id: "irs",  domain: "Admin / taxes",    src: "deadline", consequence: "high",
@@ -335,6 +344,7 @@
         due: inDays(31, 23),
         why: "Hard deadline 30 Jun; your own target was today. Backup accountant on standby.",
         prov: "Statutory deadline (AT). Self-set target lives in your markdown, flagged stale.",
+        link: "https://www.portaldasfinancas.gov.pt",
         action: "Reply to Cristina to confirm filing, else trigger backup" },
 
       { id: "dent", domain: "Calendar",         src: "calendar", consequence: "med",
@@ -342,6 +352,7 @@
         due: inDays(1, 9),
         why: "You booked it; tomorrow morning. Low stakes but easy to no-show.",
         prov: "From your Calendar. You placed it, so it is trusted as scheduled.",
+        link: "https://calendar.google.com",
         action: "Confirm you are going, or reschedule now" },
 
       { id: "radar", domain: "GitHub / agents", src: "github", consequence: "med",
@@ -349,6 +360,7 @@
         due: null,
         why: "Build red on main for 2 days; the lead-scoring cron is not running.",
         prov: "Factual machine state from the GitHub Actions run. State, not opinion.",
+        link: "https://github.com/simonsangla/pipeline-radar/actions",
         action: "Open the failing build log and redeploy" }
     ];
 
@@ -426,6 +438,7 @@
             title: "CI is failing on " + name,
             why: 'Latest run "' + r.runName + '" ' + r.conclusion + " " + rel(r.updatedAt) + ". An automated agent/cron is broken.",
             prov: "Live from the GitHub Actions API (public repo, no auth). Objective machine state - a failing run, not inferred.",
+            link: r.url || ("https://github.com/" + full + "/actions"),
             action: "Open the failing run on " + name + " and fix it" });
         } else if (r.stale) {
           out.push({ id: "mon:" + full, origin: "live", domain: "Agent / cron", src: "github",
@@ -433,6 +446,7 @@
             title: name + " has not run in " + r.staleDays + " days",
             why: 'Last run "' + r.runName + '" ' + rel(r.updatedAt) + ". A scheduled cron may have stopped firing.",
             prov: "Live from the GitHub Actions API. Stale = no recent run; could be a paused or broken schedule.",
+            link: "https://github.com/" + full + "/actions",
             action: "Check the workflow schedule on " + name });
         }
       });
@@ -457,7 +471,7 @@
             var fail = complete && run.conclusion && ["success", "neutral", "skipped"].indexOf(run.conclusion) < 0;
             var ageDays = Math.floor((Date.now() - new Date(run.updated_at).getTime()) / DAY);
             return { full: full, runName: run.name || "workflow", status: run.status,
-              conclusion: run.conclusion || run.status, updatedAt: run.updated_at,
+              conclusion: run.conclusion || run.status, updatedAt: run.updated_at, url: run.html_url,
               fail: fail, running: !complete, ok: complete && !fail, stale: ageDays >= 14, staleDays: ageDays };
           })
           .catch(function (e) { return { full: full, error: String(e.message || e) }; });
@@ -538,6 +552,9 @@
     var wizard = { open: false, view: "menu", error: "" };
     var GEAR = '<svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
+    var ARROW = String.fromCharCode(8599);   // open-source link glyph
+    var CHECK = String.fromCharCode(10003);  // mark-done glyph
+
     // ---- Settings / source-status surface ----
     function settingsHtml() {
       var on = monEnabled();
@@ -587,7 +604,9 @@
         else if (r.running) { pill = '<span class="mon-pill amber">running</span>'; sub = esc(r.runName) + " &middot; " + esc(rel(r.updatedAt)); }
         else if (r.stale) { pill = '<span class="mon-pill amber">stale</span>'; sub = "last run " + esc(rel(r.updatedAt)); }
         else { pill = '<span class="mon-pill green">green</span>'; sub = esc(r.runName) + " &middot; " + esc(rel(r.updatedAt)); }
-        h += '<div class="item"><span class="src-pill">Repo</span><div class="meta"><p class="t">' + esc(name) + '</p><p class="s">' + sub + '</p></div>' + pill + '</div>';
+        var rlink = (r && r.url) ? r.url : ("https://github.com/" + full + "/actions");
+        h += '<div class="item"><span class="src-pill">Repo</span><div class="meta"><p class="t">' + esc(name) + '</p><p class="s">' + sub + '</p></div>' + pill +
+          '<a class="item-cta" href="' + esc(rlink) + '" target="_blank" rel="noopener noreferrer" aria-label="Open ' + esc(name) + ' on GitHub">' + ARROW + '</a></div>';
       });
       h += '</div>';
       h += '<button class="btn-connect" data-wz="open">+ Connect a source</button>';
@@ -710,6 +729,7 @@
         html += '<button class="btn-do" id="do">Mark this done</button>';
         html += '<div class="row">';
         html += '<button class="btn-ghost" id="snooze">Not today</button>';
+        if (hero.link) html += '<a class="btn-ghost src-open" href="' + esc(hero.link) + '" target="_blank" rel="noopener noreferrer">Open source ' + ARROW + '</a>';
         html += '</div></div>';
 
         html += '<details class="prov"><summary>Why this is #1 ' + String.fromCharCode(8595) + '</summary>';
@@ -724,7 +744,10 @@
           var it = list[i], dd = dueText(it.due);
           html += '<div class="item"><span class="src-pill">' + srcPill(it.src) + '</span>';
           html += '<div class="meta"><p class="t">' + esc(it.title) + '</p><p class="s">' + esc(it.domain) + ' &middot; ' + originLabel(it.origin) + '</p></div>';
-          html += '<span class="due ' + dd.cls + '">' + dd.txt + '</span></div>';
+          html += '<span class="due ' + dd.cls + '">' + dd.txt + '</span>';
+          if (it.link) html += '<a class="item-cta" href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer" aria-label="Open source">' + ARROW + '</a>';
+          else html += '<button class="item-cta" data-done="' + esc(it.id) + '" aria-label="Mark done">' + CHECK + '</button>';
+          html += '</div>';
         }
         html += '</div>';
       }
@@ -770,6 +793,10 @@
       var cs = document.querySelectorAll("[data-confirm]");
       for (var i = 0; i < cs.length; i++) {
         cs[i].onclick = function () { state["confirm:" + this.getAttribute("data-confirm")] = 1; save(); render(); };
+      }
+      var dbs = document.querySelectorAll("[data-done]");
+      for (var k = 0; k < dbs.length; k++) {
+        dbs[k].onclick = function () { state[this.getAttribute("data-done")] = "done"; save(); render(); };
       }
       var setEl = document.getElementById("settings");
       if (setEl) setEl.addEventListener("toggle", function () { state["ui.settings"] = setEl.open ? 1 : 0; save(); });
