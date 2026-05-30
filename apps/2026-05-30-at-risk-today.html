@@ -211,6 +211,52 @@
     }
     .repo-input:focus { outline: none; border-color: var(--clay); }
 
+    /* monitoring deck */
+    .mon-pill { font-size: 12px; font-weight: 700; flex: none; }
+    .mon-pill.green { color: var(--green); }
+    .mon-pill.red { color: var(--red); }
+    .mon-pill.amber { color: #B8791F; }
+    .btn-connect {
+      width: 100%; margin: 2px 0 22px; background: transparent; color: var(--clay-deep);
+      border: 1px dashed rgba(217,119,87,0.5); font-size: 14px; font-weight: 700;
+      padding: 12px; border-radius: 12px;
+    }
+
+    /* connection wizard modal */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(20,19,18,0.5); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+      display: flex; align-items: flex-end; justify-content: center; z-index: 50; animation: fade 0.18s ease;
+    }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      width: 100%; max-width: 460px; background: var(--card); color: var(--ink);
+      border-radius: 22px 22px 0 0;
+      padding: 20px calc(env(safe-area-inset-right) + 18px) calc(env(safe-area-inset-bottom) + 22px) calc(env(safe-area-inset-left) + 18px);
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.25); animation: rise 0.22s ease;
+    }
+    @keyframes rise { from { transform: translateY(24px); } to { transform: translateY(0); } }
+    .modal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .modal-top h3 { font-family: ui-serif, "New York", Georgia, serif; font-size: 21px; font-weight: 600; margin: 0; }
+    .modal-x { background: transparent; color: var(--muted); font-size: 24px; line-height: 1; padding: 4px 8px; border: 0; }
+    .modal-sub { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0 0 14px; }
+    .wz-opt {
+      width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 3px; position: relative;
+    }
+    .wz-opt b { font-size: 15px; }
+    .wz-opt small { font-size: 12px; color: var(--muted); max-width: 76%; }
+    .wz-ok, .wz-lock, .wz-pend {
+      position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+    }
+    .wz-ok { background: rgba(63,125,78,0.16); color: var(--green); }
+    .wz-lock { background: rgba(180,67,43,0.12); color: var(--red); }
+    .wz-pend { background: rgba(217,119,87,0.14); color: var(--clay-deep); }
+    .wz-need { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+    .wz-need > p { font-size: 13px; color: var(--muted); line-height: 1.55; margin: 10px 0 0; }
+    .wz-safe { color: var(--green) !important; font-weight: 600; }
+    .modal-foot { font-size: 12px; color: var(--faint); margin: 12px 0 0; text-align: center; }
+
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1F1E1D; --card: #2A2927; --ink: #F5F4EF; --muted: #B0AEA6; --faint: #807E77;
@@ -308,53 +354,100 @@
         prov: "Reported by a Claude agent. Agent output can hallucinate, so it waits for your confirmation." }
     ];
 
-    // ---- blocked / demo sources (shown in Settings) ----
-    var SOURCES_BLOCKED = [
-      { label: "Calendar", sub: "obligations and deadlines",
-        blocker: "Needs Google OAuth plus a serverless token exchange - a backend and auth system, outside the current static-first scope. A build-time snapshot is also unsafe here: this deployment is public and would expose private events. Unblock: a private deployment, or a Vercel function holding the OAuth flow." },
-      { label: "Gmail", sub: "follow-ups",
-        blocker: "Same OAuth and privacy blocker as Calendar, and heavier (thread parsing). For now Gmail stays a demo signal you confirm by hand, so its meaning is never trusted automatically." }
+    // ---- sources that need approval / a credential ----
+    // The wizard explains the SAFE path for each. It never collects a secret on this
+    // public origin - credentialed sources are routed to a backend (simon-ops), not localStorage.
+    var APPROVAL_SOURCES = [
+      { key: "ghsec", label: "GitHub security alerts", sub: "high-severity code scanning / Dependabot",
+        need: "Code-scanning and Dependabot alerts are not public - reading high-severity findings needs a token with security-events scope. Storing that token on this public page would let any XSS on the lab origin steal it. Safe path: a serverless proxy in simon-ops holds the token server-side and this app calls /api/security.",
+        safeHome: "simon-ops backend proxy" },
+      { key: "privrepos", label: "Private repos", sub: "crons that live in private repos",
+        need: "Private-repo Actions need an authenticated token - same exposure risk on a public origin. Safe path: the same simon-ops backend proxy, or run this app from a private deployment.",
+        safeHome: "simon-ops backend proxy" },
+      { key: "calendar", label: "Calendar", sub: "obligations and deadlines",
+        need: "Needs Google OAuth + a serverless token exchange (a backend). A build-time snapshot is also unsafe: this deploy is public and would expose private events.",
+        safeHome: "OAuth backend" },
+      { key: "gmail", label: "Gmail", sub: "follow-ups",
+        need: "Same OAuth + privacy blocker as Calendar, and heavier (thread parsing). Stays a demo signal you confirm by hand until a secure backend exists.",
+        safeHome: "OAuth backend" }
     ];
 
-    // ---- state (localStorage, never window.storage) ----
+    // ---- state (localStorage, never window.storage; never a credential) ----
     var KEY = "atrisk.v1";
+    var DEFAULT_REPOS = ["simonsangla/lab", "simonsangla/portfolio-v2", "simonsangla/proofforge"];
     var state = load();
     function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
     function done(id) { return state[id] === "done" || state[id] === "snooze"; }
-    function ghEnabled() { return state["gh.enabled"] !== false; }
-    function ghRepo() { return state["gh.repo"] || "simonsangla/portfolio-v2"; }
+    function monEnabled() { return state["mon.enabled"] !== false; }
+    function monRepos() {
+      var r = state["mon.repos"];
+      if (Array.isArray(r) && r.length) return r;
+      if (state["gh.repo"]) return [state["gh.repo"]];   // migrate older single-repo state
+      return DEFAULT_REPOS.slice();
+    }
 
-    // ---- first real source: GitHub Actions (public repo, no auth, live on open) ----
-    var ghState = { status: "idle" };
-    function ghLiveActive() { return ghEnabled() && ghState.status === "live" && ghState.item; }
-    function fetchGitHub() {
-      if (!ghEnabled()) { ghState = { status: "off" }; render(); return; }
-      ghState = { status: "loading" }; render();
-      var repo = ghRepo();
-      fetch("https://api.github.com/repos/" + repo + "/actions/runs?per_page=1",
-            { headers: { "Accept": "application/vnd.github+json" } })
-        .then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status +
-            (res.status === 403 ? " (rate limit, 60/hr)" : res.status === 404 ? " (repo not found)" : ""));
-          return res.json();
-        })
-        .then(function (data) {
-          var run = (data.workflow_runs || [])[0];
-          if (!run) throw new Error("no workflow runs on this repo");
-          var complete = run.status === "completed";
-          var fail = complete && run.conclusion && ["success", "neutral", "skipped"].indexOf(run.conclusion) < 0;
-          var name = repo.split("/").pop();
-          ghState = { status: "live", lastRefresh: Date.now(), repo: repo,
-            item: { id: "gh-live", origin: "live", domain: "GitHub / agents", src: "github",
-              consequence: fail ? "high" : "low", due: null,
-              title: fail ? ("CI is failing on " + name) : !complete ? ("CI is running on " + name) : (name + " CI is green"),
-              why: 'Latest run "' + (run.name || "workflow") + '" ' + (run.conclusion || run.status) + " " + rel(run.updated_at) + ".",
-              prov: "Live from the GitHub Actions REST API (public repo, no auth, fetched on open). Objective machine state, not inferred.",
-              action: fail ? "Open the failing run and fix it" : "Nothing to act on - CI is green" } };
-          render();
-        })
-        .catch(function (e) { ghState = { status: "blocked", error: String(e.message || e), lastRefresh: Date.now() }; render(); });
+    // ---- Claude monitoring deck: GitHub Actions across your repos (public, no auth) ----
+    // Each monitored repo's latest workflow run = the health of an automated agent/cron.
+    var monState = { status: "idle", repos: {}, lastRefresh: 0 };
+    function monHasLive() {
+      return monEnabled() && monState.status === "live" &&
+        Object.keys(monState.repos).some(function (k) { return monState.repos[k] && !monState.repos[k].error; });
+    }
+    function monAttentionItems() {
+      // only FAILING or STALE runs become rank-eligible attention items
+      var out = [];
+      Object.keys(monState.repos).forEach(function (full) {
+        var r = monState.repos[full];
+        if (!r || r.error || r.empty) return;
+        var name = full.split("/").pop();
+        if (r.fail) {
+          out.push({ id: "mon:" + full, origin: "live", domain: "Agent / cron", src: "github",
+            consequence: "high", due: null,
+            title: "CI is failing on " + name,
+            why: 'Latest run "' + r.runName + '" ' + r.conclusion + " " + rel(r.updatedAt) + ". An automated agent/cron is broken.",
+            prov: "Live from the GitHub Actions API (public repo, no auth). Objective machine state - a failing run, not inferred.",
+            action: "Open the failing run on " + name + " and fix it" });
+        } else if (r.stale) {
+          out.push({ id: "mon:" + full, origin: "live", domain: "Agent / cron", src: "github",
+            consequence: "low", due: null,
+            title: name + " has not run in " + r.staleDays + " days",
+            why: 'Last run "' + r.runName + '" ' + rel(r.updatedAt) + ". A scheduled cron may have stopped firing.",
+            prov: "Live from the GitHub Actions API. Stale = no recent run; could be a paused or broken schedule.",
+            action: "Check the workflow schedule on " + name });
+        }
+      });
+      return out;
+    }
+    function fetchMonitoring() {
+      if (!monEnabled()) { monState = { status: "off", repos: {}, lastRefresh: 0 }; render(); return; }
+      var repos = monRepos();
+      monState = { status: "loading", repos: {}, lastRefresh: 0 }; render();
+      Promise.all(repos.map(function (full) {
+        return fetch("https://api.github.com/repos/" + full + "/actions/runs?per_page=1",
+              { headers: { "Accept": "application/vnd.github+json" } })
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status +
+              (res.status === 403 ? " (rate limit)" : res.status === 404 ? " (not found / private)" : ""));
+            return res.json();
+          })
+          .then(function (data) {
+            var run = (data.workflow_runs || [])[0];
+            if (!run) return { full: full, empty: true };
+            var complete = run.status === "completed";
+            var fail = complete && run.conclusion && ["success", "neutral", "skipped"].indexOf(run.conclusion) < 0;
+            var ageDays = Math.floor((Date.now() - new Date(run.updated_at).getTime()) / DAY);
+            return { full: full, runName: run.name || "workflow", status: run.status,
+              conclusion: run.conclusion || run.status, updatedAt: run.updated_at,
+              fail: fail, running: !complete, ok: complete && !fail, stale: ageDays >= 14, staleDays: ageDays };
+          })
+          .catch(function (e) { return { full: full, error: String(e.message || e) }; });
+      })).then(function (results) {
+        var map = {};
+        results.forEach(function (r) { map[r.full] = r; });
+        monState = { status: "live", repos: map, lastRefresh: Date.now() };
+        render();
+      });
     }
 
     // ---- ranking: rank-eligible items only, by risk of missing ----
@@ -367,9 +460,9 @@
       return base + w + snoozed;
     }
     function ranked() {
-      // demo items; live GitHub replaces the demo GitHub item when available
+      // demo items; live monitoring (real GitHub Actions) supersedes the demo GitHub item
       var base = ITEMS.map(function (it) { return Object.assign({}, it, { origin: "demo" }); });
-      if (ghLiveActive()) base = base.filter(function (it) { return it.id !== "radar"; }).concat([ghState.item]);
+      if (monHasLive()) base = base.filter(function (it) { return it.id !== "radar"; }).concat(monAttentionItems());
       var promoted = CANDIDATES.filter(function (c) { return state["confirm:" + c.id] === 1; })
         .map(function (c) { return { id: c.id, domain: c.domainFull, src: c.src, consequence: c.consequence,
           title: c.title, due: c.due, why: c.why, prov: c.prov, action: c.action, origin: "confirmed" }; });
@@ -406,41 +499,104 @@
     }
     function originLabel(o) { return o === "live" ? "Live" : o === "confirmed" ? "Confirmed" : "Demo"; }
 
+    // ---- wizard state (not persisted; never holds a credential) ----
+    var wizard = { open: false, view: "menu", error: "" };
+    var GEAR = '<svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+
     // ---- Settings / source-status surface ----
     function settingsHtml() {
-      var en = ghEnabled();
-      var gstatus = !en ? "available" : (ghState.status === "live" ? "live" : ghState.status === "blocked" ? "blocked" : "available");
-      var glabel = !en ? "Off" : (ghState.status === "live" ? "Live" : ghState.status === "blocked" ? "Blocked" : "Connecting");
-      var gear = '<svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+      var on = monEnabled();
+      var mst = !on ? "available" : monState.status === "live" ? "live" : "available";
+      var mlabel = !on ? "Off" : monState.status === "live" ? "Live" : "Connecting";
       var h = '<details class="settings" id="settings"' + (state["ui.settings"] ? " open" : "") + '>';
-      h += '<summary>' + gear + 'Sources and status</summary>';
-
-      // GitHub - the one live source
-      h += '<div class="src-row"><div class="sn">GitHub<small>' +
-        (en ? esc(ghRepo()) + (ghState.status === "live" && ghState.lastRefresh ? ' &middot; last refresh ' + esc(rel(new Date(ghState.lastRefresh).toISOString())) : "")
-            : "disabled") + '</small></div>' +
-        '<span class="st ' + gstatus + '">' + glabel + '</span>' +
-        '<button class="tg ' + (en ? "on" : "") + '" data-gh-toggle>' + (en ? "On" : "Off") + '</button></div>';
-      if (en) {
-        h += '<div class="src-extra"><input class="repo-input" data-gh-repo value="' + esc(ghRepo()) +
-          '" placeholder="owner/repo" autocapitalize="off" autocorrect="off" spellcheck="false">';
-        if (ghState.status === "blocked" && ghState.error)
-          h += '<p class="blocker">Blocked: ' + esc(ghState.error) + '. Showing the demo GitHub item instead.</p>';
-        h += '</div>';
-      }
-
-      // blocked sources, with exact blocker text
-      SOURCES_BLOCKED.forEach(function (s) {
+      h += '<summary>' + GEAR + 'Sources and status</summary>';
+      h += '<div class="src-row"><div class="sn">GitHub Actions monitoring<small>' +
+        monRepos().length + ' repos' + (monState.status === "live" && monState.lastRefresh ? ' &middot; ' + esc(rel(new Date(monState.lastRefresh).toISOString())) : "") +
+        '</small></div><span class="st ' + mst + '">' + mlabel + '</span>' +
+        '<button class="tg ' + (on ? "on" : "") + '" data-mon-toggle>' + (on ? "On" : "Off") + '</button></div>';
+      APPROVAL_SOURCES.forEach(function (s) {
+        var pend = state["pending:" + s.key];
         h += '<div class="src-row"><div class="sn">' + esc(s.label) + '<small>' + esc(s.sub) + '</small></div>' +
-          '<span class="st blocked">Blocked</span></div>';
-        h += '<div class="src-extra"><p class="blocker">' + esc(s.blocker) + '</p></div>';
+          '<span class="st ' + (pend ? "available" : "blocked") + '">' + (pend ? "Pending" : "Needs approval") + '</span>' +
+          '<button class="tg" data-wz="approval:' + s.key + '">Connect</button></div>';
       });
-
-      // demo seed
       h += '<div class="src-row"><div class="sn">Demo data<small>Taxes, personal and freelance seed items</small></div>' +
         '<span class="st demo">Demo</span></div>';
       h += '</details>';
       return h;
+    }
+
+    // ---- Claude monitoring deck (real GitHub Actions across your repos) ----
+    function deckHtml() {
+      var repos = monRepos();
+      var h = '<p class="sec-title">Agent &amp; cron monitoring <span class="n">' + repos.length + '</span></p>';
+      h += '<div class="stack">';
+      repos.forEach(function (full) {
+        var r = monEnabled() ? monState.repos[full] : null;
+        var name = full.split("/").pop();
+        var pill, sub;
+        if (!monEnabled()) { pill = '<span class="due ok">off</span>'; sub = "monitoring disabled"; }
+        else if (monState.status === "loading" || !r) { pill = '<span class="due ok">checking</span>'; sub = "fetching latest run"; }
+        else if (r.error) { pill = '<span class="mon-pill red">error</span>'; sub = esc(r.error); }
+        else if (r.empty) { pill = '<span class="due ok">no runs</span>'; sub = "no workflow runs yet"; }
+        else if (r.fail) { pill = '<span class="mon-pill red">failing</span>'; sub = esc(r.runName) + " &middot; " + esc(rel(r.updatedAt)); }
+        else if (r.running) { pill = '<span class="mon-pill amber">running</span>'; sub = esc(r.runName) + " &middot; " + esc(rel(r.updatedAt)); }
+        else if (r.stale) { pill = '<span class="mon-pill amber">stale</span>'; sub = "last run " + esc(rel(r.updatedAt)); }
+        else { pill = '<span class="mon-pill green">green</span>'; sub = esc(r.runName) + " &middot; " + esc(rel(r.updatedAt)); }
+        h += '<div class="item"><span class="src-pill">Repo</span><div class="meta"><p class="t">' + esc(name) + '</p><p class="s">' + sub + '</p></div>' + pill + '</div>';
+      });
+      h += '</div>';
+      h += '<button class="btn-connect" data-wz="open">+ Connect a source</button>';
+      return h;
+    }
+
+    // ---- connection wizard (no secret ever stored on this public origin) ----
+    function wizardHtml() {
+      if (!wizard.open) return "";
+      var h = '<div class="modal-bg" id="wz-bg"><div class="modal">';
+      h += '<div class="modal-top"><h3>Connect a source</h3><button class="modal-x" data-wz="close">' + String.fromCharCode(215) + '</button></div>';
+      if (wizard.view === "menu") {
+        h += '<p class="modal-sub">Public sources connect instantly. Anything needing a credential is routed to a safe backend - no token is ever stored on this public page.</p>';
+        h += '<button class="wz-opt" data-wz="addrepo"><b>Monitor a public GitHub repo</b><small>A cron or agent that runs as GitHub Actions. No auth needed.</small><span class="wz-ok">Safe</span></button>';
+        APPROVAL_SOURCES.forEach(function (s) {
+          var pend = state["pending:" + s.key];
+          h += '<button class="wz-opt" data-wz="approval:' + s.key + '"><b>' + esc(s.label) + '</b><small>' + esc(s.sub) + '</small>' +
+            (pend ? '<span class="wz-pend">Pending</span>' : '<span class="wz-lock">Needs approval</span>') + '</button>';
+        });
+      } else if (wizard.view === "addrepo") {
+        h += '<p class="modal-sub">Enter a public repo (owner/repo). Its latest workflow run becomes a monitored agent/cron.</p>';
+        h += '<input class="repo-input" id="wz-repo" placeholder="owner/repo" autocapitalize="off" autocorrect="off" spellcheck="false">';
+        if (wizard.error) h += '<p class="blocker">' + esc(wizard.error) + '</p>';
+        h += '<div class="row"><button class="btn-ghost" data-wz="menu">Back</button><button class="btn-do" data-wz="addrepo-go">Add and check</button></div>';
+      } else if (wizard.view.indexOf("approval:") === 0) {
+        var key = wizard.view.slice(9);
+        var s = APPROVAL_SOURCES.filter(function (x) { return x.key === key; })[0] || {};
+        var pend = state["pending:" + key];
+        h += '<div class="wz-need"><span class="st blocked">Needs approval</span><p>' + esc(s.need) + '</p>' +
+          '<p class="wz-safe">' + String.fromCharCode(10003) + ' No secret is collected or stored on this public origin.</p></div>';
+        h += '<div class="row"><button class="btn-ghost" data-wz="menu">Back</button>' +
+          '<button class="btn-do" data-wz="pending:' + key + '">' + (pend ? "Pending - tap to clear" : "Mark as pending") + '</button></div>';
+        h += '<p class="modal-foot">Safe home: ' + esc(s.safeHome) + '.</p>';
+      }
+      h += '</div></div>';
+      return h;
+    }
+
+    function handleWz(v) {
+      if (v === "close") { wizard.open = false; render(); return; }
+      if (v === "open" || v === "menu") { wizard.open = true; wizard.view = "menu"; wizard.error = ""; render(); return; }
+      if (v === "addrepo") { wizard.open = true; wizard.view = "addrepo"; wizard.error = ""; render(); return; }
+      if (v === "addrepo-go") {
+        var inp = document.getElementById("wz-repo");
+        var val = inp ? inp.value.trim() : "";
+        if (!/^[\w.\-]+\/[\w.\-]+$/.test(val)) { wizard.error = "Use owner/repo format, e.g. simonsangla/lab."; render(); return; }
+        var repos = monRepos();
+        if (repos.indexOf(val) < 0) repos = repos.concat([val]);
+        state["mon.repos"] = repos; state["mon.enabled"] = true; save();
+        wizard.open = false; fetchMonitoring(); return;
+      }
+      if (v.indexOf("approval:") === 0) { wizard.open = true; wizard.view = v; render(); return; }
+      if (v.indexOf("pending:") === 0) { var k = v.slice(8); state["pending:" + k] = state["pending:" + k] ? 0 : 1; save(); render(); return; }
     }
 
     // ---- render ----
@@ -503,11 +659,13 @@
         html += '<p class="cand-note">These came from Gmail and an agent. They will not rank, or become your #1, until you confirm them - signals are not treated as truth.</p>';
       }
 
+      html += deckHtml();
       html += settingsHtml();
+      html += wizardHtml();
       content.innerHTML = html;
 
       var badge = document.querySelector(".badge");
-      if (badge) badge.textContent = ghLiveActive() ? "Live + demo" : "Demo data";
+      if (badge) badge.textContent = monHasLive() ? "Live + demo" : "Demo data";
       wire();
     }
 
@@ -530,16 +688,19 @@
       }
       var setEl = document.getElementById("settings");
       if (setEl) setEl.addEventListener("toggle", function () { state["ui.settings"] = setEl.open ? 1 : 0; save(); });
-      var ght = document.querySelector("[data-gh-toggle]");
-      if (ght) ght.onclick = function () { state["gh.enabled"] = !ghEnabled(); save(); fetchGitHub(); };
-      var ghr = document.querySelector("[data-gh-repo]");
-      if (ghr) ghr.addEventListener("change", function () {
-        state["gh.repo"] = this.value.trim() || "simonsangla/portfolio-v2"; save(); fetchGitHub();
-      });
+      var mtg = document.querySelector("[data-mon-toggle]");
+      if (mtg) mtg.onclick = function () { state["mon.enabled"] = !monEnabled(); save(); fetchMonitoring(); };
+      // wizard: backdrop closes; inner actions stop propagation so they never close on click-through
+      var bg = document.getElementById("wz-bg");
+      if (bg) bg.onclick = function (e) { if (e.target === bg) { wizard.open = false; render(); } };
+      var wzEls = document.querySelectorAll("[data-wz]");
+      for (var j = 0; j < wzEls.length; j++) {
+        wzEls[j].onclick = function (e) { e.stopPropagation(); handleWz(this.getAttribute("data-wz")); };
+      }
     }
 
-    render();        // instant first paint with demo data (keeps open fast)
-    fetchGitHub();   // then upgrade the GitHub item with live data
+    render();           // instant first paint with demo data (keeps open fast)
+    fetchMonitoring();  // then fill the monitoring deck with live GitHub Actions data
   </script>
 </body>
 </html>
