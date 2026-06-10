@@ -12,11 +12,11 @@ gates, and screenshot verification — not new architecture.
 | Asset | What it is | Verdict |
 |---|---|---|
 | `apps/*.html` (8) | Standalone single-file PWA apps, 12–48 KB | **KEEP** — the product |
-| `apps/2026-05-31-pomodoro-brutal.html` | Canonical dark-token head/CSS shell (lines 1–60) | **KEEP** — de-facto app template; every new app copies it |
+| `apps/2026-05-31-pomodoro-brutal.html` | Canonical app shell: head/meta lines 1–19, dark tokens + layout CSS 20–42 (app-specific styles begin after `.wrap`) | **KEEP** — de-facto app template; every new app copies it |
 | `apps/2026-05-30-at-risk-today.html` | Live-source + demo-fallback + connection-wizard patterns | **KEEP** — pattern donor |
 | `apps/2026-06-10-chat-triage.html` | Feed-driven triage board (scan feed + GitHub live source) | **KEEP** — the factory's intake UI |
 | `index.html` | Generated landing/gallery | **KEEP (generated)** — never hand-edit; fixes go in gen-index.mjs |
-| `scripts/gen-index.mjs` | Meta-tags → gallery generator, stdlib, idempotent | **KEEP / IMPROVE** — landing P0/P1 fixes land here (see below) |
+| `scripts/gen-index.mjs` | Meta-tags → gallery generator, stdlib, idempotent | **KEEP / IMPROVE** — landing P0/P1 fixes land here; harden `parseMeta` quote handling so the spec contract can drop its no-quotes rule |
 | `scripts/gen-icons.mjs` | Deterministic stdlib PNG icon generator | **IMPROVE** — artwork still the placeholder deferred in PR #1 |
 | `scripts/scan-sessions.mjs` | Session-log scanner feeding the Chat Triage backlog | **KEEP** — factory intake |
 | `.claude/skills/triage-chats/` | Skill: scan → classify backlog/WIP → publish feed (privacy gate) | **KEEP** — factory intake; template for further skills |

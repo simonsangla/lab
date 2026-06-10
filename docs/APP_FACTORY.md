@@ -17,8 +17,8 @@ An app enters the factory only as a completed spec. Template:
 
 ```yaml
 idea:            one line, from data/chat-triage.json backlog or the ideas list
-app-name:        ≤24 chars, no quotes
-app-description: ONE sentence, ≤140 chars, no quotes   # gen-index clamp + share copy
+app-name:        ≤24 chars, no quotes*
+app-description: ONE sentence, ≤140 chars, no quotes*  # gen-index clamp + share copy
 app-tags:        ≤3, domain-first (e.g. snowflake,analytics)
 filename:        apps/YYYY-MM-DD-<slug>.html           # date = ship date, sort key
 data-sources:    none | public-api(<url, CORS, no auth>) | published-feed | localStorage-only
@@ -34,6 +34,11 @@ out-of-scope:    explicit non-goals (kills mid-build scope drift)
 **Prompt optimization step** 🔧: a `/optimize-app-prompt` skill takes the raw
 idea and interrogates it into this template; generation may not start while any
 field is empty. Validation evidence for why this gate pays for itself: §7.
+
+\* The no-quotes rule exists because `gen-index.mjs`'s meta regex stops at the
+first quote. Acceptable alternative at build time: harden `parseMeta` to handle
+quoted content and drop the rule — either way G2 enforces whichever contract
+the generator actually implements.
 
 ## 2. Generation flow
 
@@ -56,7 +61,7 @@ produce different HTML; both must clear identical gates.
 
 | Gate | Check | Tool | Status |
 |---|---|---|---|
-| G1 syntax | inline `<script>` extracted → `node --check` | sed + node | ✅ pattern (PR #7) |
+| G1 syntax | inline `<script>` extracted (Node string split on the script tags, not sed) → `node --check` | 🔧 part of `scripts/lint-app.mjs` | pattern ✅ (PR #7) |
 | G2 meta lint | 3 meta tags present, match gen-index regex, desc ≤140, no quotes, filename pattern, date not in future | 🔧 `scripts/lint-app.mjs` | gap |
 | G3 gallery | `npm run gen` → exactly one new card; second run = no diff | ✅ exists | |
 | G4 behavior | DOM-stub Node harness runs the app's real script with stubbed document/localStorage/fetch; every `acceptance:` line is an assertion; fallback paths (source down) covered | 🔧 `scripts/smoke.mjs` (pattern proven: PR #7, 15/15, caught a real fetch-race bug) | gap |
