@@ -1,0 +1,20 @@
+{
+  "app": "chat-triage",
+  "v": 2,
+  "scannedAt": "2026-06-10T18:44:54.363Z",
+  "items": [
+    {
+      "id": "cc-52d545f2",
+      "title": "Chat Triage board - build and auto-scan rework",
+      "surface": "code",
+      "status": "followup",
+      "date": "2026-06-10",
+      "link": "https://github.com/simonsangla/lab/pull/7",
+      "next": "Review PR #7 and merge to publish the board",
+      "notes": "lab · claude/code-chat-triage-artifact-12kptg · 3 prompts",
+      "snoozedOn": null,
+      "createdAt": "2026-06-10T18:44:32.203Z",
+      "updatedAt": "2026-06-10T18:44:54.363Z"
+    }
+  ]
+}

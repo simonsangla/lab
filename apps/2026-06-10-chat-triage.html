@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chat Triage &mdash; lab.</title>
 <meta name="app-name" content="Chat Triage">
-<meta name="app-description" content="Triage board for AI sessions across Claude, Cowork and Claude Code. Quick-add or paste-import chats, get the one next step to take. Everything stays in localStorage.">
-<meta name="app-tags" content="triage,ai,attention,pwa">
+<meta name="app-description" content="Auto-triage of recent Claude, Cowork and Claude Code sessions. The /triage-chats skill scans local session logs, sorts backlog-to-develop from WIP-to-follow-up, and publishes the feed this board renders with the one next step.">
+<meta name="app-tags" content="triage,ai,live-source,pwa">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#29d8c7">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
@@ -66,7 +66,7 @@
     color: var(--muted); border: 1px solid var(--border); padding: 2px 7px; border-radius: 6px; vertical-align: middle;
   }
   .pill.st-followup { color: var(--red); border-color: rgba(239,68,68,0.4); }
-  .pill.st-blocked { color: var(--yellow); border-color: rgba(250,204,21,0.4); }
+  .pill.st-backlog { color: var(--yellow); border-color: rgba(250,204,21,0.4); }
   .pill.st-monitor { color: var(--accent); border-color: rgba(41,216,199,0.4); }
   .pill.st-done { color: var(--green); border-color: rgba(34,197,94,0.4); }
   .action-label {
@@ -97,10 +97,13 @@
     padding: 7px 13px; border-radius: 99px;
   }
   .chip.on { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .scan-note { font-family: var(--font-mono); font-size: 10px; color: var(--muted); line-height: 1.6; margin: 0; display: flex; align-items: center; gap: 7px; }
+  .scan-note .live { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex: none; }
+  .scan-note .live.off { background: var(--yellow); }
   .counts { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
   .counts b { font-weight: 400; }
   .counts .c-followup { color: var(--red); }
-  .counts .c-blocked { color: var(--yellow); }
+  .counts .c-backlog { color: var(--yellow); }
   .counts .c-monitor { color: var(--accent); }
   .counts .c-done { color: var(--green); }
 
@@ -111,7 +114,7 @@
   }
   .sec-title .n { background: var(--surface); border: 1px solid var(--border); font-size: 10px; padding: 1px 7px; border-radius: 999px; }
   .sec-title.h-followup { color: var(--red); }
-  .sec-title.h-blocked { color: var(--yellow); }
+  .sec-title.h-backlog { color: var(--yellow); }
   .sec-title.h-monitor { color: var(--accent); }
   .stack { display: flex; flex-direction: column; gap: 8px; }
   .item {
@@ -143,11 +146,6 @@
   .doneblock summary::-webkit-details-marker { display: none; }
   .doneblock summary .n { background: var(--surface); border: 1px solid var(--border); font-size: 10px; padding: 1px 7px; border-radius: 999px; }
   .doneblock .item { opacity: 0.55; }
-
-  .btn-add {
-    width: 100%; background: var(--accent); color: var(--bg);
-    font-size: 15px; font-weight: 700; padding: 14px; border-radius: 12px;
-  }
 
   /* data panel */
   .settings { border-top: 1px solid var(--border); padding-top: 14px; }
@@ -206,11 +204,11 @@
   <div class="wrap">
     <header>
       <h1>Chat Triage</h1>
-      <p class="sub">Your AI sessions, triaged. Private to this browser.</p>
+      <p class="sub">Backlog to develop, WIP to follow up &mdash; auto-scanned from Claude, Cowork and Claude Code.</p>
       <p class="date" id="date"></p>
     </header>
     <main id="content"></main>
-    <p class="foot">Manual + paste-in only &mdash; no API reads your chats.<br>Stored only in this browser. Nothing leaves your device.</p>
+    <p class="foot">Feed published by the /triage-chats skill &mdash; titles only, never chat content.<br>Your edits here stay in this browser.</p>
   </div>
 
   <script>
@@ -219,8 +217,8 @@
     var ARROW = String.fromCharCode(8599);
     var CHECK = String.fromCharCode(10003);
     var STATUSES = [
-      { key: "followup", label: "Needs follow-up", weight: 3 },
-      { key: "blocked",  label: "Blocked / waiting", weight: 2 },
+      { key: "followup", label: "WIP / follow up", weight: 3 },
+      { key: "backlog",  label: "Backlog / develop", weight: 2 },
       { key: "monitor",  label: "Monitor", weight: 1 },
       { key: "done",     label: "Done", weight: 0 }
     ];
@@ -233,20 +231,26 @@
     function load() {
       try {
         var s = JSON.parse(localStorage.getItem(KEY));
-        if (s && Array.isArray(s.items)) return { items: s.items, ui: s.ui || { surface: "all", showDone: false } };
+        if (s && Array.isArray(s.items)) {
+          s.items.forEach(function (it) { if (it.status === "blocked") it.status = "followup"; });  // v1 migration
+          return { items: s.items, ui: s.ui || { surface: "all", showDone: false } };
+        }
       } catch (e) {}
       return { items: [], ui: { surface: "all", showDone: false } };
     }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    var demoMode = false;
+    function save() { if (demoMode) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
     // ---- helpers ----
     function esc(t) { var e = document.createElement("div"); e.textContent = t == null ? "" : t; return e.innerHTML; }
-    function pad(n) { return (n < 10 ? "0" : "") + n; }
-    function todayStr() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-    function uid() { return "ct" + Date.now() + Math.random().toString(36).slice(2, 6); }
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function dayStr(off) { var d = new Date(Date.now() + (off || 0) * DAY); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+    function todayStr() { return dayStr(0); }
+    function uid() {
+      return "ct" + (window.crypto && crypto.randomUUID ? crypto.randomUUID().slice(0, 13) : Date.now() + Math.random().toString(36).slice(2, 6));
+    }
     function statusMeta(key) {
-      for (var i = 0; i < STATUSES.length; i++) if (STATUSES[i].key === key) return STATUSES[i];
-      return STATUSES[2];
+      return STATUSES.find(function (s) { return s.key === key; }) || STATUSES[2];
     }
     function daysSince(ymd) {
       if (!ymd) return 0;
@@ -254,12 +258,17 @@
       if (isNaN(t)) return 0;
       return Math.max(0, Math.floor((Date.now() - t) / DAY));
     }
+    function scanAge() {
+      if (!feedInfo.scannedAt) return "scan time unknown";
+      var d = daysSince(String(feedInfo.scannedAt).slice(0, 10));
+      return d === 0 ? "scanned today" : "scanned " + d + "d ago";
+    }
     function ageText(ymd) {
       var d = daysSince(ymd);
       return d === 0 ? "today" : d === 1 ? "1 day quiet" : d + " days quiet";
     }
     function isStale(it) {
-      return (it.status === "followup" || it.status === "blocked") && daysSince(it.date) > STALE_DAYS;
+      return it.status === "followup" && daysSince(it.date) > STALE_DAYS;   // backlog ideas can wait
     }
     function normSurface(s) {
       s = String(s || "");
@@ -269,8 +278,8 @@
     }
     function normStatus(s) {
       s = String(s || "");
-      if (/follow|todo|action/i.test(s)) return "followup";
-      if (/block|wait/i.test(s)) return "blocked";
+      if (/follow|wip|block|wait|todo|action/i.test(s)) return "followup";
+      if (/backlog|idea|develop|build/i.test(s)) return "backlog";
       if (/done|closed|complete/i.test(s)) return "done";
       if (/monitor|watch/i.test(s)) return "monitor";
       return null;
@@ -281,6 +290,61 @@
       if (isNaN(t)) return null;
       var d = new Date(t);
       return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+
+    // ---- scan feed: published to data/chat-triage.json by the /triage-chats skill ----
+    var FEED_URL = "../data/chat-triage.json";
+    var feedInfo = { state: "loading", scannedAt: null, count: 0 };
+    function mergeFeed(feed) {
+      if (!feed || !Array.isArray(feed.items)) { feedInfo.state = "off"; return; }
+      feedInfo = { state: "live", scannedAt: feed.scannedAt || null, count: feed.items.length };
+      var byId = {};
+      state.items.forEach(function (it) { byId[it.id] = it; });
+      var now = new Date().toISOString();
+      feed.items.forEach(function (f) {
+        if (!f || !f.id || !f.title) return;
+        var status = normStatus(f.status) || "monitor";
+        var loc = byId[f.id];
+        if (!loc) {
+          state.items.push({
+            id: f.id, title: String(f.title), surface: normSurface(f.surface), status: status,
+            date: normDate(f.date) || todayStr(), link: f.link || "", next: f.next || "", notes: f.notes || "",
+            snoozedOn: f.snoozedOn || null, src: "scan",
+            createdAt: f.createdAt || now, updatedAt: f.updatedAt || now
+          });
+          return;
+        }
+        // facts refresh on every scan; triage edits made here after the scan win
+        loc.title = String(f.title);
+        loc.surface = normSurface(f.surface);
+        loc.date = normDate(f.date) || loc.date;
+        if (f.link) loc.link = f.link;
+        if (!(loc.updatedAt && f.updatedAt && loc.updatedAt > f.updatedAt)) {
+          loc.status = status; loc.next = f.next || ""; loc.notes = f.notes || loc.notes;
+          loc.updatedAt = f.updatedAt || loc.updatedAt;
+        }
+      });
+      save();
+    }
+    function loadFeed() {
+      if (!window.fetch) { feedInfo.state = "off"; render(); return; }
+      fetch(FEED_URL, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (f) { mergeFeed(f); render(); })
+        .catch(function () {
+          feedInfo.state = "off";
+          if (!state.items.length) loadDemo();
+          render();
+        });
+    }
+    function loadDemo() {       // file:// preview / feed unreachable: show the shape, persist nothing
+      demoMode = true;
+      state.items = [
+        { id: "demo1", title: "Chat Triage - auto-scan rework", surface: "code", status: "followup", date: todayStr(), link: "", next: "Merge the draft PR", notes: "lab · 3 prompts", snoozedOn: null, createdAt: "d1", updatedAt: "d1" },
+        { id: "demo2", title: "Cohort export idea for Snowflake clients", surface: "claude", status: "backlog", date: dayStr(-4), link: "", next: "Scaffold as a new day app", notes: "", snoozedOn: null, createdAt: "d2", updatedAt: "d2" },
+        { id: "demo3", title: "Cowork run - invoice folder cleanup", surface: "cowork", status: "monitor", date: dayStr(-2), link: "", next: "", notes: "12 prompts", snoozedOn: null, createdAt: "d3", updatedAt: "d3" },
+        { id: "demo4", title: "Pomodoro roast lines brainstorm", surface: "claude", status: "done", date: dayStr(-9), link: "", next: "", notes: "", snoozedOn: null, createdAt: "d4", updatedAt: "d4" }
+      ];
     }
 
     // ---- ranking: the one next step ----
@@ -355,13 +419,13 @@
         if (!title) { sheet.error = "Add a short title."; render(); return; }
         var now = new Date().toISOString();
         if (sheet.editId) {
-          state.items.forEach(function (it) {
-            if (it.id !== sheet.editId) return;
+          var it = state.items.find(function (x) { return x.id === sheet.editId; });
+          if (it) {
             it.title = title; it.surface = sheet.surface; it.status = sheet.status;
             it.date = sheet.date || todayStr(); it.link = (sheet.link || "").trim();
             it.next = (sheet.next || "").trim(); it.notes = (sheet.notes || "").trim();
             it.updatedAt = now;
-          });
+          }
         } else {
           state.items.push({
             id: uid(), title: title, surface: sheet.surface, status: sheet.status,
@@ -465,7 +529,7 @@
 
     // ---- export ----
     function exportPayload() {
-      return JSON.stringify({ app: "chat-triage", v: 1, exportedAt: new Date().toISOString(), items: state.items }, null, 2);
+      return JSON.stringify({ app: "chat-triage", v: 2, exportedAt: new Date().toISOString(), items: state.items }, null, 2);
     }
     function flashBtn(btn, label) {
       var old = btn.textContent;
@@ -520,9 +584,17 @@
       var hero = heroPick();
       var html = "";
 
+      // scan provenance
+      var liveOn = feedInfo.state === "live";
+      var note = feedInfo.state === "loading" ? "syncing scan feed&hellip;"
+        : liveOn ? feedInfo.count + " sessions auto-scanned &middot; " + scanAge() + " &middot; /triage-chats rescans"
+        : demoMode ? "feed unreachable &middot; demo data &middot; run /triage-chats to publish"
+        : "feed unreachable &middot; showing local edits only";
+      html += '<p class="scan-note"><span class="live' + (liveOn ? "" : " off") + '"></span>' + note + '</p>';
+
       // hero: propose next step
       if (!state.items.length) {
-        html += '<div class="empty"><div class="big">Nothing here yet.</div><p>Add a session below, or paste-import your recent Claude chats.</p></div>';
+        html += '<div class="empty"><div class="big">No scan feed yet.</div><p>Run /triage-chats in Claude Code to scan your Claude, Cowork and Claude Code sessions and publish the board.</p></div>';
       } else if (!hero) {
         html += '<div class="empty"><div class="big">Nothing needs you.</div><p>Everything is done or snoozed for today.</p></div>';
       } else {
@@ -554,8 +626,8 @@
         });
         html += '</div>';
         html += '<p class="counts">' +
-          '<b class="c-followup">' + counts.followup + ' follow-up</b> &middot; ' +
-          '<b class="c-blocked">' + counts.blocked + ' blocked</b> &middot; ' +
+          '<b class="c-followup">' + counts.followup + ' wip</b> &middot; ' +
+          '<b class="c-backlog">' + counts.backlog + ' backlog</b> &middot; ' +
           '<b class="c-monitor">' + counts.monitor + ' monitor</b> &middot; ' +
           '<b class="c-done">' + counts.done + ' done</b></p>';
         html += '</div>';
@@ -581,14 +653,13 @@
         html += '</div></details>';
       }
 
-      html += '<button class="btn-add" data-add>+ Add a session</button>';
-
-      // data panel
-      html += '<details class="settings"><summary>Data &mdash; import and backup</summary>';
-      html += '<div class="row"><button class="btn-ghost" data-imp="open">Paste-import</button>' +
+      // data panel (fallbacks: the feed is the primary source)
+      html += '<details class="settings"><summary>Data &mdash; fallbacks and backup</summary>';
+      html += '<div class="row"><button class="btn-ghost" data-add>Add manually</button>' +
+        '<button class="btn-ghost" data-imp="open">Paste-import</button>' +
         '<button class="btn-ghost" id="exp-copy">Copy JSON</button>' +
         '<button class="btn-ghost" id="exp-dl">Download .json</button></div>';
-      html += '<p class="note">Import accepts a Claude data export (conversations.json), a Chat Triage backup, or plain "title | surface | status" lines. Export round-trips through import.</p>';
+      html += '<p class="note">The board fills itself from the /triage-chats scan feed. These are escape hatches: claude.ai chats with no data export, or a backup of your local edits. Import accepts conversations.json, a Chat Triage backup, or "title | surface | status" lines.</p>';
       html += '</details>';
 
       html += sheetHtml();
@@ -623,8 +694,12 @@
       for (i = 0; i < els.length; i++) {
         els[i].onclick = function () {
           var id = this.getAttribute("data-edit");
-          var it = state.items.filter(function (x) { return x.id === id; })[0];
+          var it = state.items.find(function (x) { return x.id === id; });
           if (it) openSheet(it);
+        };
+        // rows are divs (a real <button> can't nest the link arrow) - keyboard support by hand
+        if (els[i].getAttribute("role") === "button") els[i].onkeydown = function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.click(); }
         };
       }
       els = document.querySelectorAll("[data-stop]");   // link arrows inside tappable rows
@@ -662,6 +737,7 @@
     }
 
     render();
+    loadFeed();
   </script>
 </body>
 </html>
