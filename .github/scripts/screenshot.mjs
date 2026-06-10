@@ -21,7 +21,14 @@ for (const path of pages) {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
   const page = await ctx.newPage();
   const errors = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    // Chromium logs every non-2xx fetch as "Failed to load resource" even when
+    // the app handles it - live-source apps probe public APIs that may 404 by
+    // design (At Risk Today's Blocked/demo fallback). JS errors still fail.
+    if (/Failed to load resource/.test(m.text())) return;
+    errors.push(m.text());
+  });
   page.on('pageerror', (e) => errors.push(String(e)));
   try {
     await page.goto(base + path, { waitUntil: 'networkidle', timeout: 30000 });
