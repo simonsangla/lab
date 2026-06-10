@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chat Triage &mdash; lab.</title>
+<meta name="app-name" content="Chat Triage">
+<meta name="app-description" content="Triage board for AI sessions across Claude, Cowork and Claude Code. Quick-add or paste-import chats, get the one next step to take. Everything stays in localStorage.">
+<meta name="app-tags" content="triage,ai,attention,pwa">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#29d8c7">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chat Triage">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #1e1e1e;
+    --accent: #29d8c7; --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --text: #e8e8e8; --muted: #5a5a5a;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh;
+    padding: max(60px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--accent); }
+  .wrap { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  header h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--accent); margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; margin: 6px 0 0; line-height: 1.5; }
+  header .date { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+
+  button {
+    appearance: none; border: 0; font: inherit; cursor: pointer; color: inherit; background: none;
+    transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  }
+  button:active { transform: scale(0.98); }
+
+  /* hero */
+  .hero { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 16px; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .eyebrow .age { margin-left: auto; color: var(--muted); letter-spacing: 0; text-transform: none; }
+  .eyebrow .age.stale { color: var(--red); }
+  .hero h2 { font-weight: 700; font-size: 22px; line-height: 1.2; margin: 0 0 10px; }
+  .pill {
+    display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); padding: 2px 7px; border-radius: 6px; vertical-align: middle;
+  }
+  .pill.st-followup { color: var(--red); border-color: rgba(239,68,68,0.4); }
+  .pill.st-blocked { color: var(--yellow); border-color: rgba(250,204,21,0.4); }
+  .pill.st-monitor { color: var(--accent); border-color: rgba(41,216,199,0.4); }
+  .pill.st-done { color: var(--green); border-color: rgba(34,197,94,0.4); }
+  .action-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 14px 0 6px;
+  }
+  .action-text { font-size: 16px; font-weight: 600; line-height: 1.35; margin: 0 0 14px; }
+  .action-text.fallback { color: var(--muted); font-weight: 400; }
+  .btn-do {
+    width: 100%; background: var(--accent); color: var(--bg);
+    font-size: 16px; font-weight: 700; padding: 14px; border-radius: 12px;
+  }
+  .btn-do.flash { background: var(--green); }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  .btn-ghost {
+    flex: 1; background: transparent; color: var(--muted); border: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; padding: 11px 6px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none;
+  }
+  .btn-ghost:hover, .btn-ghost:active { color: var(--text); border-color: var(--muted); }
+
+  /* filters */
+  .filters { display: flex; flex-direction: column; gap: 10px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    border: 1px solid var(--border); background: var(--surface);
+    padding: 7px 13px; border-radius: 99px;
+  }
+  .chip.on { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .counts { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .counts b { font-weight: 400; }
+  .counts .c-followup { color: var(--red); }
+  .counts .c-blocked { color: var(--yellow); }
+  .counts .c-monitor { color: var(--accent); }
+  .counts .c-done { color: var(--green); }
+
+  /* lists */
+  .sec-title {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin: 0 2px 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .sec-title .n { background: var(--surface); border: 1px solid var(--border); font-size: 10px; padding: 1px 7px; border-radius: 999px; }
+  .sec-title.h-followup { color: var(--red); }
+  .sec-title.h-blocked { color: var(--yellow); }
+  .sec-title.h-monitor { color: var(--accent); }
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+  .item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; width: 100%;
+  }
+  .item:active { border-color: var(--muted); }
+  .item.stale { border-left: 3px solid var(--red); padding-left: 11px; }
+  .item .meta { min-width: 0; flex: 1; }
+  .item .t { font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .s { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 3px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .s .nx { color: var(--text); }
+  .item .when { font-family: var(--font-mono); font-size: 10px; flex: none; color: var(--muted); }
+  .item .when.stale { color: var(--red); }
+  .item-cta {
+    flex: none; width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); border: 1px solid var(--border); color: var(--muted); font-size: 14px;
+    text-decoration: none;
+  }
+  .item-cta:active { transform: scale(0.95); color: var(--accent); }
+  .empty { text-align: center; color: var(--muted); padding: 26px 10px; background: var(--surface); border: 1px dashed var(--border); border-radius: 14px; }
+  .empty .big { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+  .empty p { margin: 0; font-size: 13px; line-height: 1.5; }
+
+  .doneblock summary {
+    list-style: none; cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--green); display: flex; align-items: center; gap: 8px; margin: 0 2px 8px;
+  }
+  .doneblock summary::-webkit-details-marker { display: none; }
+  .doneblock summary .n { background: var(--surface); border: 1px solid var(--border); font-size: 10px; padding: 1px 7px; border-radius: 999px; }
+  .doneblock .item { opacity: 0.55; }
+
+  .btn-add {
+    width: 100%; background: var(--accent); color: var(--bg);
+    font-size: 15px; font-weight: 700; padding: 14px; border-radius: 12px;
+  }
+
+  /* data panel */
+  .settings { border-top: 1px solid var(--border); padding-top: 14px; }
+  .settings > summary {
+    list-style: none; cursor: pointer; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .settings > summary::-webkit-details-marker { display: none; }
+  .settings > summary:hover { color: var(--text); }
+  .settings .row { margin-top: 12px; }
+  .settings .note { font-family: var(--font-mono); font-size: 10px; color: var(--muted); line-height: 1.6; margin: 10px 0 0; }
+
+  .foot { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--muted); line-height: 1.7; margin-top: 6px; }
+
+  /* bottom sheet */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 50; animation: fade 0.18s ease;
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    width: 100%; max-width: 460px; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-bottom: 0; border-radius: 18px 18px 0 0;
+    padding: 18px calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 16px);
+    animation: rise 0.22s ease; max-height: 88dvh; overflow-y: auto;
+  }
+  @keyframes rise { from { transform: translateY(24px); } to { transform: translateY(0); } }
+  .modal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .modal-top h3 { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin: 0; }
+  .modal-x { color: var(--muted); font-size: 24px; line-height: 1; padding: 4px 8px; }
+  .modal-sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.6; margin: 0 0 12px; }
+  .field-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin: 13px 0 6px;
+  }
+  .inp {
+    width: 100%; font: inherit; font-size: 14px; padding: 11px 12px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--bg); color: var(--text); color-scheme: dark;
+  }
+  .inp:focus { outline: none; border-color: var(--accent); }
+  textarea.inp { min-height: 72px; resize: vertical; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+  textarea.inp.tall { min-height: 130px; }
+  .seg-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg {
+    flex: 1; min-width: 72px; background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+    font-size: 12px; font-weight: 600; padding: 10px 4px; border-radius: 9px; white-space: nowrap;
+  }
+  .seg.on { border-color: var(--accent); color: var(--accent); background: rgba(41,216,199,0.08); }
+  .err { font-family: var(--font-mono); font-size: 11px; color: var(--red); margin: 10px 0 0; }
+  .preview { font-family: var(--font-mono); font-size: 11px; color: var(--accent); line-height: 1.6; margin: 10px 0 0; }
+  .btn-del { width: 100%; margin-top: 8px; color: var(--red); border: 1px solid rgba(239,68,68,0.35); font-size: 13px; font-weight: 600; padding: 11px; border-radius: 10px; }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <h1>Chat Triage</h1>
+      <p class="sub">Your AI sessions, triaged. Private to this browser.</p>
+      <p class="date" id="date"></p>
+    </header>
+    <main id="content"></main>
+    <p class="foot">Manual + paste-in only &mdash; no API reads your chats.<br>Stored only in this browser. Nothing leaves your device.</p>
+  </div>
+
+  <script>
+    // ---- constants ----
+    var DAY = 86400000;
+    var ARROW = String.fromCharCode(8599);
+    var CHECK = String.fromCharCode(10003);
+    var STATUSES = [
+      { key: "followup", label: "Needs follow-up", weight: 3 },
+      { key: "blocked",  label: "Blocked / waiting", weight: 2 },
+      { key: "monitor",  label: "Monitor", weight: 1 },
+      { key: "done",     label: "Done", weight: 0 }
+    ];
+    var SURFACES = { claude: "Claude", cowork: "Cowork", code: "Claude Code" };
+    var STALE_DAYS = 3;
+
+    // ---- state: localStorage only, never a credential ----
+    var KEY = "chattriage.v1";
+    var state = load();
+    function load() {
+      try {
+        var s = JSON.parse(localStorage.getItem(KEY));
+        if (s && Array.isArray(s.items)) return { items: s.items, ui: s.ui || { surface: "all", showDone: false } };
+      } catch (e) {}
+      return { items: [], ui: { surface: "all", showDone: false } };
+    }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+    // ---- helpers ----
+    function esc(t) { var e = document.createElement("div"); e.textContent = t == null ? "" : t; return e.innerHTML; }
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    function todayStr() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+    function uid() { return "ct" + Date.now() + Math.random().toString(36).slice(2, 6); }
+    function statusMeta(key) {
+      for (var i = 0; i < STATUSES.length; i++) if (STATUSES[i].key === key) return STATUSES[i];
+      return STATUSES[2];
+    }
+    function daysSince(ymd) {
+      if (!ymd) return 0;
+      var t = new Date(ymd + "T00:00:00").getTime();
+      if (isNaN(t)) return 0;
+      return Math.max(0, Math.floor((Date.now() - t) / DAY));
+    }
+    function ageText(ymd) {
+      var d = daysSince(ymd);
+      return d === 0 ? "today" : d === 1 ? "1 day quiet" : d + " days quiet";
+    }
+    function isStale(it) {
+      return (it.status === "followup" || it.status === "blocked") && daysSince(it.date) > STALE_DAYS;
+    }
+    function normSurface(s) {
+      s = String(s || "");
+      if (/cowork/i.test(s)) return "cowork";
+      if (/code/i.test(s)) return "code";
+      return "claude";
+    }
+    function normStatus(s) {
+      s = String(s || "");
+      if (/follow|todo|action/i.test(s)) return "followup";
+      if (/block|wait/i.test(s)) return "blocked";
+      if (/done|closed|complete/i.test(s)) return "done";
+      if (/monitor|watch/i.test(s)) return "monitor";
+      return null;
+    }
+    function normDate(v) {
+      if (!v) return null;
+      var t = Date.parse(v);
+      if (isNaN(t)) return null;
+      var d = new Date(t);
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+
+    // ---- ranking: the one next step ----
+    function score(it) {
+      return statusMeta(it.status).weight * 1000 + Math.min(daysSince(it.date), 60) * 10 + (it.next ? 50 : 0);
+    }
+    function visible(it) { return state.ui.surface === "all" || it.surface === state.ui.surface; }
+    function heroPick() {
+      var t = todayStr();
+      function open(it) { return it.status !== "done" && it.snoozedOn !== t; }
+      var pool = state.items.filter(function (it) { return open(it) && visible(it); });
+      if (!pool.length) pool = state.items.filter(open);   // surface filter emptied it - fall back to all
+      return pool.slice().sort(function (a, b) {
+        var d = score(b) - score(a);
+        return d !== 0 ? d : String(a.createdAt).localeCompare(String(b.createdAt));
+      })[0] || null;
+    }
+
+    // ---- sheet (add / edit) ----
+    var sheet = { open: false, editId: null, error: "" };
+    function openSheet(it) {
+      sheet = it
+        ? { open: true, editId: it.id, title: it.title, surface: it.surface, status: it.status,
+            date: it.date, link: it.link || "", next: it.next || "", notes: it.notes || "", error: "" }
+        : { open: true, editId: null, title: "", surface: "claude", status: "followup",
+            date: todayStr(), link: "", next: "", notes: "", error: "" };
+      render();
+    }
+    // keep typed values across re-renders (segmented taps re-render the form)
+    function captureForm() {
+      ["title", "date", "link", "next", "notes"].forEach(function (f) {
+        var el = document.getElementById("f-" + f);
+        if (el) sheet[f] = el.value;
+      });
+    }
+    function sheetHtml() {
+      if (!sheet.open) return "";
+      var h = '<div class="modal-bg" id="sheet-bg"><div class="modal">';
+      h += '<div class="modal-top"><h3>' + (sheet.editId ? "Edit session" : "Add a session") + '</h3><button class="modal-x" data-sheet="close">' + String.fromCharCode(215) + '</button></div>';
+      h += '<p class="modal-sub">Stored only in this browser. Never sent anywhere.</p>';
+      h += '<input class="inp" id="f-title" value="' + esc(sheet.title) + '" placeholder="What was the chat about?" autocapitalize="sentences">';
+      h += '<p class="field-label">Surface</p><div class="seg-row">';
+      Object.keys(SURFACES).forEach(function (k) {
+        h += '<button class="seg' + (sheet.surface === k ? " on" : "") + '" data-seg="surface:' + k + '">' + SURFACES[k] + '</button>';
+      });
+      h += '</div>';
+      h += '<p class="field-label">Status</p><div class="seg-row">';
+      STATUSES.forEach(function (s) {
+        h += '<button class="seg' + (sheet.status === s.key ? " on" : "") + '" data-seg="status:' + s.key + '">' + s.label + '</button>';
+      });
+      h += '</div>';
+      h += '<p class="field-label">Last activity</p>';
+      h += '<input class="inp" id="f-date" type="date" value="' + esc(sheet.date) + '">';
+      h += '<p class="field-label">Next step</p>';
+      h += '<input class="inp" id="f-next" value="' + esc(sheet.next) + '" placeholder="The one action to take">';
+      h += '<p class="field-label">Link to chat (optional)</p>';
+      h += '<input class="inp" id="f-link" type="url" value="' + esc(sheet.link) + '" placeholder="https://" autocapitalize="off" autocorrect="off" spellcheck="false">';
+      h += '<p class="field-label">Notes (optional)</p>';
+      h += '<textarea class="inp" id="f-notes" placeholder="Context for future you">' + esc(sheet.notes) + '</textarea>';
+      if (sheet.error) h += '<p class="err">' + esc(sheet.error) + '</p>';
+      h += '<div class="row"><button class="btn-ghost" data-sheet="close">Cancel</button>' +
+        '<button class="btn-do" style="flex:2" data-sheet="save">' + (sheet.editId ? "Save" : "Add session") + '</button></div>';
+      if (sheet.editId) h += '<button class="btn-del" data-sheet="del">Delete this session</button>';
+      h += '</div></div>';
+      return h;
+    }
+    function sheetAction(v) {
+      if (v === "close") { sheet.open = false; render(); return; }
+      if (v === "save") {
+        captureForm();
+        var title = (sheet.title || "").trim();
+        if (!title) { sheet.error = "Add a short title."; render(); return; }
+        var now = new Date().toISOString();
+        if (sheet.editId) {
+          state.items.forEach(function (it) {
+            if (it.id !== sheet.editId) return;
+            it.title = title; it.surface = sheet.surface; it.status = sheet.status;
+            it.date = sheet.date || todayStr(); it.link = (sheet.link || "").trim();
+            it.next = (sheet.next || "").trim(); it.notes = (sheet.notes || "").trim();
+            it.updatedAt = now;
+          });
+        } else {
+          state.items.push({
+            id: uid(), title: title, surface: sheet.surface, status: sheet.status,
+            date: sheet.date || todayStr(), link: (sheet.link || "").trim(),
+            next: (sheet.next || "").trim(), notes: (sheet.notes || "").trim(),
+            snoozedOn: null, createdAt: now, updatedAt: now
+          });
+        }
+        save(); sheet.open = false; render(); return;
+      }
+      if (v === "del") {
+        state.items = state.items.filter(function (it) { return it.id !== sheet.editId; });
+        save(); sheet.open = false; render(); return;
+      }
+    }
+
+    // ---- import (parse -> preview -> confirm; never silent) ----
+    var imp = { open: false, text: "", rows: null, fresh: null, dupes: 0, error: "" };
+    function captureImport() { var el = document.getElementById("imp-text"); if (el) imp.text = el.value; }
+    function parseImport(text) {
+      text = String(text || "").trim();
+      if (!text) return { error: "Paste something first." };
+      var rows = [];
+      if (text[0] === "[" || text[0] === "{") {
+        var data;
+        try { data = JSON.parse(text); } catch (e) { return { error: "That is not valid JSON." }; }
+        if (data && data.app === "chat-triage" && Array.isArray(data.items)) data = data.items;  // own backup
+        if (!Array.isArray(data)) data = [data];
+        data.forEach(function (o) {
+          if (!o || typeof o !== "object") return;
+          var title = o.title || o.name || o.t;   // Claude export conversations.json uses "name"
+          if (!title || !String(title).trim()) return;
+          rows.push({
+            title: String(title).trim().slice(0, 200),
+            surface: normSurface(o.surface),
+            status: normStatus(o.status) || "monitor",
+            date: normDate(o.date || o.updated_at || o.updatedAt || o.created_at) || todayStr(),
+            link: typeof o.link === "string" ? o.link : (o.uuid ? "https://claude.ai/chat/" + o.uuid : ""),
+            next: typeof o.next === "string" ? o.next : "",
+            notes: typeof o.notes === "string" ? o.notes : ""
+          });
+        });
+        if (!rows.length) return { error: "No usable entries found. Need title or name fields." };
+      } else {
+        // plain lines: title | surface | status | date | link  (only title required)
+        text.split(/\r?\n/).forEach(function (line) {
+          var p = line.split("|").map(function (s) { return s.trim(); });
+          if (!p[0]) return;
+          rows.push({ title: p[0].slice(0, 200), surface: normSurface(p[1]), status: normStatus(p[2]) || "monitor",
+            date: normDate(p[3]) || todayStr(), link: p[4] || "", next: "", notes: "" });
+        });
+        if (!rows.length) return { error: "No lines with a title found." };
+      }
+      return { rows: rows };
+    }
+    function dedupe(rows) {
+      var seen = {};
+      state.items.forEach(function (it) { seen[(it.title + "|" + it.surface).toLowerCase()] = 1; });
+      var fresh = [], dupes = 0;
+      rows.forEach(function (r) {
+        var k = (r.title + "|" + r.surface).toLowerCase();
+        if (seen[k]) { dupes++; return; }
+        seen[k] = 1; fresh.push(r);
+      });
+      return { fresh: fresh, dupes: dupes };
+    }
+    function importHtml() {
+      if (!imp.open) return "";
+      var h = '<div class="modal-bg" id="imp-bg"><div class="modal">';
+      h += '<div class="modal-top"><h3>Paste-import</h3><button class="modal-x" data-imp="close">' + String.fromCharCode(215) + '</button></div>';
+      h += '<p class="modal-sub">Accepts your Claude data export (conversations.json), a Chat Triage backup, or plain lines:<br>title | surface | status | date | link</p>';
+      h += '<textarea class="inp tall" id="imp-text" placeholder="Paste JSON or lines here" autocapitalize="off" autocorrect="off" spellcheck="false">' + esc(imp.text) + '</textarea>';
+      if (imp.error) h += '<p class="err">' + esc(imp.error) + '</p>';
+      if (imp.rows) h += '<p class="preview">' + imp.rows.length + ' parsed &middot; ' + imp.fresh.length + ' new &middot; ' + imp.dupes + ' duplicates skipped</p>';
+      h += '<div class="row"><button class="btn-ghost" data-imp="parse">Parse</button>';
+      if (imp.fresh && imp.fresh.length) h += '<button class="btn-do" style="flex:2" data-imp="go">Import ' + imp.fresh.length + '</button>';
+      h += '</div>';
+      h += '</div></div>';
+      return h;
+    }
+    function impAction(v) {
+      if (v === "close") { imp.open = false; render(); return; }
+      if (v === "open") { imp = { open: true, text: "", rows: null, fresh: null, dupes: 0, error: "" }; render(); return; }
+      if (v === "parse") {
+        captureImport();
+        var res = parseImport(imp.text);
+        if (res.error) { imp.error = res.error; imp.rows = null; imp.fresh = null; render(); return; }
+        var d = dedupe(res.rows);
+        imp.error = ""; imp.rows = res.rows; imp.fresh = d.fresh; imp.dupes = d.dupes;
+        render(); return;
+      }
+      if (v === "go") {
+        var now = new Date().toISOString();
+        (imp.fresh || []).forEach(function (r) {
+          state.items.push({ id: uid(), title: r.title, surface: r.surface, status: r.status, date: r.date,
+            link: r.link, next: r.next, notes: r.notes, snoozedOn: null, createdAt: now, updatedAt: now });
+        });
+        save(); imp.open = false; render(); return;
+      }
+    }
+
+    // ---- export ----
+    function exportPayload() {
+      return JSON.stringify({ app: "chat-triage", v: 1, exportedAt: new Date().toISOString(), items: state.items }, null, 2);
+    }
+    function flashBtn(btn, label) {
+      var old = btn.textContent;
+      btn.textContent = CHECK + " " + label;
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    }
+    function copyExport(btn) {
+      var txt = exportPayload();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () { flashBtn(btn, "Copied"); }, function () { copyFallback(txt, btn); });
+      } else copyFallback(txt, btn);
+    }
+    function copyFallback(txt, btn) {
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); flashBtn(btn, "Copied"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    function downloadExport() {
+      var blob = new Blob([exportPayload()], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "chat-triage-" + todayStr() + ".json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 400);
+    }
+
+    // ---- render ----
+    var content = document.getElementById("content");
+    document.getElementById("date").textContent =
+      new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+
+    function itemRow(it, dim) {
+      var stale = isStale(it);
+      var sub = it.next ? '<span class="nx">' + esc(it.next) + '</span>'
+        : it.notes ? esc(it.notes)
+        : "last activity " + esc(ageText(it.date));
+      var when = stale ? "stale " + daysSince(it.date) + "d" : daysSince(it.date) === 0 ? "today" : daysSince(it.date) + "d";
+      var h = '<div class="item' + (stale && !dim ? " stale" : "") + '" data-edit="' + esc(it.id) + '" role="button" tabindex="0">';
+      h += '<span class="pill">' + SURFACES[it.surface] + '</span>';
+      h += '<div class="meta"><p class="t">' + esc(it.title) + '</p><p class="s">' + sub + '</p></div>';
+      h += '<span class="when' + (stale && !dim ? " stale" : "") + '">' + when + '</span>';
+      if (it.link) h += '<a class="item-cta" href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer" data-stop aria-label="Open chat">' + ARROW + '</a>';
+      h += '</div>';
+      return h;
+    }
+
+    function render() {
+      var t = todayStr();
+      var vis = state.items.filter(visible);
+      var hero = heroPick();
+      var html = "";
+
+      // hero: propose next step
+      if (!state.items.length) {
+        html += '<div class="empty"><div class="big">Nothing here yet.</div><p>Add a session below, or paste-import your recent Claude chats.</p></div>';
+      } else if (!hero) {
+        html += '<div class="empty"><div class="big">Nothing needs you.</div><p>Everything is done or snoozed for today.</p></div>';
+      } else {
+        var stale = isStale(hero);
+        html += '<section class="hero">';
+        html += '<div class="eyebrow"><span class="dot"></span>Propose next step<span class="age' + (stale ? " stale" : "") + '">' + esc(ageText(hero.date)) + '</span></div>';
+        html += '<h2>' + esc(hero.title) + '</h2>';
+        html += '<span class="pill">' + SURFACES[hero.surface] + '</span> <span class="pill st-' + hero.status + '">' + statusMeta(hero.status).label + '</span>';
+        html += '<p class="action-label">The one action</p>';
+        html += hero.next
+          ? '<p class="action-text">' + esc(hero.next) + '</p>'
+          : '<p class="action-text fallback">No next step set. Open this chat and decide it.</p>';
+        html += '<button class="btn-do" id="hero-done">Mark done</button>';
+        html += '<div class="row">';
+        html += '<button class="btn-ghost" id="hero-snooze">Not today</button>';
+        html += '<button class="btn-ghost" data-edit="' + esc(hero.id) + '">' + (hero.next ? "Edit" : "Set next step") + '</button>';
+        if (hero.link) html += '<a class="btn-ghost" href="' + esc(hero.link) + '" target="_blank" rel="noopener noreferrer">Open ' + ARROW + '</a>';
+        html += '</div></section>';
+      }
+
+      // filters + counts
+      if (state.items.length) {
+        var counts = {};
+        STATUSES.forEach(function (s) { counts[s.key] = vis.filter(function (it) { return it.status === s.key; }).length; });
+        html += '<div class="filters"><div class="chips">';
+        html += '<button class="chip' + (state.ui.surface === "all" ? " on" : "") + '" data-chip="all">All</button>';
+        Object.keys(SURFACES).forEach(function (k) {
+          html += '<button class="chip' + (state.ui.surface === k ? " on" : "") + '" data-chip="' + k + '">' + SURFACES[k] + '</button>';
+        });
+        html += '</div>';
+        html += '<p class="counts">' +
+          '<b class="c-followup">' + counts.followup + ' follow-up</b> &middot; ' +
+          '<b class="c-blocked">' + counts.blocked + ' blocked</b> &middot; ' +
+          '<b class="c-monitor">' + counts.monitor + ' monitor</b> &middot; ' +
+          '<b class="c-done">' + counts.done + ' done</b></p>';
+        html += '</div>';
+      }
+
+      // grouped lists per status (mobile-first grouped list, not horizontal kanban)
+      STATUSES.forEach(function (s) {
+        if (s.key === "done") return;
+        var items = vis.filter(function (it) { return it.status === s.key; })
+          .sort(function (a, b) { return score(b) - score(a); });
+        if (!items.length) return;
+        html += '<section><p class="sec-title h-' + s.key + '">' + s.label + ' <span class="n">' + items.length + '</span></p><div class="stack">';
+        items.forEach(function (it) { html += itemRow(it, false); });
+        html += '</div></section>';
+      });
+
+      // done, collapsed
+      var doneItems = vis.filter(function (it) { return it.status === "done"; });
+      if (doneItems.length) {
+        html += '<details class="doneblock" id="doneblock"' + (state.ui.showDone ? " open" : "") + '>';
+        html += '<summary>Done <span class="n">' + doneItems.length + '</span></summary><div class="stack">';
+        doneItems.forEach(function (it) { html += itemRow(it, true); });
+        html += '</div></details>';
+      }
+
+      html += '<button class="btn-add" data-add>+ Add a session</button>';
+
+      // data panel
+      html += '<details class="settings"><summary>Data &mdash; import and backup</summary>';
+      html += '<div class="row"><button class="btn-ghost" data-imp="open">Paste-import</button>' +
+        '<button class="btn-ghost" id="exp-copy">Copy JSON</button>' +
+        '<button class="btn-ghost" id="exp-dl">Download .json</button></div>';
+      html += '<p class="note">Import accepts a Claude data export (conversations.json), a Chat Triage backup, or plain "title | surface | status" lines. Export round-trips through import.</p>';
+      html += '</details>';
+
+      html += sheetHtml();
+      html += importHtml();
+      content.innerHTML = html;
+      wire(hero, t);
+    }
+
+    function wire(hero, t) {
+      var i, els;
+
+      var hd = document.getElementById("hero-done");
+      if (hd) hd.onclick = function () {
+        state.items.forEach(function (it) { if (it.id === hero.id) { it.status = "done"; it.updatedAt = new Date().toISOString(); } });
+        save();
+        hd.classList.add("flash"); hd.textContent = CHECK + " Done"; hd.disabled = true;
+        setTimeout(render, 420);
+      };
+      var hs = document.getElementById("hero-snooze");
+      if (hs) hs.onclick = function () {
+        state.items.forEach(function (it) { if (it.id === hero.id) it.snoozedOn = t; });
+        save(); render();
+      };
+
+      els = document.querySelectorAll("[data-chip]");
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function () { state.ui.surface = this.getAttribute("data-chip"); save(); render(); };
+      }
+      var add = document.querySelector("[data-add]");
+      if (add) add.onclick = function () { openSheet(null); };
+      els = document.querySelectorAll("[data-edit]");
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function () {
+          var id = this.getAttribute("data-edit");
+          var it = state.items.filter(function (x) { return x.id === id; })[0];
+          if (it) openSheet(it);
+        };
+      }
+      els = document.querySelectorAll("[data-stop]");   // link arrows inside tappable rows
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function (e) { e.stopPropagation(); };
+      }
+      els = document.querySelectorAll("[data-seg]");
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function (e) {
+          e.stopPropagation();
+          captureForm();
+          var v = this.getAttribute("data-seg").split(":");
+          sheet[v[0]] = v[1];
+          render();
+        };
+      }
+      els = document.querySelectorAll("[data-sheet]");
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function (e) { e.stopPropagation(); sheetAction(this.getAttribute("data-sheet")); };
+      }
+      els = document.querySelectorAll("[data-imp]");
+      for (i = 0; i < els.length; i++) {
+        els[i].onclick = function (e) { e.stopPropagation(); impAction(this.getAttribute("data-imp")); };
+      }
+      var sbg = document.getElementById("sheet-bg");
+      if (sbg) sbg.onclick = function (e) { if (e.target === sbg) { sheet.open = false; render(); } };
+      var ibg = document.getElementById("imp-bg");
+      if (ibg) ibg.onclick = function (e) { if (e.target === ibg) { imp.open = false; render(); } };
+      var db = document.getElementById("doneblock");
+      if (db) db.addEventListener("toggle", function () { state.ui.showDone = db.open; save(); });
+      var ec = document.getElementById("exp-copy");
+      if (ec) ec.onclick = function () { copyExport(ec); };
+      var ed = document.getElementById("exp-dl");
+      if (ed) ed.onclick = function () { downloadExport(); };
+    }
+
+    render();
+  </script>
+</body>
+</html>
