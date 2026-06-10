@@ -10,7 +10,7 @@ import { chromium } from 'playwright';
 const base = (process.argv[2] || '').replace(/\/$/, '');
 if (!base) { console.error('usage: screenshot.mjs <base-url>'); process.exit(2); }
 
-const pages = ['/', ...readdirSync('apps').filter((f) => f.endsWith('.html')).map((f) => '/apps/' + f)];
+const pages = ['/', ...readdirSync('apps').filter((f) => f.endsWith('.html')).sort().map((f) => '/apps/' + f)];
 const newest = pages[pages.length - 1];
 mkdirSync('shots', { recursive: true });
 

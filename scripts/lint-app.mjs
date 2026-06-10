@@ -41,6 +41,7 @@ const warn = (f, msg) => { console.error('warn  ' + f + ': ' + msg); warnings++;
 
 const tmp = mkdtempSync(join(tmpdir(), 'lint-app-'));
 
+try {
 for (const file of files) {
   const base = file.split('/').pop();
   const html = readFileSync(file, 'utf8');
@@ -73,7 +74,8 @@ for (const file of files) {
     }
   });
 }
-
-rmSync(tmp, { recursive: true, force: true });
+} finally {
+  rmSync(tmp, { recursive: true, force: true });
+}
 console.log('[lint-app] ' + files.length + ' files, ' + errors + ' errors, ' + warnings + ' warnings');
 process.exit(errors ? 1 : 0);

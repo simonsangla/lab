@@ -46,7 +46,7 @@ function makeSandbox(timers, loadHandlers) {
   };
   const document = {
     getElementById: (id) => { if (!elements.has(id)) elements.set(id, elStub()); return elements.get(id); },
-    querySelector: () => null,
+    querySelector: (sel) => { if (!elements.has(sel)) elements.set(sel, elStub()); return elements.get(sel); },
     querySelectorAll: () => [],
     createElement: () => elStub(),
     addEventListener: deferToLoad, removeEventListener() {},
@@ -99,7 +99,11 @@ for (const file of files) {
   const ctx = vm.createContext(sandbox);
   const errs = [];
   const onRejection = (reason) => errs.push('unhandled rejection: ' + (reason && reason.stack || reason));
+  // timer callbacks that throw surface as uncaught exceptions, not rejections -
+  // capture them per-app instead of letting them kill the whole run
+  const onException = (error) => errs.push('uncaught exception: ' + (error && error.stack || error));
   process.on('unhandledRejection', onRejection);
+  process.on('uncaughtException', onException);
   try {
     for (const src of scripts(html)) vm.runInContext(src, ctx, { timeout: 5000 });
     loadHandlers.forEach((fn) => fn());   // window load / DOMContentLoaded
@@ -108,6 +112,7 @@ for (const file of files) {
   }
   await new Promise((r) => setTimeout(r, 150));   // let fetch fallbacks + microtasks settle
   process.off('unhandledRejection', onRejection);
+  process.off('uncaughtException', onException);
   timers.forEach((h) => { clearTimeout(h); clearInterval(h); });
 
   const rendered = [...sandbox.elements.values()].some((el) => el.innerHTML || el.textContent);
