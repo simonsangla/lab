@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chat Triage &mdash; lab.</title>
 <meta name="app-name" content="Chat Triage">
-<meta name="app-description" content="Auto-triage of recent Claude, Cowork and Claude Code sessions. The /triage-chats skill scans local session logs, sorts backlog-to-develop from WIP-to-follow-up, and publishes the feed this board renders with the one next step.">
+<meta name="app-description" content="Auto-triage of recent Claude, Cowork, Claude Code and Claude cloud sessions. The /triage-chats skill scans local session logs, claude/* PRs stream in live from GitHub, claude.ai connects via data export - sorted into backlog vs WIP with the one next step.">
 <meta name="app-tags" content="triage,ai,live-source,pwa">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#29d8c7">
@@ -204,11 +204,11 @@
   <div class="wrap">
     <header>
       <h1>Chat Triage</h1>
-      <p class="sub">Backlog to develop, WIP to follow up &mdash; auto-scanned from Claude, Cowork and Claude Code.</p>
+      <p class="sub">Backlog to develop, WIP to follow up &mdash; auto-fed from Claude, Cowork, Claude Code and Claude cloud.</p>
       <p class="date" id="date"></p>
     </header>
     <main id="content"></main>
-    <p class="foot">Feed published by the /triage-chats skill &mdash; titles only, never chat content.<br>Your edits here stay in this browser.</p>
+    <p class="foot">Scan feed: /triage-chats skill &middot; Cloud: public claude/* PRs, no token &middot; claude.ai: your export, parsed locally.<br>Titles only, never chat content. Your edits stay in this browser.</p>
   </div>
 
   <script>
@@ -222,7 +222,7 @@
       { key: "monitor",  label: "Monitor", weight: 1 },
       { key: "done",     label: "Done", weight: 0 }
     ];
-    var SURFACES = { claude: "Claude", cowork: "Cowork", code: "Claude Code" };
+    var SURFACES = { claude: "Claude", cowork: "Cowork", code: "Claude Code", cloud: "Claude cloud" };
     var STALE_DAYS = 3;
 
     // ---- state: localStorage only, never a credential ----
@@ -233,12 +233,14 @@
         var s = JSON.parse(localStorage.getItem(KEY));
         if (s && Array.isArray(s.items)) {
           s.items.forEach(function (it) { if (it.status === "blocked") it.status = "followup"; });  // v1 migration
-          return { items: s.items, ui: s.ui || { surface: "all", showDone: false } };
+          var ui = s.ui || {};
+          return { items: s.items, ui: { surface: ui.surface || "all", showDone: !!ui.showDone, ghRepo: ui.ghRepo !== undefined ? ui.ghRepo : "simonsangla/lab" } };
         }
       } catch (e) {}
-      return { items: [], ui: { surface: "all", showDone: false } };
+      return { items: [], ui: { surface: "all", showDone: false, ghRepo: "simonsangla/lab" } };
     }
     var demoMode = false;
+    var panelOpen = false;      // Connect panel survives re-renders within the visit
     function save() { if (demoMode) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
     // ---- helpers ----
@@ -273,6 +275,7 @@
     function normSurface(s) {
       s = String(s || "");
       if (/cowork/i.test(s)) return "cowork";
+      if (/cloud|web|remote/i.test(s)) return "cloud";
       if (/code/i.test(s)) return "code";
       return "claude";
     }
@@ -343,8 +346,58 @@
         { id: "demo1", title: "Chat Triage - auto-scan rework", surface: "code", status: "followup", date: todayStr(), link: "", next: "Merge the draft PR", notes: "lab · 3 prompts", snoozedOn: null, createdAt: "d1", updatedAt: "d1" },
         { id: "demo2", title: "Cohort export idea for Snowflake clients", surface: "claude", status: "backlog", date: dayStr(-4), link: "", next: "Scaffold as a new day app", notes: "", snoozedOn: null, createdAt: "d2", updatedAt: "d2" },
         { id: "demo3", title: "Cowork run - invoice folder cleanup", surface: "cowork", status: "monitor", date: dayStr(-2), link: "", next: "", notes: "12 prompts", snoozedOn: null, createdAt: "d3", updatedAt: "d3" },
+        { id: "demo5", title: "feat(apps): At Risk Today source links", surface: "cloud", status: "followup", date: dayStr(-1), link: "", next: "Review and merge PR #6", notes: "lab · claude/at-risk-links", snoozedOn: null, createdAt: "d5", updatedAt: "d5" },
         { id: "demo4", title: "Pomodoro roast lines brainstorm", surface: "claude", status: "done", date: dayStr(-9), link: "", next: "", notes: "", snoozedOn: null, createdAt: "d4", updatedAt: "d4" }
       ];
+    }
+
+    // ---- Claude cloud: live source, no auth ----
+    // Cloud sessions (Claude Code on the web) always work on a claude/* branch
+    // and open a PR, so the public GitHub API is their session list.
+    var cloudInfo = { state: "loading", count: 0 };
+    function loadCloud() {
+      var repo = (state.ui.ghRepo || "").trim();
+      if (!repo || !window.fetch) { cloudInfo = { state: "off", count: 0 }; return; }
+      fetch("https://api.github.com/repos/" + repo + "/pulls?state=all&per_page=30",
+        { headers: { Accept: "application/vnd.github+json" } })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (prs) { mergeCloud(repo, prs); render(); })
+        .catch(function () { cloudInfo = { state: "off", count: 0 }; render(); });
+    }
+    function mergeCloud(repo, prs) {
+      if (!Array.isArray(prs)) { cloudInfo = { state: "off", count: 0 }; return; }
+      var links = {};
+      state.items.forEach(function (it) { if (it.link) links[it.link] = it.id; });
+      var n = 0;
+      prs.forEach(function (pr) {
+        if (!pr || !pr.head || !/^claude\//.test(pr.head.ref)) return;
+        n++;
+        var id = "gh-" + repo + "#" + pr.number;
+        var open = pr.state === "open";
+        var loc = state.items.find(function (x) { return x.id === id; });
+        if (!loc && links[pr.html_url] && links[pr.html_url] !== id) return;   // session already tracked via scan feed
+        if (!loc) {
+          state.items.push({
+            id: id, title: String(pr.title || pr.head.ref), surface: "cloud",
+            status: open ? "followup" : "done",
+            date: normDate(pr.updated_at) || todayStr(), link: pr.html_url,
+            next: open ? "Review and merge PR #" + pr.number : "", notes: repo + " · " + pr.head.ref,
+            snoozedOn: null, src: "cloud", createdAt: pr.created_at, updatedAt: pr.updated_at
+          });
+          return;
+        }
+        loc.title = String(pr.title || loc.title);
+        loc.date = normDate(pr.updated_at) || loc.date;
+        loc.link = pr.html_url;
+        if (!(loc.updatedAt && loc.updatedAt > pr.updated_at)) {   // local triage made after the PR moved wins
+          loc.status = open ? "followup" : "done";
+          if (open && !loc.next) loc.next = "Review and merge PR #" + pr.number;
+          if (!open) loc.next = "";
+          loc.updatedAt = pr.updated_at;
+        }
+      });
+      cloudInfo = { state: "live", count: n };
+      save();
     }
 
     // ---- ranking: the one next step ----
@@ -570,7 +623,7 @@
         : "last activity " + esc(ageText(it.date));
       var when = stale ? "stale " + daysSince(it.date) + "d" : daysSince(it.date) === 0 ? "today" : daysSince(it.date) + "d";
       var h = '<div class="item' + (stale && !dim ? " stale" : "") + '" data-edit="' + esc(it.id) + '" role="button" tabindex="0">';
-      h += '<span class="pill">' + SURFACES[it.surface] + '</span>';
+      h += '<span class="pill">' + (SURFACES[it.surface] || "Claude") + '</span>';
       h += '<div class="meta"><p class="t">' + esc(it.title) + '</p><p class="s">' + sub + '</p></div>';
       h += '<span class="when' + (stale && !dim ? " stale" : "") + '">' + when + '</span>';
       if (it.link) h += '<a class="item-cta" href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer" data-stop aria-label="Open chat">' + ARROW + '</a>';
@@ -590,6 +643,11 @@
         : liveOn ? feedInfo.count + " sessions auto-scanned &middot; " + scanAge() + " &middot; /triage-chats rescans"
         : demoMode ? "feed unreachable &middot; demo data &middot; run /triage-chats to publish"
         : "feed unreachable &middot; showing local edits only";
+      if (!demoMode) {
+        note += cloudInfo.state === "live" ? " &middot; " + cloudInfo.count + " cloud PRs live"
+          : cloudInfo.state === "loading" ? " &middot; cloud syncing&hellip;"
+          : " &middot; cloud off";
+      }
       html += '<p class="scan-note"><span class="live' + (liveOn ? "" : " off") + '"></span>' + note + '</p>';
 
       // hero: propose next step
@@ -602,7 +660,7 @@
         html += '<section class="hero">';
         html += '<div class="eyebrow"><span class="dot"></span>Propose next step<span class="age' + (stale ? " stale" : "") + '">' + esc(ageText(hero.date)) + '</span></div>';
         html += '<h2>' + esc(hero.title) + '</h2>';
-        html += '<span class="pill">' + SURFACES[hero.surface] + '</span> <span class="pill st-' + hero.status + '">' + statusMeta(hero.status).label + '</span>';
+        html += '<span class="pill">' + (SURFACES[hero.surface] || "Claude") + '</span> <span class="pill st-' + hero.status + '">' + statusMeta(hero.status).label + '</span>';
         html += '<p class="action-label">The one action</p>';
         html += hero.next
           ? '<p class="action-text">' + esc(hero.next) + '</p>'
@@ -653,13 +711,21 @@
         html += '</div></details>';
       }
 
-      // data panel (fallbacks: the feed is the primary source)
-      html += '<details class="settings"><summary>Data &mdash; fallbacks and backup</summary>';
-      html += '<div class="row"><button class="btn-ghost" data-add>Add manually</button>' +
-        '<button class="btn-ghost" data-imp="open">Paste-import</button>' +
+      // connections + data panel
+      html += '<details class="settings" id="connect-panel"' + (panelOpen ? " open" : "") + '><summary>Connect &amp; data</summary>';
+      html += '<p class="field-label">Claude cloud &mdash; GitHub repo with claude/* PRs</p>';
+      html += '<div class="row" style="margin-top:0"><input class="inp" id="gh-repo" value="' + esc(state.ui.ghRepo || "") + '" placeholder="owner/repo" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<button class="btn-ghost" style="flex:0 0 auto;padding:11px 16px" id="gh-save">Connect</button></div>';
+      html += '<p class="note">Cloud sessions branch as claude/* and open PRs &mdash; the public GitHub API lists them live, no token. Clear the field to disconnect.</p>';
+      html += '<p class="field-label">Claude.ai &mdash; data export</p>';
+      html += '<div class="row" style="margin-top:0"><button class="btn-ghost" id="up-btn">Upload conversations.json</button>' +
+        '<button class="btn-ghost" data-imp="open">Paste-import</button></div>';
+      html += '<input type="file" id="up-file" accept=".json,application/json" style="display:none">';
+      html += '<p class="note">claude.ai has no chat-history API, so chats connect via your data export: claude.ai &rarr; Settings &rarr; Privacy &rarr; Export data, then upload conversations.json here. It is parsed in this browser, never uploaded anywhere.</p>';
+      html += '<p class="field-label">Fallbacks &amp; backup</p>';
+      html += '<div class="row" style="margin-top:0"><button class="btn-ghost" data-add>Add manually</button>' +
         '<button class="btn-ghost" id="exp-copy">Copy JSON</button>' +
         '<button class="btn-ghost" id="exp-dl">Download .json</button></div>';
-      html += '<p class="note">The board fills itself from the /triage-chats scan feed. These are escape hatches: claude.ai chats with no data export, or a backup of your local edits. Import accepts conversations.json, a Chat Triage backup, or "title | surface | status" lines.</p>';
       html += '</details>';
 
       html += sheetHtml();
@@ -730,14 +796,42 @@
       if (ibg) ibg.onclick = function (e) { if (e.target === ibg) { imp.open = false; render(); } };
       var db = document.getElementById("doneblock");
       if (db) db.addEventListener("toggle", function () { state.ui.showDone = db.open; save(); });
+      var cp = document.getElementById("connect-panel");
+      if (cp) cp.addEventListener("toggle", function () { panelOpen = cp.open; });
       var ec = document.getElementById("exp-copy");
       if (ec) ec.onclick = function () { copyExport(ec); };
       var ed = document.getElementById("exp-dl");
       if (ed) ed.onclick = function () { downloadExport(); };
+
+      var gs = document.getElementById("gh-save");
+      if (gs) gs.onclick = function () {
+        var inp = document.getElementById("gh-repo");
+        state.ui.ghRepo = (inp ? inp.value : "").trim();
+        save();
+        cloudInfo = { state: state.ui.ghRepo ? "loading" : "off", count: 0 };
+        render();
+        if (state.ui.ghRepo) loadCloud();
+      };
+      var ub = document.getElementById("up-btn"), uf = document.getElementById("up-file");
+      if (ub && uf) {
+        ub.onclick = function () { uf.click(); };
+        uf.onchange = function () {
+          var file = uf.files && uf.files[0];
+          if (!file) return;
+          var rd = new FileReader();
+          rd.onload = function () {
+            imp = { open: true, text: String(rd.result || ""), rows: null, fresh: null, dupes: 0, error: "" };
+            render();
+            impAction("parse");   // straight to the preview - confirm still required
+          };
+          rd.readAsText(file);
+        };
+      }
     }
 
     render();
     loadFeed();
+    loadCloud();
   </script>
 </body>
 </html>

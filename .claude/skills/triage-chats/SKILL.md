@@ -24,7 +24,14 @@ This prints the merged feed as JSON (stderr shows source counts). It reads:
   chat history, so the export is the only way to cover that surface — if the
   user asks why Claude-surface chats are missing, tell them to download a
   data export (claude.ai → Settings → Privacy → Export data) and drop
-  `conversations.json` into `data/inbox/` (that folder is gitignored).
+  `conversations.json` into `data/inbox/` (that folder is gitignored), or
+  upload it directly in the app's Connect & data panel.
+
+Claude cloud sessions (Claude Code on the web) are NOT scanned here — the app
+itself streams them live as `claude/*` PRs from the public GitHub API for the
+repo configured in its Connect & data panel. Don't duplicate them in the feed;
+if a local session has an associated PR, set the item's `link` to the PR URL
+and the app will dedupe the cloud entry against it.
 
 The scanner only assigns heuristic statuses (recent → `followup`, old →
 `monitor`) and preserves any status/next/notes/snoozedOn already in the feed.
