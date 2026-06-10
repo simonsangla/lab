@@ -1,7 +1,7 @@
 {
   "app": "chat-triage",
   "v": 2,
-  "scannedAt": "2026-06-10T18:44:54.363Z",
+  "scannedAt": "2026-06-10T20:01:05.143Z",
   "items": [
     {
       "id": "cc-52d545f2",
@@ -11,10 +11,36 @@
       "date": "2026-06-10",
       "link": "https://github.com/simonsangla/lab/pull/7",
       "next": "Review PR #7 and merge to publish the board",
-      "notes": "lab · claude/code-chat-triage-artifact-12kptg · 3 prompts",
+      "notes": "lab · claude/code-chat-triage-artifact-12kptg · 7 prompts",
       "snoozedOn": null,
       "createdAt": "2026-06-10T18:44:32.203Z",
-      "updatedAt": "2026-06-10T18:44:54.363Z"
+      "updatedAt": "2026-06-10T20:01:05.143Z"
+    },
+    {
+      "id": "cc-pr4-defer",
+      "title": "At Risk Today - authed GitHub alerts need simon-ops proxy",
+      "surface": "code",
+      "status": "backlog",
+      "date": "2026-05-30",
+      "link": "https://github.com/simonsangla/lab/pull/4",
+      "next": "Build the serverless proxy in simon-ops (server-side PAT, security-events read)",
+      "notes": "deferred in PR #4 - wizard routes to this path",
+      "snoozedOn": null,
+      "createdAt": "2026-06-10T20:01:05.174Z",
+      "updatedAt": "2026-06-10T20:01:05.174Z"
+    },
+    {
+      "id": "cc-pr1-icons",
+      "title": "Lab PWA icons are placeholder squares",
+      "surface": "code",
+      "status": "backlog",
+      "date": "2026-05-26",
+      "link": "https://github.com/simonsangla/lab/pull/1",
+      "next": "Design the final brand mark and regenerate icons via gen-icons.mjs",
+      "notes": "noted as follow-up in PR #1",
+      "snoozedOn": null,
+      "createdAt": "2026-06-10T20:01:05.174Z",
+      "updatedAt": "2026-06-10T20:01:05.174Z"
     }
   ]
 }

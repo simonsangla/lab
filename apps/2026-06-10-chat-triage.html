@@ -333,11 +333,12 @@
       if (!window.fetch) { feedInfo.state = "off"; render(); return; }
       fetch(FEED_URL, { cache: "no-store" })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-        .then(function (f) { mergeFeed(f); render(); })
+        .then(function (f) { mergeFeed(f); render(); loadCloud(); })   // cloud after feed: link-dedupe needs feed items first
         .catch(function () {
           feedInfo.state = "off";
           if (!state.items.length) loadDemo();
           render();
+          loadCloud();
         });
     }
     function loadDemo() {       // file:// preview / feed unreachable: show the shape, persist nothing
@@ -830,8 +831,7 @@
     }
 
     render();
-    loadFeed();
-    loadCloud();
+    loadFeed();   // chains loadCloud() once the feed settles
   </script>
 </body>
 </html>
