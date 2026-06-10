@@ -32,6 +32,17 @@ Static "One Day One App" showcase. Zero build step. GitHub Actions regenerates `
 - Live at https://lab.simonsangla.com and https://lab-simonsanglas-projects.vercel.app.
 - Deployment Protection (SSO) is OFF — this is a public showcase.
 
+## Factory
+
+The repeatable pipeline (idea → spec → app → gates → deploy → evidence) is
+documented in [docs/APP_FACTORY.md](docs/APP_FACTORY.md); the reuse map and
+pattern catalog in [REUSE.md](REUSE.md). Before pushing an app run the gates:
+`npm run lint` (meta/filename + inline-JS syntax), `npm run smoke` (DOM-stub
+harness, all apps must load/render with no errors), `npm run gen` (index must
+be regenerated and committed — CI fails stale). On PRs, `verify-apps.yml`
+re-runs the gates and screenshots the Vercel preview (console errors fail).
+
 ## Last shipped
 
+- **2026-06-10** — Day 8 `apps/2026-06-10-chat-triage.html` (Chat Triage — auto-triage of Claude/Cowork/Claude Code/cloud sessions; scan feed `data/chat-triage.json`, `/triage-chats` skill). App Factory shipped: gates (`lint-app`/`smoke`), CI verification workflow, landing conversion P0s, real `lab.` brand icons + `og.png`.
 - **2026-05-26** — Bootstrap commit `0651fe7` `feat: scaffold One Day One App lab + Day 001 SQL Pulse`. Day 001: `apps/2026-05-26-hello-lab.html` (SQL Pulse — Snowflake query complexity scorer). Index, generator, Action workflow, vercel.json, README all in place. Vercel project + custom domain live.

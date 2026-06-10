@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>lab. &mdash; Simon Sangla</title>
 <meta name="description" content="One day. One app. No excuses.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lab.simonsangla.com/">
+<meta property="og:title" content="lab. — One day. One app. No excuses.">
+<meta property="og:description" content="8 micro-apps shipped, one per day, by Simon Sangla — Snowflake analytics consultant.">
+<meta property="og:image" content="https://lab.simonsangla.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#29d8c7">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
@@ -23,7 +31,7 @@
     --accent: #29d8c7;
     --accent2: #6366f1;
     --text: #e8e8e8;
-    --muted: #5a5a5a;
+    --muted: #8a8a8a;
     --font-display: 'Syne', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   }
@@ -48,10 +56,11 @@
   .wrap { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
   header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
   .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; }
+  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; margin: 0; }
   .brand .tagline { color: var(--muted); font-size: 13px; }
+  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 52ch; margin: 0; }
   .pill-link {
-    display: inline-block; min-height: 36px; line-height: 24px;
+    display: inline-block; min-height: 44px; line-height: 30px;
     border: 1px solid var(--accent); color: var(--accent);
     padding: 6px 14px; border-radius: 99px; font-size: 13px;
     text-decoration: none; font-family: var(--font-display);
@@ -122,72 +131,74 @@
   <div class="wrap">
     <header>
       <div class="brand">
-        <span class="logo">lab.</span>
+        <h1 class="logo">lab.</h1>
         <span class="tagline">One day. One app. No excuses.</span>
       </div>
-      <a class="pill-link" href="https://simonsangla.com">simonsangla.com &rarr;</a>
+      <a class="pill-link" href="mailto:simonsangla@gmail.com">Work with me &rarr;</a>
     </header>
-    <p class="counter">8 experiments shipped</p>
+    <p class="sub">Daily micro-apps, each designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>
+    <p class="counter">8 apps shipped &middot; since 2026-05-26</p>
     <section class="grid">
       <a class="card" href="apps/2026-06-10-chat-triage.html" style="animation-delay: 0ms">
         <div class="date">2026-06-10</div>
-        <h3 class="name">Chat Triage</h3>
-        <p class="desc">Auto-triage of recent Claude, Cowork, Claude Code and Claude cloud sessions. The /triage-chats skill scans local session logs, claude/* PRs stream in live from GitHub, claude.ai connects via data export - sorted into backlog vs WIP with the one next step.</p>
+        <h2 class="name">Chat Triage</h2>
+        <p class="desc">Auto-triage of recent Claude, Cowork, Claude Code and Claude cloud sessions into backlog vs WIP, each with the one next step to take.</p>
         <div class="tags"><span class="tag">triage</span><span class="tag">ai</span><span class="tag">live-source</span><span class="tag">pwa</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-31-pomodoro-brutal.html" style="animation-delay: 60ms">
         <div class="date">2026-05-31</div>
-        <h3 class="name">Pomodoro Brutal</h3>
+        <h2 class="name">Pomodoro Brutal</h2>
         <p class="desc">Pomodoro timer that roasts you with escalating dark humor when you overstay your break. Claude writes the roasts. They get worse.</p>
         <div class="tags"><span class="tag">fun</span><span class="tag">productivity</span><span class="tag">ai</span><span class="tag">daily</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-30-meeting-cost-clock.html" style="animation-delay: 120ms">
         <div class="date">2026-05-30</div>
-        <h3 class="name">Meeting Cost Clock</h3>
+        <h2 class="name">Meeting Cost Clock</h2>
         <p class="desc">How much is this meeting costing right now? Add people, set hourly rates, watch money disappear in real time.</p>
         <div class="tags"><span class="tag">fun</span><span class="tag">productivity</span><span class="tag">tools</span><span class="tag">daily</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-30-at-risk-today.html" style="animation-delay: 180ms">
         <div class="date">2026-05-30</div>
-        <h3 class="name">At Risk Today</h3>
+        <h2 class="name">At Risk Today</h2>
         <p class="desc">What you risk missing today and the one action to take now. Confirmed deadlines rank; Gmail and agent signals wait for your OK. Live GitHub CI source, demo fallback.</p>
         <div class="tags"><span class="tag">attention</span><span class="tag">deadlines</span><span class="tag">live-source</span><span class="tag">pwa</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-29-cohort-grid.html" style="animation-delay: 240ms">
         <div class="date">2026-05-29</div>
-        <h3 class="name">Cohort Grid</h3>
+        <h2 class="name">Cohort Grid</h2>
         <p class="desc">Paste a retention CSV — get a color-coded cohort heatmap instantly. Hover for exact %. Download as PNG.</p>
         <div class="tags"><span class="tag">analytics</span><span class="tag">retention</span><span class="tag">cohort</span><span class="tag">visualization</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-28-ab-verdict.html" style="animation-delay: 300ms">
         <div class="date">2026-05-28</div>
-        <h3 class="name">A/B Verdict</h3>
+        <h2 class="name">A/B Verdict</h2>
         <p class="desc">Paste control and variant numbers — get statistical significance, p-value, confidence interval and a ship/wait/kill verdict instantly.</p>
         <div class="tags"><span class="tag">analytics</span><span class="tag">statistics</span><span class="tag">ab-testing</span><span class="tag">tools</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-27-snowflake-cost-clock.html" style="animation-delay: 360ms">
         <div class="date">2026-05-27</div>
-        <h3 class="name">Snowflake Cost Clock</h3>
+        <h2 class="name">Snowflake Cost Clock</h2>
         <p class="desc">Live dollar-per-second counter for any Snowflake warehouse size. Watch your credits burn in real time.</p>
         <div class="tags"><span class="tag">snowflake</span><span class="tag">cost</span><span class="tag">realtime</span><span class="tag">tools</span></div>
         <div class="arrow">&rarr;</div>
       </a>
       <a class="card" href="apps/2026-05-26-hello-lab.html" style="animation-delay: 420ms">
         <div class="date">2026-05-26</div>
-        <h3 class="name">SQL Pulse</h3>
+        <h2 class="name">SQL Pulse</h2>
         <p class="desc">Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.</p>
         <div class="tags"><span class="tag">snowflake</span><span class="tag">sql</span><span class="tag">analytics</span><span class="tag">tools</span></div>
         <div class="arrow">&rarr;</div>
       </a>
     </section>
     <footer>
-      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant
+      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant<br>
+      <a href="mailto:simonsangla@gmail.com">Email</a> &middot; <a href="https://github.com/simonsangla/lab">Source on GitHub</a>
     </footer>
   </div>
   <script>

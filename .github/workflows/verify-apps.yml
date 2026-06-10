@@ -1,0 +1,55 @@
+name: Verify Apps
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'scripts/**'
+      - 'index.html'
+      - 'sw.js'
+      - 'manifest.webmanifest'
+  deployment_status:
+
+jobs:
+  # Factory gates G1-G4: lint, smoke, gallery idempotence (G5 scans run locally pre-push)
+  gates:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: G1+G2 lint
+        run: node scripts/lint-app.mjs
+      - name: G4 smoke (DOM-stub harness)
+        run: node scripts/smoke.mjs
+      - name: G3 gallery regenerated and committed
+        run: |
+          node scripts/gen-index.mjs
+          git diff --exit-code index.html || { echo "::error::index.html is stale - run 'npm run gen' and commit the result"; exit 1; }
+
+  # Browser verification against the Vercel preview (the agent sandbox cannot
+  # reach vercel.app or run a browser - this must live in CI)
+  screenshots:
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment != 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install Playwright
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Screenshot + console-error check
+        env:
+          PREVIEW_URL: ${{ github.event.deployment_status.environment_url }}
+        run: node .github/scripts/screenshot.mjs "$PREVIEW_URL"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ github.event.deployment_status.id }}
+          path: shots/
+          retention-days: 14

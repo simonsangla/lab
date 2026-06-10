@@ -7,12 +7,13 @@ const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 
 function parseMeta(html, name) {
   if (!META_KEYS.includes(name)) return null;
+  // Quote-aware: content may contain the other quote character.
   const re = new RegExp(
-    '<meta\\s+name=["\']' + name + '["\']\\s+content=["\']([^"\']*)["\']',
+    '<meta\\s+name=["\']' + name + '["\']\\s+content=(?:"([^"]*)"|\'([^\']*)\')',
     'i'
   );
   const m = html.match(re);
-  return m ? m[1] : null;
+  return m ? (m[1] !== undefined ? m[1] : m[2]) : null;
 }
 
 function titleCase(s) {
@@ -44,6 +45,9 @@ const apps = files.map((filename) => {
   const fallbackName = titleCase(rest.replace(/-/g, ' '));
   const name = parseMeta(raw, 'app-name') || fallbackName;
   const description = parseMeta(raw, 'app-description') || '';
+  if (description.length > 140) {
+    console.warn('[gen-index] WARN ' + filename + ': description is ' + description.length + ' chars (>140) and will clamp on the card');
+  }
   const tagsRaw = parseMeta(raw, 'app-tags') || '';
   const tags = tagsRaw
     ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
@@ -52,13 +56,14 @@ const apps = files.map((filename) => {
 });
 
 const N = apps.length;
+const since = N ? apps[N - 1].date : '';
 
 const cardsHtml = apps
   .map((app, i) => {
     const tagsHtml = app.tags
       .map((t) => '<span class="tag">' + escapeHtml(t) + '</span>')
       .join('');
-    const delay = i * 60;
+    const delay = Math.min(i, 8) * 60;   // cap the stagger so late cards never hide as the count grows
     return (
       '<a class="card" href="apps/' +
       escapeHtml(app.filename) +
@@ -68,9 +73,9 @@ const cardsHtml = apps
       '        <div class="date">' +
       escapeHtml(app.date) +
       '</div>\n' +
-      '        <h3 class="name">' +
+      '        <h2 class="name">' +
       escapeHtml(app.name) +
-      '</h3>\n' +
+      '</h2>\n' +
       '        <p class="desc">' +
       escapeHtml(app.description) +
       '</p>\n' +
@@ -99,6 +104,14 @@ const html =
   '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
   '<title>lab. &mdash; Simon Sangla</title>\n' +
   '<meta name="description" content="One day. One app. No excuses.">\n' +
+  '<meta property="og:type" content="website">\n' +
+  '<meta property="og:url" content="https://lab.simonsangla.com/">\n' +
+  '<meta property="og:title" content="lab. — One day. One app. No excuses.">\n' +
+  '<meta property="og:description" content="' + N + ' micro-apps shipped, one per day, by Simon Sangla — Snowflake analytics consultant.">\n' +
+  '<meta property="og:image" content="https://lab.simonsangla.com/og.png">\n' +
+  '<meta property="og:image:width" content="1200">\n' +
+  '<meta property="og:image:height" content="630">\n' +
+  '<meta name="twitter:card" content="summary_large_image">\n' +
   '<link rel="manifest" href="/manifest.webmanifest">\n' +
   '<meta name="theme-color" content="#29d8c7">\n' +
   '<link rel="icon" type="image/png" href="/icons/icon-192.png">\n' +
@@ -117,7 +130,7 @@ const html =
   '    --accent: #29d8c7;\n' +
   '    --accent2: #6366f1;\n' +
   '    --text: #e8e8e8;\n' +
-  '    --muted: #5a5a5a;\n' +
+  '    --muted: #8a8a8a;\n' +
   "    --font-display: 'Syne', system-ui, sans-serif;\n" +
   "    --font-mono: 'JetBrains Mono', ui-monospace, monospace;\n" +
   '  }\n' +
@@ -142,10 +155,11 @@ const html =
   '  .wrap { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }\n' +
   '  header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }\n' +
   '  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }\n' +
-  '  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; }\n' +
+  '  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; margin: 0; }\n' +
   '  .brand .tagline { color: var(--muted); font-size: 13px; }\n' +
+  '  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 52ch; margin: 0; }\n' +
   '  .pill-link {\n' +
-  '    display: inline-block; min-height: 36px; line-height: 24px;\n' +
+  '    display: inline-block; min-height: 44px; line-height: 30px;\n' +
   '    border: 1px solid var(--accent); color: var(--accent);\n' +
   '    padding: 6px 14px; border-radius: 99px; font-size: 13px;\n' +
   '    text-decoration: none; font-family: var(--font-display);\n' +
@@ -216,15 +230,17 @@ const html =
   '  <div class="wrap">\n' +
   '    <header>\n' +
   '      <div class="brand">\n' +
-  '        <span class="logo">lab.</span>\n' +
+  '        <h1 class="logo">lab.</h1>\n' +
   '        <span class="tagline">One day. One app. No excuses.</span>\n' +
   '      </div>\n' +
-  '      <a class="pill-link" href="https://simonsangla.com">simonsangla.com &rarr;</a>\n' +
+  '      <a class="pill-link" href="mailto:simonsangla@gmail.com">Work with me &rarr;</a>\n' +
   '    </header>\n' +
-  '    <p class="counter">' + N + ' experiments shipped</p>\n' +
+  '    <p class="sub">Daily micro-apps, each designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
+  '    <p class="counter">' + N + ' apps shipped' + (since ? ' &middot; since ' + since : '') + '</p>\n' +
   body + '\n' +
   '    <footer>\n' +
-  '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant\n' +
+  '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant<br>\n' +
+  '      <a href="mailto:simonsangla@gmail.com">Email</a> &middot; <a href="https://github.com/simonsangla/lab">Source on GitHub</a>\n' +
   '    </footer>\n' +
   '  </div>\n' +
   '  <script>\n' +

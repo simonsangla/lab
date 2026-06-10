@@ -5,6 +5,8 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "gen": "node scripts/gen-index.mjs",
-    "icons": "node scripts/gen-icons.mjs"
+    "icons": "node scripts/gen-icons.mjs",
+    "lint": "node scripts/lint-app.mjs",
+    "smoke": "node scripts/smoke.mjs"
   }
 }
