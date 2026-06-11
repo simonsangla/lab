@@ -4,6 +4,8 @@ import { join } from 'node:path';
 const APPS_DIR = 'apps';
 const OUT = 'index.html';
 const META_KEYS = ['app-name', 'app-description', 'app-tags'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const GRADIENT_COUNT = 7; // .g1 … .g7 in the stylesheet below
 
 function parseMeta(html, name) {
   if (!META_KEYS.includes(name)) return null;
@@ -33,6 +35,19 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+function monogram(name) {
+  const words = name.split(/\s+/).map((w) => w.replace(/[^a-zA-Z0-9]/g, '')).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function formatDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return MONTHS[m - 1] + ' ' + d + ', ' + y;
+}
+
 const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
   .sort((a, b) => b.localeCompare(a));
@@ -57,35 +72,49 @@ const apps = files.map((filename) => {
 
 const N = apps.length;
 const since = N ? apps[N - 1].date : '';
+const featured = N ? apps[0] : null;
 
-const cardsHtml = apps
-  .map((app, i) => {
-    const tagsHtml = app.tags
-      .map((t) => '<span class="tag">' + escapeHtml(t) + '</span>')
-      .join('');
-    const delay = Math.min(i, 8) * 60;   // cap the stagger so late cards never hide as the count grows
-    return (
-      '<a class="card" href="apps/' +
-      escapeHtml(app.filename) +
-      '" style="animation-delay: ' +
-      delay +
-      'ms">\n' +
-      '        <div class="date">' +
-      escapeHtml(app.date) +
-      '</div>\n' +
-      '        <h2 class="name">' +
-      escapeHtml(app.name) +
-      '</h2>\n' +
-      '        <p class="desc">' +
-      escapeHtml(app.description) +
-      '</p>\n' +
-      '        <div class="tags">' +
-      tagsHtml +
-      '</div>\n' +
-      '        <div class="arrow">&rarr;</div>\n' +
-      '      </a>'
-    );
-  })
+function rowHtml(app, i) {
+  const grad = 'g' + ((i % GRADIENT_COUNT) + 1);
+  const category = app.tags.length ? titleCase(app.tags[0].replace(/-/g, ' ')) : 'App';
+  return (
+    '<a class="row" href="apps/' + escapeHtml(app.filename) + '">\n' +
+    '          <div class="icon ' + grad + '">' + escapeHtml(monogram(app.name)) + '</div>\n' +
+    '          <div class="info">\n' +
+    '            <p class="name">' + escapeHtml(app.name) + '</p>\n' +
+    '            <p class="desc">' + escapeHtml(app.description) + '</p>\n' +
+    '            <p class="cat">' + escapeHtml(category) + '</p>\n' +
+    '          </div>\n' +
+    '          <span class="open">OPEN</span>\n' +
+    '        </a>'
+  );
+}
+
+const heroHtml = featured
+  ? '<a class="hero" href="apps/' + escapeHtml(featured.filename) + '">\n' +
+    '      <div class="kicker">Latest ship &middot; ' + escapeHtml(formatDate(featured.date)) + '</div>\n' +
+    '      <h2>' + escapeHtml(featured.name) + '</h2>\n' +
+    '      <p>' + escapeHtml(featured.description) + '</p>\n' +
+    '      <div class="bar">\n' +
+    '        <div class="mini-icon">' + escapeHtml(monogram(featured.name)) + '</div>\n' +
+    '        <div class="meta">\n' +
+    '          <div class="n">' + escapeHtml(featured.name) + '</div>\n' +
+    '          <div class="d">' + escapeHtml(featured.tags.slice(0, 3).join(' · ')) + '</div>\n' +
+    '        </div>\n' +
+    '        <span class="get">OPEN</span>\n' +
+    '      </div>\n' +
+    '    </a>'
+  : '';
+
+const half = Math.ceil(N / 2);
+const columns = [apps.slice(0, half), apps.slice(half)].filter((c) => c.length);
+const listsHtml = columns
+  .map(
+    (col, c) =>
+      '<div class="list">\n        ' +
+      col.map((app, i) => rowHtml(app, c * half + i)).join('\n        ') +
+      '\n      </div>'
+  )
   .join('\n      ');
 
 const emptyHtml =
@@ -94,7 +123,12 @@ const emptyHtml =
 const body =
   N === 0
     ? '    ' + emptyHtml
-    : '    <section class="grid">\n      ' + cardsHtml + '\n    </section>';
+    : '    ' + heroHtml + '\n' +
+      '    <div class="section-head">\n' +
+      '      <h3>All apps</h3>\n' +
+      '      <span class="count">' + N + ' shipped</span>\n' +
+      '    </div>\n' +
+      '    <div class="lists">\n      ' + listsHtml + '\n    </div>';
 
 const html =
   '<!doctype html>\n' +
@@ -113,26 +147,24 @@ const html =
   '<meta property="og:image:height" content="630">\n' +
   '<meta name="twitter:card" content="summary_large_image">\n' +
   '<link rel="manifest" href="/manifest.webmanifest">\n' +
-  '<meta name="theme-color" content="#29d8c7">\n' +
+  '<meta name="theme-color" content="#009A44">\n' +
   '<link rel="icon" type="image/png" href="/icons/icon-192.png">\n' +
   '<link rel="apple-touch-icon" href="/icons/icon-192.png">\n' +
   '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
-  '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n' +
+  '<meta name="apple-mobile-web-app-status-bar-style" content="default">\n' +
   '<meta name="apple-mobile-web-app-title" content="lab.">\n' +
-  '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
-  '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
-  '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">\n' +
   '<style>\n' +
   '  :root {\n' +
-  '    --bg: #0a0a0a;\n' +
-  '    --surface: #141414;\n' +
-  '    --border: #1e1e1e;\n' +
-  '    --accent: #29d8c7;\n' +
-  '    --accent2: #6366f1;\n' +
-  '    --text: #e8e8e8;\n' +
-  '    --muted: #8a8a8a;\n' +
-  "    --font-display: 'Syne', system-ui, sans-serif;\n" +
-  "    --font-mono: 'JetBrains Mono', ui-monospace, monospace;\n" +
+  '    --green: #009A44;        /* Basque green — Pantone 348C (ikurriña) */\n' +
+  '    --green-dark: #00702F;\n' +
+  '    --green-deep: #064E26;\n' +
+  '    --green-tint: #E5F5EC;\n' +
+  '    --bg: #f5f5f7;\n' +
+  '    --card: #ffffff;\n' +
+  '    --text: #1d1d1f;\n' +
+  '    --muted: #6e6e73;\n' +
+  '    --hairline: rgba(0,0,0,0.08);\n' +
+  '    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;\n' +
   '  }\n' +
   '  * { box-sizing: border-box; }\n' +
   '  html, body { margin: 0; padding: 0; }\n' +
@@ -140,110 +172,176 @@ const html =
   '  body {\n' +
   '    background: var(--bg);\n' +
   '    color: var(--text);\n' +
-  '    font-family: var(--font-display);\n' +
+  '    font-family: var(--font);\n' +
   '    min-height: 100dvh;\n' +
-  '    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));\n' +
-  '    position: relative;\n' +
+  '    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));\n' +
+  '    -webkit-font-smoothing: antialiased;\n' +
   '    overscroll-behavior-y: contain;\n' +
   '  }\n' +
   '  a, button { -webkit-tap-highlight-color: transparent; }\n' +
-  '  .grain {\n' +
-  '    position: fixed; inset: 0; pointer-events: none;\n' +
-  '    width: 100%; height: 100%;\n' +
-  '    opacity: 0.03; z-index: 0;\n' +
+  '  .wrap { max-width: 980px; margin: 0 auto; }\n' +
+  '  .eyebrow {\n' +
+  '    font-size: 13px; font-weight: 600; letter-spacing: 0.06em;\n' +
+  '    text-transform: uppercase; color: var(--muted); margin: 8px 0 2px;\n' +
   '  }\n' +
-  '  .wrap { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }\n' +
-  '  header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }\n' +
-  '  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }\n' +
-  '  .brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--accent); line-height: 1; margin: 0; }\n' +
-  '  .brand .tagline { color: var(--muted); font-size: 13px; }\n' +
-  '  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 52ch; margin: 0; }\n' +
-  '  .pill-link {\n' +
-  '    display: inline-block; min-height: 44px; line-height: 30px;\n' +
-  '    border: 1px solid var(--accent); color: var(--accent);\n' +
-  '    padding: 6px 14px; border-radius: 99px; font-size: 13px;\n' +
-  '    text-decoration: none; font-family: var(--font-display);\n' +
-  '    transition: background 180ms ease, color 180ms ease;\n' +
+  '  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; }\n' +
+  '  .masthead h1 {\n' +
+  '    font-size: 34px; font-weight: 800; letter-spacing: -0.02em;\n' +
+  '    margin: 0; line-height: 1.1;\n' +
   '  }\n' +
-  '  .pill-link:hover, .pill-link:active { background: var(--accent); color: var(--bg); }\n' +
-  '  .counter {\n' +
-  '    display: inline-block; margin: 20px 0 24px;\n' +
-  '    background: var(--surface); border: 1px solid var(--border);\n' +
-  '    color: var(--muted); font-family: var(--font-mono); font-size: 12px;\n' +
+  '  .masthead h1 .dot { color: var(--green); }\n' +
+  '  .avatar {\n' +
+  '    width: 44px; height: 44px; border-radius: 50%;\n' +
+  '    background: linear-gradient(135deg, var(--green), var(--green-dark));\n' +
+  '    color: #fff; font-weight: 700; font-size: 16px;\n' +
+  '    display: flex; align-items: center; justify-content: center;\n' +
+  '    flex-shrink: 0; text-decoration: none;\n' +
+  '  }\n' +
+  '  .lede { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 10px 0 0; max-width: 56ch; }\n' +
+  '  .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }\n' +
+  '  .chip {\n' +
+  '    background: var(--green-tint); color: var(--green-dark);\n' +
+  '    font-size: 12px; font-weight: 600;\n' +
   '    padding: 6px 12px; border-radius: 99px;\n' +
   '  }\n' +
-  '  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }\n' +
-  '  .card {\n' +
-  '    background: var(--surface); border: 1px solid var(--border);\n' +
-  '    border-radius: 10px; padding: 18px;\n' +
-  '    text-decoration: none; color: inherit; display: block;\n' +
-  '    transition: border-color 180ms ease, transform 180ms ease;\n' +
+  '  .hero {\n' +
+  '    display: block; text-decoration: none; color: #fff;\n' +
+  '    background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 55%, var(--green-deep) 100%);\n' +
+  '    border-radius: 24px; padding: 24px;\n' +
+  '    box-shadow: 0 12px 32px rgba(0, 122, 54, 0.28);\n' +
+  '    position: relative; overflow: hidden;\n' +
+  '    transition: transform 200ms ease;\n' +
   '    animation: fadeUp 400ms ease both;\n' +
   '  }\n' +
-  '  .card:hover, .card:active { border-color: var(--accent); }\n' +
-  '  @media (hover: hover) { .card:hover { transform: translateY(-2px); } }\n' +
-  '  .card .date { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }\n' +
-  '  .card .name { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--text); margin: 8px 0 0; }\n' +
-  '  .card .desc {\n' +
-  '    font-size: 14px; color: var(--muted); margin: 6px 0 0; line-height: 1.45;\n' +
+  '  .hero::after {\n' +
+  '    content: ""; position: absolute; inset: 0;\n' +
+  '    background: radial-gradient(120% 80% at 85% -10%, rgba(255,255,255,0.22), transparent 55%);\n' +
+  '    pointer-events: none;\n' +
+  '  }\n' +
+  '  @media (hover: hover) { .hero:hover { transform: scale(1.01); } }\n' +
+  '  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }\n' +
+  '  .hero h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 6px; line-height: 1.12; }\n' +
+  '  .hero p { font-size: 15px; line-height: 1.45; margin: 0; opacity: 0.92; max-width: 50ch; }\n' +
+  '  .hero .bar { display: flex; align-items: center; gap: 12px; margin-top: 22px; }\n' +
+  '  .hero .mini-icon {\n' +
+  '    width: 48px; height: 48px; border-radius: 12px;\n' +
+  '    background: rgba(255,255,255,0.18);\n' +
+  '    display: flex; align-items: center; justify-content: center;\n' +
+  '    font-weight: 800; font-size: 15px; letter-spacing: -0.01em;\n' +
+  '  }\n' +
+  '  .hero .bar .meta { flex: 1; min-width: 0; }\n' +
+  '  .hero .bar .meta .n { font-size: 14px; font-weight: 700; }\n' +
+  '  .hero .bar .meta .d { font-size: 12px; opacity: 0.8; }\n' +
+  '  .hero .get {\n' +
+  '    background: #fff; color: var(--green-dark);\n' +
+  '    font-size: 14px; font-weight: 700;\n' +
+  '    padding: 8px 22px; border-radius: 99px;\n' +
+  '  }\n' +
+  '  .section-head {\n' +
+  '    display: flex; align-items: baseline; justify-content: space-between;\n' +
+  '    margin: 32px 0 8px;\n' +
+  '  }\n' +
+  '  .section-head h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }\n' +
+  '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green); }\n' +
+  '  .list {\n' +
+  '    background: var(--card); border-radius: 20px;\n' +
+  '    padding: 6px 16px;\n' +
+  '    box-shadow: 0 1px 3px rgba(0,0,0,0.05);\n' +
+  '    animation: fadeUp 400ms ease both;\n' +
+  '  }\n' +
+  '  .row {\n' +
+  '    display: flex; align-items: center; gap: 14px;\n' +
+  '    padding: 14px 0; text-decoration: none; color: inherit;\n' +
+  '    border-bottom: 1px solid var(--hairline);\n' +
+  '  }\n' +
+  '  .row:last-child { border-bottom: none; }\n' +
+  '  .icon {\n' +
+  '    width: 60px; height: 60px; border-radius: 14px; flex-shrink: 0;\n' +
+  '    display: flex; align-items: center; justify-content: center;\n' +
+  '    color: #fff; font-weight: 800; font-size: 19px; letter-spacing: -0.02em;\n' +
+  '    box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);\n' +
+  '  }\n' +
+  '  .row .info { flex: 1; min-width: 0; }\n' +
+  '  .row .name { font-size: 16px; font-weight: 600; margin: 0; }\n' +
+  '  .row .desc {\n' +
+  '    font-size: 13px; color: var(--muted); margin: 3px 0 0; line-height: 1.35;\n' +
   '    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;\n' +
   '  }\n' +
-  '  .card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }\n' +
-  '  .card .tag {\n' +
-  '    background: #1a1a2e; color: var(--accent2);\n' +
-  '    font-family: var(--font-mono); font-size: 11px;\n' +
-  '    padding: 3px 8px; border-radius: 4px;\n' +
+  '  .row .cat { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }\n' +
+  '  .open {\n' +
+  '    background: var(--green-tint); color: var(--green-dark);\n' +
+  '    font-size: 14px; font-weight: 700;\n' +
+  '    padding: 7px 18px; border-radius: 99px; flex-shrink: 0;\n' +
   '  }\n' +
-  '  .card .arrow { color: var(--accent); font-size: 18px; text-align: right; margin-top: 12px; }\n' +
+  '  .g1 { background: linear-gradient(135deg, #00B450, #00803A); }\n' +
+  '  .g2 { background: linear-gradient(135deg, #2BC06A, #009A44); }\n' +
+  '  .g3 { background: linear-gradient(135deg, #0E5E33, #0B3D22); }\n' +
+  '  .g4 { background: linear-gradient(135deg, #00A86B, #006B3C); }\n' +
+  '  .g5 { background: linear-gradient(135deg, #4CCB7E, #1B7A45); }\n' +
+  '  .g6 { background: linear-gradient(135deg, #007A4D, #00472B); }\n' +
+  '  .g7 { background: linear-gradient(135deg, #18A558, #0E6B38); }\n' +
+  '  .cta {\n' +
+  '    display: flex; align-items: center; justify-content: space-between; gap: 16px;\n' +
+  '    background: var(--card); border-radius: 20px; padding: 20px;\n' +
+  '    box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 28px;\n' +
+  '    text-decoration: none; color: inherit;\n' +
+  '  }\n' +
+  '  .cta .t { font-size: 16px; font-weight: 700; margin: 0; }\n' +
+  '  .cta .s { font-size: 13px; color: var(--muted); margin: 3px 0 0; }\n' +
+  '  .cta .btn {\n' +
+  '    background: var(--green); color: #fff;\n' +
+  '    font-size: 14px; font-weight: 700;\n' +
+  '    padding: 9px 20px; border-radius: 99px; flex-shrink: 0;\n' +
+  '  }\n' +
   '  .empty { text-align: center; padding: 64px 0; }\n' +
   '  .empty p { color: var(--muted); font-style: italic; }\n' +
-  '  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 56px; line-height: 1.5; }\n' +
-  '  footer a { color: var(--text); text-decoration: none; }\n' +
-  '  footer a:hover, footer a:active { color: var(--accent); }\n' +
+  '  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 36px; line-height: 1.6; }\n' +
+  '  footer a { color: var(--green-dark); text-decoration: none; font-weight: 600; }\n' +
   '  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }\n' +
   '  @media (prefers-reduced-motion: reduce) {\n' +
-  '    .card { animation: none; transition: none; }\n' +
+  '    .hero, .list { animation: none; transition: none; }\n' +
   '  }\n' +
-  '  @media (min-width: 640px) {\n' +
-  '    body { padding-top: max(32px, env(safe-area-inset-top)); padding-left: 20px; padding-right: 20px; }\n' +
-  '    header { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }\n' +
-  '    .brand .logo { font-size: 32px; }\n' +
-  '    .brand .tagline { font-size: 14px; }\n' +
-  '    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }\n' +
-  '    .card { padding: 20px; }\n' +
-  '    .card .name { font-size: 18px; }\n' +
-  '  }\n' +
-  '  @media (min-width: 960px) {\n' +
-  '    body { padding-left: 24px; padding-right: 24px; padding-top: 40px; padding-bottom: 80px; }\n' +
-  '    .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }\n' +
+  '  @media (min-width: 720px) {\n' +
+  '    .masthead h1 { font-size: 40px; }\n' +
+  '    .hero { padding: 32px; }\n' +
+  '    .hero h2 { font-size: 36px; }\n' +
+  '    .list { padding: 6px 24px; }\n' +
+  '    .lists { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }\n' +
   '  }\n' +
   '</style>\n' +
   '</head>\n' +
   '<body>\n' +
-  '  <svg class="grain" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">\n' +
-  '    <filter id="grain">\n' +
-  '      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>\n' +
-  '      <feColorMatrix type="saturate" values="0"/>\n' +
-  '    </filter>\n' +
-  '    <rect width="100%" height="100%" filter="url(#grain)"/>\n' +
-  '  </svg>\n' +
   '  <div class="wrap">\n' +
-  '    <header>\n' +
-  '      <div class="brand">\n' +
-  '        <h1 class="logo">lab.</h1>\n' +
-  '        <span class="tagline">One day. One app. No excuses.</span>\n' +
-  '      </div>\n' +
-  '      <a class="pill-link" href="mailto:simonsangla@gmail.com">Work with me &rarr;</a>\n' +
+  '    <p class="eyebrow" id="eyebrow">One day. One app.</p>\n' +
+  '    <header class="masthead">\n' +
+  '      <h1>lab<span class="dot">.</span></h1>\n' +
+  '      <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla">SS</a>\n' +
   '    </header>\n' +
-  '    <p class="sub">Daily micro-apps, each designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
-  '    <p class="counter">' + N + ' apps shipped' + (since ? ' &middot; since ' + since : '') + '</p>\n' +
+  '    <p class="lede">One day. One app. No excuses. Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
+  '    <div class="stats">\n' +
+  '      <span class="chip">' + N + ' apps shipped</span>\n' +
+  (since ? '      <span class="chip">since ' + escapeHtml(formatDate(since)) + '</span>\n' : '') +
+  '    </div>\n' +
   body + '\n' +
+  '    <a class="cta" href="mailto:simonsangla@gmail.com">\n' +
+  '      <div>\n' +
+  '        <p class="t">Work with me</p>\n' +
+  '        <p class="s">Snowflake analytics, shipped at lab speed.</p>\n' +
+  '      </div>\n' +
+  '      <span class="btn">Get in touch</span>\n' +
+  '    </a>\n' +
   '    <footer>\n' +
   '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant<br>\n' +
   '      <a href="mailto:simonsangla@gmail.com">Email</a> &middot; <a href="https://github.com/simonsangla/lab">Source on GitHub</a>\n' +
   '    </footer>\n' +
   '  </div>\n' +
   '  <script>\n' +
+  '    (function () {\n' +
+  "      var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\n" +
+  "      var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\n" +
+  '      var now = new Date();\n' +
+  "      document.getElementById('eyebrow').textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();\n" +
+  '    })();\n' +
   "    if ('serviceWorker' in navigator) {\n" +
   "      window.addEventListener('load', function () {\n" +
   "        navigator.serviceWorker.register('/sw.js').catch(function () {});\n" +
