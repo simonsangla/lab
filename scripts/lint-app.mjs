@@ -63,6 +63,11 @@ for (const file of files) {
   const tags = (parseMeta(html, 'app-tags') || '').split(',').map((t) => t.trim()).filter(Boolean);
   if (tags.length > 4) warn(file, tags.length + ' tags (>4), card gets noisy');
 
+  // G2: brand contract — every app links the shared theme after its inline style
+  if (!/<link\s[^>]*href=["']\/assets\/lab-theme\.css["']/i.test(html)) {
+    err(file, 'missing <link rel="stylesheet" href="/assets/lab-theme.css"> (brand identity, see AGENTS.md)');
+  }
+
   // G1: every inline script must parse
   scripts(html).forEach((src, i) => {
     const p = join(tmp, base + '.' + i + '.js');

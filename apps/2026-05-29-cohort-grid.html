@@ -8,7 +8,7 @@
 <meta name="app-description" content="Paste a retention CSV — get a color-coded cohort heatmap instantly. Hover for exact %. Download as PNG.">
 <meta name="app-tags" content="analytics,retention,cohort,visualization">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#29d8c7">
+<meta name="theme-color" content="#009A44">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -72,7 +72,7 @@
     transition: border-color 120ms ease;
     cursor: default;
   }
-  .cell:hover { border-color: #ffffff; }
+  .cell:hover { border-color: var(--text); }
   .cell.header {
     background: transparent; color: var(--muted);
     border-radius: 0;
@@ -111,6 +111,7 @@
     .cell.label { width: 70px; min-width: 70px; }
   }
 </style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
 </head>
 <body>
   <a class="back" href="../">&larr; lab.</a>
@@ -338,10 +339,10 @@
     canvas.height = h * 2;
     var ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#5a5a5a';
+    ctx.fillStyle = '#6e6e73';
     ctx.textBaseline = 'middle';
     for (var c = 0; c < cols; c++) {
       var hx = 20 + labelW + c * cellW + cellW / 2;
@@ -352,7 +353,7 @@
     for (var r = 0; r < pctRows.length; r++) {
       var row = pctRows[r];
       var ry = 20 + headerH + r * cellH;
-      ctx.fillStyle = '#5a5a5a';
+      ctx.fillStyle = '#6e6e73';
       ctx.textAlign = 'right';
       ctx.fillText(row.label, 20 + labelW - 12, ry + cellH / 2);
       for (var cc = 0; cc < row.pcts.length; cc++) {

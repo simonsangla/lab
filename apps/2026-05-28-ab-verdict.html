@@ -8,7 +8,7 @@
 <meta name="app-description" content="Paste control and variant numbers — get statistical significance, p-value, confidence interval and a ship/wait/kill verdict instantly.">
 <meta name="app-tags" content="analytics,statistics,ab-testing,tools">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#29d8c7">
+<meta name="theme-color" content="#009A44">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -76,9 +76,9 @@
     margin: 0 auto; max-width: 260px;
     letter-spacing: 1px;
   }
-  .verdict.ship { background: var(--green); color: #0a0a0a; }
+  .verdict.ship { background: var(--green); color: var(--surface); }
   .verdict.kill { background: var(--red); color: #ffffff; }
-  .verdict.wait { background: var(--yellow); color: #0a0a0a; }
+  .verdict.wait { background: var(--yellow); color: var(--surface); }
   .stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .pill {
     background: var(--surface); border: 1px solid var(--border);
@@ -98,6 +98,7 @@
     header h1 { font-size: 28px; }
   }
 </style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
 </head>
 <body>
   <a class="back" href="../">&larr; lab.</a>
