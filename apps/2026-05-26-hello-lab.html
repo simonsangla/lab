@@ -8,7 +8,7 @@
 <meta name="app-description" content="Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.">
 <meta name="app-tags" content="snowflake,sql,analytics,tools">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#29d8c7">
+<meta name="theme-color" content="#009A44">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -117,6 +117,7 @@
     .tier-badge { font-size: 20px; max-width: 240px; }
   }
 </style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
 </head>
 <body>
   <div class="wrap">
@@ -151,7 +152,7 @@
   }
 
   function tierFor(total) {
-    if (total === 0) return { name: 'SIMPLE', color: '#29d8c7' };
+    if (total === 0) return { name: 'SIMPLE', color: '#2BC06A' };
     if (total <= 4) return { name: 'MODERATE', color: '#facc15' };
     if (total <= 9) return { name: 'COMPLEX', color: '#f97316' };
     return { name: 'BEAST', color: '#ef4444' };

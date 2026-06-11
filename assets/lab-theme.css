@@ -1,0 +1,87 @@
+/* lab-theme.css — shared brand identity for all lab apps.
+ *
+ * Reusable component: apps keep their full inline dark theme as a built-in
+ * fallback (standalone file:// opens still work); this sheet, linked after
+ * the inline <style>, re-maps the shared design tokens to the App Store
+ * light identity with Basque green (Pantone 348C #009A44) as primary.
+ * Text-bearing greens use the darker AA-safe shades.
+ */
+
+:root {
+  /* brand */
+  --lab-green: #009A44;
+  --lab-green-text: #007D37;   /* >=4.5:1 on white and on --bg */
+  --lab-green-dark: #00702F;
+  --lab-green-deep: #064E26;
+  --lab-green-tint: #E5F5EC;
+
+  /* shared app tokens (dark theme overrides) */
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --accent: var(--lab-green-text);
+  --accent2: var(--lab-green-dark);
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --red: #C62828;
+  --yellow: #A16207;
+  --green: var(--lab-green-text);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  /* At Risk Today palette (clay -> green) */
+  --card: #ffffff;
+  --ink: #1d1d1f;
+  --faint: #8e8e93;
+  --clay: var(--lab-green-text);
+  --clay-deep: var(--lab-green-dark);
+  --on-clay: #ffffff;
+  --line: rgba(0, 0, 0, 0.08);
+
+  color-scheme: light;
+}
+
+::selection { background: var(--lab-green-tint); color: var(--lab-green-deep); }
+
+/* App Store card language on existing surfaces: soft shadow over hairlines */
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── shared lab components (for current spot-use and future apps) ────── */
+
+.lab-chip {
+  display: inline-block;
+  background: var(--lab-green-tint); color: var(--lab-green-dark);
+  font-size: 12px; font-weight: 600;
+  padding: 6px 12px; border-radius: 99px;
+}
+
+.lab-btn {
+  display: inline-block;
+  background: var(--lab-green); color: #fff;
+  font-size: 14px; font-weight: 700;
+  padding: 9px 20px; border-radius: 99px;
+  border: none; cursor: pointer; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.lab-btn:hover, .lab-btn:active { background: var(--lab-green-dark); }
+
+.lab-btn-quiet {
+  display: inline-block;
+  background: var(--lab-green-tint); color: var(--lab-green-dark);
+  font-size: 14px; font-weight: 700;
+  padding: 7px 18px; border-radius: 99px;
+  border: none; cursor: pointer; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lab-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--lab-green-dark);
+  outline-offset: 2px;
+}
