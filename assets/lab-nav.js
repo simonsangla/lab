@@ -20,9 +20,12 @@
   var inner = document.createElement('div');
   inner.className = 'lab-nav-inner';
 
+  // inherit the inline fallback link's target so relative hosting works
+  var old = document.querySelector('a.back');
+
   var back = document.createElement('a');
   back.className = 'lab-nav-back';
-  back.href = '/';
+  back.href = (old && old.getAttribute('href')) || '/';
   back.setAttribute('aria-label', 'Back to lab. — all apps');
   back.innerHTML = '<span class="lab-nav-chevron" aria-hidden="true">&#8249;</span> lab.';
 
@@ -38,7 +41,6 @@
   document.body.classList.add('has-lab-nav');
 
   // the old in-flow link is replaced by the bar
-  var old = document.querySelector('a.back');
   if (old) old.style.display = 'none';
 
   // iOS large-title behavior: the bar title appears once the page's own
