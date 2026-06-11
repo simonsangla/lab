@@ -1,7 +1,8 @@
-const CACHE = 'lab-v1';
+const CACHE = 'lab-v2';
 const PRECACHE = [
   '/',
   '/manifest.webmanifest',
+  '/assets/lab-theme.css',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/maskable-512.png'
@@ -43,7 +44,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (sameOrigin || isFonts) {
+  if (sameOrigin) {
+    // stale-while-revalidate: serve cached immediately, refresh in the
+    // background so edits to shared assets (lab-theme.css, icons) propagate.
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        const refresh = fetch(req)
+          .then((res) => {
+            if (res && res.status === 200) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(req, copy));
+            }
+            return res;
+          })
+          .catch(() => cached);
+        return cached || refresh;
+      })
+    );
+    return;
+  }
+
+  if (isFonts) {
     event.respondWith(
       caches.match(req).then(
         (cached) =>
