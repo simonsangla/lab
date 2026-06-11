@@ -24,7 +24,12 @@ const opt = (n, d) => { const i = ARGS.indexOf(n); return i >= 0 ? ARGS[i + 1] :
 const USER = opt('--user', 'simonsangla');
 const FEED = 'data/chat-triage.json';
 const API = 'https://api.github.com';
-const HDRS = { Accept: 'application/vnd.github+json', 'User-Agent': 'lab-triage-scan' };
+const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+const HDRS = {
+  Accept: 'application/vnd.github+json',
+  'User-Agent': 'lab-triage-scan',
+  ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {})
+};
 
 async function gh(path) {
   const res = await fetch(API + path, { headers: HDRS });
@@ -53,6 +58,7 @@ console.error(`[scan-repos] ${repos.length} repos for ${USER}: ${repos.map((r) =
 
 const items = [];
 for (const r of repos) {
+  try {
   const prs = await gh(`/repos/${r.full_name}/pulls?state=open&per_page=50`);
   const prHeads = new Set(prs.map((p) => p.head.ref));
   for (const p of prs) {
@@ -101,6 +107,12 @@ for (const r of repos) {
       next: 'Open a PR for this branch or delete it',
       notes: `${r.name} · branch with no open PR`
     }));
+  }
+  } catch (err) {
+    // one broken/empty repo must not kill the whole scan - but a rate
+    // limit guarantees every later request fails too, so abort on it
+    if (String(err.message).includes('rate limit')) throw err;
+    console.error(`[scan-repos] skipping ${r.full_name}: ${err.message}`);
   }
 }
 

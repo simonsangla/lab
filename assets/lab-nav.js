@@ -11,7 +11,7 @@
   if (document.querySelector('.lab-nav')) return;
 
   var meta = document.querySelector('meta[name="app-name"]');
-  var name = (meta && meta.content) || document.title.replace(/\s*[—-].*$/, '');
+  var name = (meta && meta.content) || document.title.replace(/\s*[-–—].*$/, '');
 
   var nav = document.createElement('nav');
   nav.className = 'lab-nav';
