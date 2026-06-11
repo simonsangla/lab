@@ -53,14 +53,14 @@
     .mark {
       width: 34px; height: 34px; border-radius: 10px; background: var(--clay);
       display: flex; align-items: center; justify-content: center; flex: none;
-      box-shadow: 0 4px 12px rgba(193, 95, 60, 0.26);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--clay-deep) 26%, transparent);
     }
     .mark svg { width: 20px; height: 20px; display: block; }
     .top h2 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: 0.02em; }
     .top .date { font-size: 12px; color: var(--muted); margin: 1px 0 0; }
     .badge {
       font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--clay-deep); background: rgba(217, 119, 87, 0.12);
+      color: var(--clay-deep); background: color-mix(in srgb, var(--clay) 12%, transparent);
       padding: 4px 8px; border-radius: 999px;
     }
 
@@ -291,6 +291,7 @@
     }
   </style>
 <link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
 </head>
 <body>
   <div class="wrap">
