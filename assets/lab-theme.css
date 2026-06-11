@@ -85,3 +85,45 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   outline: 3px solid var(--lab-green-dark);
   outline-offset: 2px;
 }
+
+/* ── lab-nav: fixed top bar injected by /assets/lab-nav.js ───────────── */
+
+.lab-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: rgba(245, 245, 247, 0.85);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.lab-nav-inner {
+  position: relative; display: flex; align-items: center;
+  height: 48px; max-width: 980px; margin: 0 auto;
+  padding: 0 max(14px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+}
+.lab-nav-back {
+  display: inline-flex; align-items: center; gap: 2px;
+  min-height: 44px; padding: 0 6px;
+  color: var(--lab-green-text); text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.01em;
+}
+.lab-nav-chevron { font-size: 26px; font-weight: 400; line-height: 1; margin-top: -3px; }
+.lab-nav-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text, #1d1d1f);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+  opacity: 0; transition: opacity 200ms ease;
+  pointer-events: none;
+}
+.lab-nav-titled .lab-nav-title { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .lab-nav-title { transition: none; } }
+
+/* push page content below the fixed bar (overrides each app's inline
+   body padding; class is added by lab-nav.js) */
+body.has-lab-nav {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 62px);
+}
+
