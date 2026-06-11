@@ -23,6 +23,7 @@
 <style>
   :root {
     --green: #009A44;        /* Basque green — Pantone 348C (ikurriña) */
+    --green-hero: #00853B;   /* darkest hero-gradient start that keeps white text AA (4.75:1) */
     --green-dark: #00702F;
     --green-deep: #064E26;
     --green-tint: #E5F5EC;
@@ -46,6 +47,7 @@
     overscroll-behavior-y: contain;
   }
   a, button { -webkit-tap-highlight-color: transparent; }
+  a:focus-visible { outline: 3px solid var(--green-dark); outline-offset: 2px; }
   .wrap { max-width: 980px; margin: 0 auto; }
   .eyebrow {
     font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
@@ -73,7 +75,7 @@
   }
   .hero {
     display: block; text-decoration: none; color: #fff;
-    background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 55%, var(--green-deep) 100%);
+    background: linear-gradient(150deg, var(--green-hero) 0%, var(--green-dark) 55%, var(--green-deep) 100%);
     border-radius: 24px; padding: 24px;
     box-shadow: 0 12px 32px rgba(0, 122, 54, 0.28);
     position: relative; overflow: hidden;
@@ -86,7 +88,7 @@
     pointer-events: none;
   }
   @media (hover: hover) { .hero:hover { transform: scale(1.01); } }
-  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
   .hero h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 6px; line-height: 1.12; }
   .hero p { font-size: 15px; line-height: 1.45; margin: 0; opacity: 0.92; max-width: 50ch; }
   .hero .bar { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
@@ -98,7 +100,7 @@
   }
   .hero .bar .meta { flex: 1; min-width: 0; }
   .hero .bar .meta .n { font-size: 14px; font-weight: 700; }
-  .hero .bar .meta .d { font-size: 12px; opacity: 0.8; }
+  .hero .bar .meta .d { font-size: 12px; opacity: 0.9; }
   .hero .get {
     background: #fff; color: var(--green-dark);
     font-size: 14px; font-weight: 700;
@@ -109,7 +111,7 @@
     margin: 32px 0 8px;
   }
   .section-head h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
-  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green); }
+  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green-dark); }
   .list {
     background: var(--card); border-radius: 20px;
     padding: 6px 16px;
@@ -199,7 +201,7 @@
           <div class="n">Chat Triage</div>
           <div class="d">triage · ai · live-source</div>
         </div>
-        <span class="get">OPEN</span>
+        <span class="get" aria-hidden="true">OPEN</span>
       </div>
     </a>
     <div class="section-head">
@@ -215,7 +217,7 @@
             <p class="desc">Auto-triage of recent Claude, Cowork, Claude Code and Claude cloud sessions into backlog vs WIP, each with the one next step to take.</p>
             <p class="cat">Triage</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-31-pomodoro-brutal.html">
           <div class="icon g2">PB</div>
@@ -224,7 +226,7 @@
             <p class="desc">Pomodoro timer that roasts you with escalating dark humor when you overstay your break. Claude writes the roasts. They get worse.</p>
             <p class="cat">Fun</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-30-meeting-cost-clock.html">
           <div class="icon g3">MC</div>
@@ -233,7 +235,7 @@
             <p class="desc">How much is this meeting costing right now? Add people, set hourly rates, watch money disappear in real time.</p>
             <p class="cat">Fun</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-30-at-risk-today.html">
           <div class="icon g4">AR</div>
@@ -242,7 +244,7 @@
             <p class="desc">What you risk missing today and the one action to take now. Confirmed deadlines rank; Gmail and agent signals wait for your OK. Live GitHub CI source, demo fallback.</p>
             <p class="cat">Attention</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
       </div>
       <div class="list">
@@ -253,7 +255,7 @@
             <p class="desc">Paste a retention CSV — get a color-coded cohort heatmap instantly. Hover for exact %. Download as PNG.</p>
             <p class="cat">Analytics</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-28-ab-verdict.html">
           <div class="icon g6">AV</div>
@@ -262,7 +264,7 @@
             <p class="desc">Paste control and variant numbers — get statistical significance, p-value, confidence interval and a ship/wait/kill verdict instantly.</p>
             <p class="cat">Analytics</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-27-snowflake-cost-clock.html">
           <div class="icon g7">SC</div>
@@ -271,7 +273,7 @@
             <p class="desc">Live dollar-per-second counter for any Snowflake warehouse size. Watch your credits burn in real time.</p>
             <p class="cat">Snowflake</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
         <a class="row" href="apps/2026-05-26-hello-lab.html">
           <div class="icon g1">SP</div>
@@ -280,7 +282,7 @@
             <p class="desc">Instant complexity scorer for Snowflake SQL queries. Counts joins, CTEs, window functions and ranks your query from SIMPLE to BEAST.</p>
             <p class="cat">Snowflake</p>
           </div>
-          <span class="open">OPEN</span>
+          <span class="open" aria-hidden="true">OPEN</span>
         </a>
       </div>
     </div>

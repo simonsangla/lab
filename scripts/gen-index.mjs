@@ -85,7 +85,7 @@ function rowHtml(app, i) {
     '            <p class="desc">' + escapeHtml(app.description) + '</p>\n' +
     '            <p class="cat">' + escapeHtml(category) + '</p>\n' +
     '          </div>\n' +
-    '          <span class="open">OPEN</span>\n' +
+    '          <span class="open" aria-hidden="true">OPEN</span>\n' +
     '        </a>'
   );
 }
@@ -101,7 +101,7 @@ const heroHtml = featured
     '          <div class="n">' + escapeHtml(featured.name) + '</div>\n' +
     '          <div class="d">' + escapeHtml(featured.tags.slice(0, 3).join(' · ')) + '</div>\n' +
     '        </div>\n' +
-    '        <span class="get">OPEN</span>\n' +
+    '        <span class="get" aria-hidden="true">OPEN</span>\n' +
     '      </div>\n' +
     '    </a>'
   : '';
@@ -156,6 +156,7 @@ const html =
   '<style>\n' +
   '  :root {\n' +
   '    --green: #009A44;        /* Basque green — Pantone 348C (ikurriña) */\n' +
+  '    --green-hero: #00853B;   /* darkest hero-gradient start that keeps white text AA (4.75:1) */\n' +
   '    --green-dark: #00702F;\n' +
   '    --green-deep: #064E26;\n' +
   '    --green-tint: #E5F5EC;\n' +
@@ -179,6 +180,7 @@ const html =
   '    overscroll-behavior-y: contain;\n' +
   '  }\n' +
   '  a, button { -webkit-tap-highlight-color: transparent; }\n' +
+  '  a:focus-visible { outline: 3px solid var(--green-dark); outline-offset: 2px; }\n' +
   '  .wrap { max-width: 980px; margin: 0 auto; }\n' +
   '  .eyebrow {\n' +
   '    font-size: 13px; font-weight: 600; letter-spacing: 0.06em;\n' +
@@ -206,7 +208,7 @@ const html =
   '  }\n' +
   '  .hero {\n' +
   '    display: block; text-decoration: none; color: #fff;\n' +
-  '    background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 55%, var(--green-deep) 100%);\n' +
+  '    background: linear-gradient(150deg, var(--green-hero) 0%, var(--green-dark) 55%, var(--green-deep) 100%);\n' +
   '    border-radius: 24px; padding: 24px;\n' +
   '    box-shadow: 0 12px 32px rgba(0, 122, 54, 0.28);\n' +
   '    position: relative; overflow: hidden;\n' +
@@ -219,7 +221,7 @@ const html =
   '    pointer-events: none;\n' +
   '  }\n' +
   '  @media (hover: hover) { .hero:hover { transform: scale(1.01); } }\n' +
-  '  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }\n' +
+  '  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }\n' +
   '  .hero h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 6px; line-height: 1.12; }\n' +
   '  .hero p { font-size: 15px; line-height: 1.45; margin: 0; opacity: 0.92; max-width: 50ch; }\n' +
   '  .hero .bar { display: flex; align-items: center; gap: 12px; margin-top: 22px; }\n' +
@@ -231,7 +233,7 @@ const html =
   '  }\n' +
   '  .hero .bar .meta { flex: 1; min-width: 0; }\n' +
   '  .hero .bar .meta .n { font-size: 14px; font-weight: 700; }\n' +
-  '  .hero .bar .meta .d { font-size: 12px; opacity: 0.8; }\n' +
+  '  .hero .bar .meta .d { font-size: 12px; opacity: 0.9; }\n' +
   '  .hero .get {\n' +
   '    background: #fff; color: var(--green-dark);\n' +
   '    font-size: 14px; font-weight: 700;\n' +
@@ -242,7 +244,7 @@ const html =
   '    margin: 32px 0 8px;\n' +
   '  }\n' +
   '  .section-head h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }\n' +
-  '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green); }\n' +
+  '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green-dark); }\n' +
   '  .list {\n' +
   '    background: var(--card); border-radius: 20px;\n' +
   '    padding: 6px 16px;\n' +
