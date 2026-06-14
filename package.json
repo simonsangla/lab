@@ -2,11 +2,16 @@
   "name": "lab",
   "version": "1.0.0",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "gen": "node scripts/gen-index.mjs",
     "icons": "node scripts/gen-icons.mjs",
     "lint": "node scripts/lint-app.mjs",
     "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
   }
 }
