@@ -1,5 +1,12 @@
 /* lab-theme.css - shared brand identity for all lab apps.
  *
+ * SINGLE SOURCE: this :root block is the lab PROJECTION of @simon/tokens
+ * (simon-platform: packages/@simon/tokens/src/themes/lab.css, the lab bridge,
+ * which itself derives from theme.css). The structural neutral + status values
+ * below are kept in sync with that bridge so the two surfaces can never silently
+ * drift; the one intentional divergence is the brand accent - lab keeps the
+ * Basque green #009A44 (text-safe #007D37). Synced 2026-06-14.
+ *
  * Reusable component: apps keep their full inline dark theme as a built-in
  * fallback (standalone file:// opens still work); this sheet, linked after
  * the inline <style>, re-maps the shared design tokens to the lab identity.
@@ -7,8 +14,8 @@
  * Identity (ported from simonsangla.com): white editorial surface, IBM Plex
  * Sans body/display + IBM Plex Mono labels, big confident type, mono UPPERCASE
  * green kicker labels, restrained Basque green (Pantone 348C #009A44) accent,
- * softly-rounded buttons + hairline-bordered cards. Text-bearing greens use the
- * darker AA-safe shades.
+ * flat ~10px-radius buttons + hairline-bordered cards. Text-bearing greens use
+ * the darker AA-safe shade (#007D37).
  */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
@@ -21,18 +28,24 @@
   --lab-green-deep: #064E26;
   --lab-green-tint: #E5F5EC;
 
-  /* shared app tokens (override each app's inline dark :root on live) */
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --border: rgba(0, 0, 0, 0.10);
-  --accent: var(--lab-green-text);
+  /* shared app tokens - structural values mirror @simon/tokens lab bridge
+     (surfaces + ink + border + status scale). Override each app's inline dark
+     :root on live. */
+  --bg: #ffffff;        /* bridge --bg */
+  --surface: #ffffff;   /* bridge --surface */
+  --border: #e4e4e7;    /* bridge --border (zinc-200) */
+  --text: #18181b;      /* bridge --text (zinc-900) */
+  --muted: #71717a;     /* bridge --muted (zinc-500) */
+  --red: #dc2626;       /* bridge --red */
+  --orange: #c2410c;    /* bridge --orange */
+  --yellow: #b45309;    /* bridge --yellow */
+  /* brand accent - lab divergence kept text-safe: apps use var(--accent) as a
+     text color on white, so it maps to the AA-safe green; --accent-text mirrors
+     the bridge name, --lab-green (#009A44) is the surface/button green. */
+  --accent: var(--lab-green-text);        /* #007D37 - AA-safe on white */
+  --accent-text: var(--lab-green-text);   /* bridge --accent-text #007D37 */
   --accent2: var(--lab-green-dark);
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --red: #C62828;
-  --orange: #C2410C;
-  --yellow: #A16207;
-  --green: var(--lab-green-text);
+  --green: var(--lab-green-text);  /* text-safe; surfaces use --lab-green */
   --font-display: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 
