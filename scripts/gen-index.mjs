@@ -302,8 +302,8 @@ const html =
   '  .cta .s { font-size: 13px; color: var(--muted); margin: 3px 0 0; }\n' +
   '  .cta .btn {\n' +
   '    background: var(--green); color: #fff;\n' +
-  '    font-size: 14px; font-weight: 700;\n' +
-  '    padding: 9px 20px; border-radius: 99px; flex-shrink: 0;\n' +
+  '    font-size: 14px; font-weight: 600;\n' +
+  '    padding: 10px 22px; border-radius: 10px; flex-shrink: 0;\n' +
   '  }\n' +
   '  .empty { text-align: center; padding: 64px 0; }\n' +
   '  .empty p { color: var(--muted); font-style: italic; }\n' +
