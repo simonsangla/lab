@@ -156,6 +156,7 @@ const html =
   '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
   '<meta name="apple-mobile-web-app-status-bar-style" content="default">\n' +
   '<meta name="apple-mobile-web-app-title" content="lab.">\n' +
+  '<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>\n' +
   '<style>\n' +
   '  :root {\n' +
   '    --green: #009A44;        /* Basque green - Pantone 348C (ikurrina) */\n' +
