@@ -5,7 +5,7 @@ const APPS_DIR = 'apps';
 const OUT = 'index.html';
 const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const GRADIENT_COUNT = 7; // .g1 … .g7 in the stylesheet below
+const GRADIENT_COUNT = 7; // .g1 ... .g7 in the stylesheet below
 
 function parseMeta(html, name) {
   if (!META_KEYS.includes(name)) return null;
@@ -99,7 +99,7 @@ const heroHtml = featured
     '        <div class="mini-icon">' + escapeHtml(monogram(featured.name)) + '</div>\n' +
     '        <div class="meta">\n' +
     '          <div class="n">' + escapeHtml(featured.name) + '</div>\n' +
-    '          <div class="d">' + escapeHtml(featured.tags.slice(0, 3).join(' · ')) + '</div>\n' +
+    '          <div class="d">' + escapeHtml(featured.tags.slice(0, 3).join(' \u00B7 ')) + '</div>\n' +
     '        </div>\n' +
     '        <span class="get" aria-hidden="true">OPEN</span>\n' +
     '      </div>\n' +
@@ -136,12 +136,15 @@ const html =
   '<head>\n' +
   '<meta charset="utf-8">\n' +
   '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
+  '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+  '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
+  '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">\n' +
   '<title>lab. &mdash; Simon Sangla</title>\n' +
   '<meta name="description" content="One day. One app. No excuses.">\n' +
   '<meta property="og:type" content="website">\n' +
   '<meta property="og:url" content="https://lab.simonsangla.com/">\n' +
-  '<meta property="og:title" content="lab. — One day. One app. No excuses.">\n' +
-  '<meta property="og:description" content="' + N + ' micro-apps shipped, one per day, by Simon Sangla — Snowflake analytics consultant.">\n' +
+  '<meta property="og:title" content="lab. \u2014 One day. One app. No excuses.">\n' +
+  '<meta property="og:description" content="' + N + ' micro-apps shipped, one per day, by Simon Sangla \u2014 Snowflake analytics consultant.">\n' +
   '<meta property="og:image" content="https://lab.simonsangla.com/og.png">\n' +
   '<meta property="og:image:width" content="1200">\n' +
   '<meta property="og:image:height" content="630">\n' +
@@ -155,17 +158,18 @@ const html =
   '<meta name="apple-mobile-web-app-title" content="lab.">\n' +
   '<style>\n' +
   '  :root {\n' +
-  '    --green: #009A44;        /* Basque green — Pantone 348C (ikurriña) */\n' +
+  '    --green: #009A44;        /* Basque green - Pantone 348C (ikurrina) */\n' +
   '    --green-hero: #00853B;   /* darkest hero-gradient start that keeps white text AA (4.75:1) */\n' +
   '    --green-dark: #00702F;\n' +
   '    --green-deep: #064E26;\n' +
   '    --green-tint: #E5F5EC;\n' +
-  '    --bg: #f5f5f7;\n' +
+  '    --bg: #ffffff;\n' +
   '    --card: #ffffff;\n' +
   '    --text: #1d1d1f;\n' +
   '    --muted: #6e6e73;\n' +
-  '    --hairline: rgba(0,0,0,0.08);\n' +
-  '    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;\n' +
+  '    --hairline: rgba(0,0,0,0.10);\n' +
+  '    --font: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;\n' +
+  '    --font-mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;\n' +
   '  }\n' +
   '  * { box-sizing: border-box; }\n' +
   '  html, body { margin: 0; padding: 0; }\n' +
@@ -183,8 +187,9 @@ const html =
   '  a:focus-visible { outline: 3px solid var(--green-dark); outline-offset: 2px; }\n' +
   '  .wrap { max-width: 980px; margin: 0 auto; }\n' +
   '  .eyebrow {\n' +
-  '    font-size: 13px; font-weight: 600; letter-spacing: 0.06em;\n' +
-  '    text-transform: uppercase; color: var(--muted); margin: 8px 0 2px;\n' +
+  '    font-family: var(--font-mono);\n' +
+  '    font-size: 12px; font-weight: 600; letter-spacing: 0.14em;\n' +
+  '    text-transform: uppercase; color: var(--green-dark); margin: 8px 0 2px;\n' +
   '  }\n' +
   '  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; }\n' +
   '  .masthead h1 {\n' +
@@ -203,41 +208,38 @@ const html =
   '  .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }\n' +
   '  .chip {\n' +
   '    background: var(--green-tint); color: var(--green-dark);\n' +
-  '    font-size: 12px; font-weight: 600;\n' +
-  '    padding: 6px 12px; border-radius: 99px;\n' +
+  '    font-family: var(--font-mono);\n' +
+  '    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;\n' +
+  '    padding: 5px 11px; border-radius: 8px;\n' +
   '  }\n' +
   '  .hero {\n' +
-  '    display: block; text-decoration: none; color: #fff;\n' +
-  '    background: linear-gradient(150deg, var(--green-hero) 0%, var(--green-dark) 55%, var(--green-deep) 100%);\n' +
-  '    border-radius: 24px; padding: 24px;\n' +
-  '    box-shadow: 0 12px 32px rgba(0, 122, 54, 0.28);\n' +
+  '    display: block; text-decoration: none; color: var(--text);\n' +
+  '    background: var(--card);\n' +
+  '    background-image: radial-gradient(120% 90% at 90% -20%, var(--green-tint), transparent 60%);\n' +
+  '    border: 1px solid var(--hairline); border-radius: 20px; padding: 28px 24px;\n' +
+  '    box-shadow: 0 1px 2px rgba(0,0,0,0.04);\n' +
   '    position: relative; overflow: hidden;\n' +
-  '    transition: transform 200ms ease;\n' +
+  '    transition: border-color 200ms ease;\n' +
   '    animation: fadeUp 400ms ease both;\n' +
   '  }\n' +
-  '  .hero::after {\n' +
-  '    content: ""; position: absolute; inset: 0;\n' +
-  '    background: radial-gradient(120% 80% at 85% -10%, rgba(255,255,255,0.22), transparent 55%);\n' +
-  '    pointer-events: none;\n' +
-  '  }\n' +
-  '  @media (hover: hover) { .hero:hover { transform: scale(1.01); } }\n' +
-  '  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }\n' +
-  '  .hero h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 6px; line-height: 1.12; }\n' +
-  '  .hero p { font-size: 15px; line-height: 1.45; margin: 0; opacity: 0.92; max-width: 50ch; }\n' +
+  '  @media (hover: hover) { .hero:hover { border-color: var(--green); } }\n' +
+  '  .hero .kicker { font-family: var(--font-mono); color: var(--green-dark); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }\n' +
+  '  .hero h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 10px 0 8px; line-height: 1.1; }\n' +
+  '  .hero p { font-size: 15px; line-height: 1.5; margin: 0; color: var(--muted); max-width: 52ch; }\n' +
   '  .hero .bar { display: flex; align-items: center; gap: 12px; margin-top: 22px; }\n' +
   '  .hero .mini-icon {\n' +
   '    width: 48px; height: 48px; border-radius: 12px;\n' +
-  '    background: rgba(255,255,255,0.18);\n' +
+  '    background: var(--green-tint); color: var(--green-dark);\n' +
   '    display: flex; align-items: center; justify-content: center;\n' +
-  '    font-weight: 800; font-size: 15px; letter-spacing: -0.01em;\n' +
+  '    font-weight: 700; font-size: 15px; letter-spacing: -0.01em;\n' +
   '  }\n' +
   '  .hero .bar .meta { flex: 1; min-width: 0; }\n' +
   '  .hero .bar .meta .n { font-size: 14px; font-weight: 700; }\n' +
-  '  .hero .bar .meta .d { font-size: 12px; opacity: 0.9; }\n' +
+  '  .hero .bar .meta .d { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }\n' +
   '  .hero .get {\n' +
-  '    background: #fff; color: var(--green-dark);\n' +
-  '    font-size: 14px; font-weight: 700;\n' +
-  '    padding: 8px 22px; border-radius: 99px;\n' +
+  '    background: var(--green); color: #fff;\n' +
+  '    font-size: 14px; font-weight: 600;\n' +
+  '    padding: 10px 22px; border-radius: 10px;\n' +
   '  }\n' +
   '  .section-head {\n' +
   '    display: flex; align-items: baseline; justify-content: space-between;\n' +
@@ -246,9 +248,9 @@ const html =
   '  .section-head h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }\n' +
   '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green-dark); }\n' +
   '  .list {\n' +
-  '    background: var(--card); border-radius: 20px;\n' +
+  '    background: var(--card); border: 1px solid var(--hairline); border-radius: 16px;\n' +
   '    padding: 6px 16px;\n' +
-  '    box-shadow: 0 1px 3px rgba(0,0,0,0.05);\n' +
+  '    box-shadow: 0 1px 2px rgba(0,0,0,0.04);\n' +
   '    animation: fadeUp 400ms ease both;\n' +
   '  }\n' +
   '  .row {\n' +
@@ -269,11 +271,12 @@ const html =
   '    font-size: 13px; color: var(--muted); margin: 3px 0 0; line-height: 1.35;\n' +
   '    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;\n' +
   '  }\n' +
-  '  .row .cat { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }\n' +
+  '  .row .cat { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-dark); margin-top: 4px; }\n' +
   '  .open {\n' +
   '    background: var(--green-tint); color: var(--green-dark);\n' +
-  '    font-size: 14px; font-weight: 700;\n' +
-  '    padding: 7px 18px; border-radius: 99px; flex-shrink: 0;\n' +
+  '    font-family: var(--font-mono);\n' +
+  '    font-size: 12px; font-weight: 600;\n' +
+  '    padding: 8px 14px; border-radius: 8px; flex-shrink: 0;\n' +
   '  }\n' +
   '  .g1 { background: linear-gradient(135deg, #00B450, #00803A); }\n' +
   '  .g2 { background: linear-gradient(135deg, #2BC06A, #009A44); }\n' +
