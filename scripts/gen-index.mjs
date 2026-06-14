@@ -204,6 +204,13 @@ const html =
   '    display: flex; align-items: center; justify-content: center;\n' +
   '    flex-shrink: 0; text-decoration: none;\n' +
   '  }\n' +
+  '  .site-nav { display: flex; align-items: center; gap: 12px; }\n' +
+  '  .site-link {\n' +
+  '    font-family: var(--font-mono); font-size: 12px; font-weight: 600;\n' +
+  '    letter-spacing: 0.04em; color: var(--green-dark); text-decoration: none;\n' +
+  '  }\n' +
+  '  .site-link:hover { text-decoration: underline; }\n' +
+  '  @media (max-width: 460px) { .site-link { display: none; } }\n' +
   '  .lede { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 10px 0 0; max-width: 56ch; }\n' +
   '  .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }\n' +
   '  .chip {\n' +
@@ -320,7 +327,10 @@ const html =
   '    <p class="eyebrow" id="eyebrow">One day. One app.</p>\n' +
   '    <header class="masthead">\n' +
   '      <h1>lab<span class="dot">.</span></h1>\n' +
-  '      <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla">SS</a>\n' +
+  '      <div class="site-nav">\n' +
+  '        <a class="site-link" href="https://simonsangla.com">simonsangla.com</a>\n' +
+  '        <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla - main site">SS</a>\n' +
+  '      </div>\n' +
   '    </header>\n' +
   '    <p class="lede">One day. One app. No excuses. Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
   '    <div class="stats">\n' +
