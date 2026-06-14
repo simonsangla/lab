@@ -69,15 +69,26 @@
   .per-sec { font-size: 13px; }
   .duration { font-size: 14px; }
   .buttons { display: flex; gap: 12px; justify-content: center; }
-  button {
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--accent); font-family: var(--font-display); font-size: 15px;
-    border-radius: 6px; padding: 10px 20px; cursor: pointer;
+  /* file:// fallbacks: single-class specificity so the shared .lab-btn /
+     .lab-btn-quiet (loaded later in /assets/lab-theme.css) win on live. */
+  .btn-fallback {
     min-height: 44px;
+    background: var(--accent); color: var(--bg);
+    border: none; font-family: var(--font-display); font-size: 15px; font-weight: 700;
+    border-radius: 99px; padding: 10px 20px; cursor: pointer;
+    transition: background 180ms ease;
+  }
+  .btn-fallback:hover, .btn-fallback:active { background: var(--green); }
+  .btn-quiet-fallback {
+    min-height: 44px;
+    background: var(--surface); color: var(--accent);
+    border: 1px solid var(--border); font-family: var(--font-display); font-size: 15px; font-weight: 700;
+    border-radius: 99px; padding: 9px 19px; cursor: pointer;
     transition: background 180ms ease, border-color 180ms ease;
   }
-  button:hover, button:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn-quiet-fallback:hover, .btn-quiet-fallback:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  /* file:// fallback: single-class specificity so shared .lab-chip wins on live. */
   .pill {
     background: var(--surface); border: 1px solid var(--border);
     color: var(--muted); font-family: var(--font-mono); font-size: 11px;
@@ -113,19 +124,19 @@
         </select>
       </div>
     </div>
-    <div class="hero">
+    <div class="hero lab-card">
       <div class="cost" id="cost">$0.000000</div>
       <div class="per-sec" id="perSec">per second: $0.003333</div>
       <div class="duration" id="duration">00:00:00</div>
     </div>
     <div class="buttons">
-      <button id="toggle" type="button">&#9654; Start</button>
-      <button id="reset" type="button">Reset</button>
+      <button class="btn-fallback lab-btn" id="toggle" type="button">&#9654; Start</button>
+      <button class="btn-quiet-fallback lab-btn-quiet" id="reset" type="button">Reset</button>
     </div>
     <div class="stats">
-      <span class="pill" id="ph">Credits/hr: 4</span>
-      <span class="pill" id="pm">Credits/min: 0.0667</span>
-      <span class="pill" id="ps">Credits/sec: 0.001111</span>
+      <span class="pill lab-chip" id="ph">Credits/hr: 4</span>
+      <span class="pill lab-chip" id="pm">Credits/min: 0.0667</span>
+      <span class="pill lab-chip" id="ps">Credits/sec: 0.001111</span>
     </div>
   </div>
 <script>

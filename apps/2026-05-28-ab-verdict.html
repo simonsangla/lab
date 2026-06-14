@@ -42,11 +42,14 @@
   .wrap { max-width: 580px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
   header h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--accent); margin: 0; }
   header p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  /* file:// fallback for .lab-card (loaded later in /assets/lab-theme.css,
+     which wins on live via the single-class .lab-card rule). */
   .grid {
     display: grid; grid-template-columns: max-content 1fr 1fr; gap: 10px 14px;
     align-items: center;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px;
+    border-radius: 20px; padding: 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
   .col-head {
     font-family: var(--font-mono); font-size: 12px; color: var(--muted);
@@ -80,6 +83,8 @@
   .verdict.kill { background: var(--red); color: #ffffff; }
   .verdict.wait { background: var(--yellow); color: var(--surface); }
   .stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  /* file:// fallback for .lab-chip; single-class specificity (0,1,0) matches
+     the shared component so /assets/lab-theme.css wins on live. */
   .pill {
     background: var(--surface); border: 1px solid var(--border);
     color: var(--muted); font-family: var(--font-mono); font-size: 12px;
@@ -93,6 +98,14 @@
   .empty {
     color: var(--muted); font-style: italic; text-align: center;
     font-size: 14px;
+  }
+  .empty .hint {
+    display: inline-block; margin-top: 10px; font-style: normal;
+    font-family: var(--font-mono); font-size: 12px; opacity: 0.75;
+  }
+  input[type=number] { will-change: border-color; }
+  @media (prefers-reduced-motion: reduce) {
+    input[type=number] { transition: none; }
   }
   @media (min-width: 640px) {
     header h1 { font-size: 28px; }
@@ -108,7 +121,7 @@
       <h1>A/B Verdict</h1>
       <p>Statistical significance in seconds.</p>
     </header>
-    <div class="grid">
+    <div class="grid lab-card">
       <span></span>
       <span class="col-head">Control</span>
       <span class="col-head">Variant</span>
@@ -124,7 +137,7 @@
       <div id="warning" class="warning" style="display:none"></div>
     </div>
     <div id="out">
-      <p class="empty">Enter visitors and conversions to compute.</p>
+      <p class="empty">Enter visitors and conversions to compute.<br><span class="hint">Try control 50/1000 vs variant 70/1050.</span></p>
     </div>
   </div>
 <script>
@@ -228,9 +241,9 @@
 
     var stats =
       '<div class="stats">' +
-        '<span class="pill">p-value: ' + r.pValue.toFixed(4) + '</span>' +
-        '<span class="pill">Z-score: ' + r.z.toFixed(2) + '</span>' +
-        '<span class="pill">95% CI: [' + fmtDelta(r.ciLow) + ', ' + fmtDelta(r.ciHigh) + ']</span>' +
+        '<span class="pill lab-chip">p-value: ' + r.pValue.toFixed(4) + '</span>' +
+        '<span class="pill lab-chip">Z-score: ' + r.z.toFixed(2) + '</span>' +
+        '<span class="pill lab-chip">95% CI: [' + fmtDelta(r.ciLow) + ', ' + fmtDelta(r.ciHigh) + ']</span>' +
       '</div>';
 
     var interpText;
