@@ -1,6 +1,6 @@
 ---
 name: lab-brand-polish
-description: Use when polishing, restyling, or brand-checking apps in the lab PWA (simonsangla/lab) - unifying an app to the shared App-Store light + Basque-green identity, adopting the reusable .lab-* components, or auditing an app for brand drift. Triggers on "polish the lab app", "make it on-brand", "brand unity", "use the shared component", "lab-theme", "lab-nav", or before shipping any new lab app.
+description: Use when polishing, restyling, or brand-checking apps in the lab PWA (simonsangla/lab) - unifying an app to the shared white-editorial identity (ported from simonsangla.com: IBM Plex Sans/Mono, mono UPPERCASE green kicker labels, Basque green #009A44 accent), adopting the reusable .lab-* components, or auditing an app for brand drift. Triggers on "polish the lab app", "make it on-brand", "brand unity", "apply simonsangla.com design", "use the shared component", "lab-theme", "lab-nav", or before shipping any new lab app.
 ---
 
 # Lab Brand Polish
@@ -11,7 +11,7 @@ each app's **character**.
 
 ## Source of truth (read these first)
 
-- `assets/lab-theme.css` - tokens + reusable components (`.lab-btn`, `.lab-btn-quiet`, `.lab-card`, `.lab-chip`, status scale, `.lab-nav`). Linked AFTER each app's inline `<style>`; it OVERRIDES the inline dark `:root` to the live App-Store light + Basque-green (`#009A44`) identity.
+- `assets/lab-theme.css` - tokens + reusable components (`.lab-kicker`, `.lab-btn`, `.lab-btn-quiet`, `.lab-card`, `.lab-chip`, status scale, `.lab-nav`) + the IBM Plex font `@import`. Linked AFTER each app's inline `<style>`; it OVERRIDES the inline dark `:root` to the live identity: **white editorial surface, IBM Plex Sans (display/body) + IBM Plex Mono (labels), mono UPPERCASE green kicker labels, Basque green `#009A44` accent, ~10px buttons, hairline-bordered cards** (ported from simonsangla.com).
 - `assets/lab-nav.js` - injects the fixed top bar; needs an inline `<a class="back" href="/">` and a top-level `<h1>`.
 - `AGENTS.md` / `REUSE.md` - shipping conventions + reuse map.
 
@@ -21,17 +21,19 @@ each app's **character**.
 2. Keeps its inline dark `:root` tokens as the standalone `file://` fallback - do NOT remove them.
 3. Has `<a class="back" href="/">` + a top-level `<h1>` (the nav bar hooks both).
 4. Routes ALL colors through shared tokens so the override reaches them:
-   `--bg --surface --border --accent(green) --text --muted --green --yellow --orange --red`.
-   Any raw hex that bypasses a token stays off-brand on the live light theme.
+   `--bg(white) --surface --border --accent(green) --text --muted --green --yellow --orange --red`.
+   Any raw hex that bypasses a token stays off-brand on the live theme.
+5. Type comes from the shared tokens too: `--font-display` (IBM Plex Sans) for body/headings, `--font-mono` (IBM Plex Mono) for labels/kickers/code. The fonts load via `@import` in lab-theme.css, so apps need no font `<link>` of their own on live.
 
 ## Reusable components (use instead of bespoke)
 
 | Need | Class | Notes |
 |---|---|---|
-| Primary action | `.lab-btn` | solid green pill, 44px min touch target |
-| Secondary action | `.lab-btn-quiet` | green-tint pill, 44px |
-| Surface / panel | `.lab-card` | white, 20px radius, soft shadow |
-| Tag / pill | `.lab-chip` | green-tint pill |
+| Section / label | `.lab-kicker` | mono UPPERCASE green label - the simonsangla.com signature; use for eyebrows, section headers, category tags |
+| Primary action | `.lab-btn` | solid green, ~10px radius, 44px min touch target |
+| Secondary action | `.lab-btn-quiet` | white + hairline border + dark text (the "See offers" style), 44px |
+| Surface / panel | `.lab-card` | white, hairline border, 16px radius, minimal shadow |
+| Tag / pill | `.lab-chip` | mono green-tint pill |
 | Status badge / heat | `.lab-good` `.lab-warn` `.lab-mid` `.lab-bad` | green / yellow / amber / red, white text |
 
 Leave genuinely-semantic NON-CTA elements alone (status verdict displays,
