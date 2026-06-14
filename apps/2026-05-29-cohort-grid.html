@@ -87,15 +87,18 @@
     font-family: var(--font-mono); font-size: 12px; color: var(--muted);
   }
   .stat strong { color: var(--text); font-weight: 400; }
-  .download {
+  /* file:// fallback: single-class specificity (0,1,0) matches .lab-btn so the
+     shared component (loaded later in /assets/lab-theme.css) wins on live. */
+  .dl-fallback {
     align-self: center;
     background: var(--surface); border: 1px solid var(--accent);
     color: var(--accent); font-family: var(--font-display); font-size: 14px;
-    border-radius: 6px; padding: 10px 22px; cursor: pointer;
+    font-weight: 600;
+    border-radius: 99px; padding: 10px 22px; cursor: pointer;
     min-height: 44px;
     transition: background 180ms ease, color 180ms ease;
   }
-  .download:hover, .download:active { background: var(--accent); color: var(--bg); }
+  .dl-fallback:hover, .dl-fallback:active { background: var(--accent); color: var(--bg); }
   .tooltip {
     position: fixed; z-index: 100;
     background: var(--surface); border: 1px solid var(--border);
@@ -106,6 +109,11 @@
     white-space: nowrap;
   }
   .tooltip.show { opacity: 1; }
+  .cell.value { animation: cell-in 220ms ease both; }
+  @keyframes cell-in { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .cell.value, textarea, .tooltip { animation: none; transition: none; }
+  }
   @media (max-width: 480px) {
     .cell { min-width: 42px; font-size: 10px; }
     .cell.label { width: 70px; min-width: 70px; }
@@ -132,7 +140,7 @@
       <div id="heatmap" class="heatmap"></div>
     </div>
     <div id="stats" class="stats"></div>
-    <button id="dl" class="download" type="button" style="display:none">Download PNG</button>
+    <button id="dl" class="dl-fallback lab-btn" type="button" style="display:none">Download PNG</button>
   </div>
   <div id="tooltip" class="tooltip"></div>
 <script>
@@ -193,26 +201,65 @@
     return out;
   }
 
+  // Brand-token reader: a <canvas>/lerp can't use CSS vars, so read the live
+  // computed value once and fall back to the original hex on file:// / smoke
+  // (where getComputedStyle is absent or returns '').
+  function token(name, fallbackHex) {
+    try {
+      if (typeof getComputedStyle === 'function') {
+        var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        if (v) return v;
+      }
+    } catch (e) {}
+    return fallbackHex;
+  }
+  function parseColor(str, fallback) {
+    var s = String(str).trim();
+    var m = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (m) {
+      var hex = m[1];
+      if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
+    }
+    var rgb = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (rgb) return { r: +rgb[1], g: +rgb[2], b: +rgb[3] };
+    return fallback;
+  }
+  // Ramp endpoints driven from brand tokens so the grid reads green-on-brand on
+  // live; the hex args are the dark-theme file:// fallback. Character preserved:
+  // low retention -> red, mid -> amber, high -> brand green.
+  var RAMP_LOW = parseColor(token('--red', '#ef4444'), { r: 0xef, g: 0x44, b: 0x44 });
+  var RAMP_MID = parseColor(token('--yellow', '#facc15'), { r: 0xfa, g: 0xcc, b: 0x15 });
+  var RAMP_HIGH = parseColor(token('--green', '#22c55e'), { r: 0x22, g: 0xc5, b: 0x5e });
   function lerp(a, b, t) { return a + (b - a) * t; }
   function colorFor(pct) {
     var p = Math.max(0, Math.min(1, pct));
-    var r, g, b;
-    if (p >= 0.5) {
-      var t = (p - 0.5) / 0.5;
-      r = lerp(0xfa, 0x22, t);
-      g = lerp(0xcc, 0xc5, t);
-      b = lerp(0x15, 0x5e, t);
-    } else {
-      var t2 = p / 0.5;
-      r = lerp(0xef, 0xfa, t2);
-      g = lerp(0x44, 0xcc, t2);
-      b = lerp(0x44, 0x15, t2);
-    }
-    return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+    var lo, hi, t;
+    if (p >= 0.5) { lo = RAMP_MID; hi = RAMP_HIGH; t = (p - 0.5) / 0.5; }
+    else { lo = RAMP_LOW; hi = RAMP_MID; t = p / 0.5; }
+    return {
+      r: Math.round(lerp(lo.r, hi.r, t)),
+      g: Math.round(lerp(lo.g, hi.g, t)),
+      b: Math.round(lerp(lo.b, hi.b, t))
+    };
   }
   function rgbToCss(c) { return 'rgb(' + c.r + ',' + c.g + ',' + c.b + ')'; }
+  // Relative luminance (sRGB-linear, WCAG) so the text light/dark threshold
+  // stays AA-legible on the re-tuned brand ramp.
   function luminance(c) {
-    return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+    var f = function (v) {
+      v = v / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  }
+  // contrast-ratio pick: dark ink vs white, whichever clears AA better
+  function inkFor(c) {
+    var L = luminance(c);
+    var darkInk = parseColor(token('--text', '#0a0a0a'), { r: 0x0a, g: 0x0a, b: 0x0a });
+    var crDark = (Math.max(L, luminance(darkInk)) + 0.05) / (Math.min(L, luminance(darkInk)) + 0.05);
+    var crWhite = (1.05) / (L + 0.05);
+    return crWhite >= crDark ? '#ffffff' : rgbToCss(darkInk);
   }
 
   function render(parsed) {
@@ -253,7 +300,7 @@
         cell.className = 'cell value';
         var col = colorFor(pct);
         cell.style.background = rgbToCss(col);
-        cell.style.color = luminance(col) > 0.55 ? '#0a0a0a' : '#ffffff';
+        cell.style.color = inkFor(col);
         cell.textContent = (pct * 100).toFixed(0) + '%';
         cell.dataset.tip = row.label + ' &middot; ' + (headers[idx + 1] || ('Wk ' + idx)) + ' &middot; ' + (pct * 100).toFixed(2) + '%';
         cell.addEventListener('mouseenter', showTip);
@@ -275,8 +322,8 @@
     }
     statsEl.innerHTML =
       '<span class="stat">Avg Week 1 retention: <strong>' + (avg * 100).toFixed(1) + '%</strong></span>' +
-      '<span class="stat">Best cohort: <strong>' + pctRows[bestIdx].label + '</strong></span>' +
-      '<span class="stat">Worst cohort: <strong>' + pctRows[worstIdx].label + '</strong></span>';
+      '<span class="stat lab-chip">Best: ' + pctRows[bestIdx].label + '</span>' +
+      '<span class="stat lab-chip">Worst: ' + pctRows[worstIdx].label + '</span>';
 
     dlEl.style.display = 'inline-flex';
   }
@@ -339,11 +386,15 @@
     canvas.width = w * 2;
     canvas.height = h * 2;
     var ctx = canvas.getContext('2d');
+    // Canvas can't read CSS vars -- pull the live brand values once so the PNG
+    // export matches the on-live light identity (fall back to dark-theme hex).
+    var bgHex = token('--surface', '#ffffff');
+    var mutedHex = token('--muted', '#6e6e73');
     ctx.scale(2, 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = bgHex;
     ctx.fillRect(0, 0, w, h);
     ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#6e6e73';
+    ctx.fillStyle = mutedHex;
     ctx.textBaseline = 'middle';
     for (var c = 0; c < cols; c++) {
       var hx = 20 + labelW + c * cellW + cellW / 2;
@@ -354,7 +405,7 @@
     for (var r = 0; r < pctRows.length; r++) {
       var row = pctRows[r];
       var ry = 20 + headerH + r * cellH;
-      ctx.fillStyle = '#6e6e73';
+      ctx.fillStyle = mutedHex;
       ctx.textAlign = 'right';
       ctx.fillText(row.label, 20 + labelW - 12, ry + cellH / 2);
       for (var cc = 0; cc < row.pcts.length; cc++) {
@@ -362,7 +413,7 @@
         var col = colorFor(pct);
         ctx.fillStyle = rgbToCss(col);
         ctx.fillRect(20 + labelW + cc * cellW + 2, ry + 2, cellW - 4, cellH - 4);
-        ctx.fillStyle = luminance(col) > 0.55 ? '#0a0a0a' : '#ffffff';
+        ctx.fillStyle = inkFor(col);
         ctx.textAlign = 'center';
         ctx.fillText((pct * 100).toFixed(0) + '%', 20 + labelW + cc * cellW + cellW / 2, ry + cellH / 2);
       }

@@ -65,13 +65,13 @@
     transition: border-color 180ms ease;
   }
   textarea:focus { border-color: var(--accent); }
-  .results { margin-top: 24px; }
+  .results { margin-top: 24px; padding: 20px 18px; }
   .tier-badge {
     display: block; text-align: center;
     font-family: var(--font-display); font-weight: 700; font-size: 18px;
     padding: 12px 24px; border-radius: 99px;
     margin: 0 auto 20px; max-width: 220px;
-    color: #0a0a0a; letter-spacing: 1px;
+    color: #fff; letter-spacing: 1px;
   }
   .dim { margin-bottom: 12px; }
   .dim-row {
@@ -80,7 +80,7 @@
     color: var(--muted); margin-bottom: 4px;
   }
   .dim-row .count { color: var(--accent); font-weight: 700; }
-  .bar { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+  .bar { height: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
   .bar-fill {
     height: 100%; width: 0; border-radius: 3px;
     transition: width 300ms ease, background-color 300ms ease;
@@ -91,19 +91,23 @@
     font-style: italic; text-align: center;
     line-height: 1.5;
   }
-  .copy-btn {
-    display: block; margin: 20px auto 0;
+  .copy-wrap { text-align: center; margin-top: 20px; }
+  /* file:// fallback: matches .lab-btn-quiet's single-class specificity so the
+     shared component (loaded later in /assets/lab-theme.css) wins on live. */
+  .copy-fallback {
     min-height: 44px;
     background: transparent; color: var(--accent);
     border: 1px solid var(--accent); padding: 8px 20px;
-    font-family: var(--font-display); font-size: 15px;
+    font-family: var(--font-display); font-size: 15px; font-weight: 600;
     border-radius: 99px; cursor: pointer;
-    transition: background 180ms ease, color 180ms ease;
   }
-  .copy-btn:hover, .copy-btn:active { background: var(--accent); color: var(--bg); }
   .empty-state {
     text-align: center; color: var(--muted);
     margin-top: 32px; font-size: 14px;
+  }
+  .empty-state .hint {
+    display: inline-block; margin-top: 10px;
+    font-family: var(--font-mono); font-size: 12px; opacity: 0.75;
   }
   @media (prefers-reduced-motion: reduce) {
     .bar-fill, textarea, .copy-btn { transition: none; }
@@ -132,7 +136,7 @@
       autocapitalize="off"
       spellcheck="false"></textarea>
     <div id="out">
-      <p class="empty-state">Paste a query above to analyse it.</p>
+      <p class="empty-state">Paste a query above to analyse it.<br><span class="hint">Try: SELECT * FROM orders JOIN customers USING (id)</span></p>
     </div>
   </div>
 <script>
@@ -153,17 +157,18 @@
   }
 
   function tierFor(total) {
-    if (total === 0) return { name: 'SIMPLE', color: '#2BC06A' };
-    if (total <= 4) return { name: 'MODERATE', color: '#facc15' };
-    if (total <= 9) return { name: 'COMPLEX', color: '#f97316' };
-    return { name: 'BEAST', color: '#ef4444' };
+    // Brand tokens drive the live light theme; the hex is the file:// fallback.
+    if (total === 0) return { name: 'SIMPLE', color: 'var(--green, #2BC06A)' };
+    if (total <= 4) return { name: 'MODERATE', color: 'var(--yellow, #facc15)' };
+    if (total <= 9) return { name: 'COMPLEX', color: 'var(--orange, #f97316)' };
+    return { name: 'BEAST', color: 'var(--red, #ef4444)' };
   }
 
   function barColor(n) {
-    if (n === 0) return '#29d8c7';
-    if (n <= 2) return '#84cc16';
-    if (n <= 4) return '#facc15';
-    return '#ef4444';
+    if (n === 0) return 'var(--green, #29d8c7)';
+    if (n <= 2) return 'var(--green, #84cc16)';
+    if (n <= 4) return 'var(--yellow, #facc15)';
+    return 'var(--red, #ef4444)';
   }
 
   function diagnose(tier, s, total) {
@@ -213,11 +218,11 @@
       );
     }).join('');
     out.innerHTML =
-      '<div class="results">' +
+      '<div class="results lab-card">' +
         '<div class="tier-badge" style="background:' + t.color + '">' + t.name + '</div>' +
         bars +
         '<p class="diagnosis">' + esc(d) + '</p>' +
-        '<button class="copy-btn" id="copy" type="button">Copy summary</button>' +
+        '<div class="copy-wrap"><button class="copy-fallback lab-btn-quiet" id="copy" type="button">Copy summary</button></div>' +
       '</div>';
     var btn = document.getElementById('copy');
     btn.addEventListener('click', function () {

@@ -68,6 +68,8 @@
     text-align: center;
   }
   input[type=number]:focus, .stepper input:focus { border-color: var(--accent); }
+  /* file:// fallback for .lab-card (single class, 0,1,0) so the shared
+     component in /assets/lab-theme.css wins on live. */
   .hero {
     text-align: center;
     background: var(--surface); border: 1px solid var(--border);
@@ -84,14 +86,24 @@
   .per-min { font-size: 14px; margin-top: 8px; }
   .duration { font-size: 13px; margin-top: 4px; }
   .buttons { display: flex; gap: 12px; justify-content: center; }
-  .btn {
+  /* file:// fallbacks for .lab-btn / .lab-btn-quiet (single class each, 0,1,0)
+     so the shared components in /assets/lab-theme.css win on live. */
+  .btn-fallback {
+    min-height: 44px;
     background: var(--surface); border: 1px solid var(--border);
     color: var(--accent); font-family: var(--font-display); font-size: 15px;
-    border-radius: 6px; padding: 10px 22px; cursor: pointer;
-    min-height: 44px;
+    border-radius: 99px; padding: 10px 22px; cursor: pointer;
     transition: background 180ms ease, border-color 180ms ease;
   }
-  .btn:hover, .btn:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn-fallback:hover, .btn-fallback:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn-fallback-quiet {
+    min-height: 44px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--accent); font-family: var(--font-display); font-size: 15px;
+    border-radius: 99px; padding: 10px 22px; cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .btn-fallback-quiet:hover, .btn-fallback-quiet:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .milestone {
     text-align: center;
     font-family: var(--font-display); font-weight: 600; font-size: 15px;
@@ -129,14 +141,14 @@
         <input id="rate" type="number" min="1" value="85" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
     </div>
-    <div class="hero">
+    <div class="hero lab-card">
       <div class="cost" id="cost">$0.00</div>
       <div class="per-min" id="perMin">burning $0.00 / minute</div>
       <div class="duration" id="duration">00:00:00</div>
     </div>
     <div class="buttons">
-      <button class="btn" id="toggle" type="button">&#9654; Start</button>
-      <button class="btn" id="reset" type="button">Reset</button>
+      <button class="btn-fallback lab-btn" id="toggle" type="button">&#9654; Start</button>
+      <button class="btn-fallback-quiet lab-btn-quiet" id="reset" type="button">Reset</button>
     </div>
     <div class="milestone" id="milestone"></div>
   </div>
