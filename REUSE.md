@@ -18,8 +18,8 @@ gates, and screenshot verification — not new architecture.
 | `index.html` | Generated landing/gallery | **KEEP (generated)** — never hand-edit; fixes go in gen-index.mjs |
 | `scripts/gen-index.mjs` | Meta-tags → gallery generator, stdlib, idempotent | **KEEP / IMPROVE** — landing P0/P1 fixes land here; harden `parseMeta` quote handling so the spec contract can drop its no-quotes rule |
 | `scripts/gen-icons.mjs` | Deterministic stdlib PNG icon generator | **IMPROVE** — artwork still the placeholder deferred in PR #1 |
-| `scripts/scan-sessions.mjs` | Session-log scanner feeding the Chat Triage backlog | **KEEP** — factory intake |
-| `.claude/skills/triage-chats/` | Skill: scan → classify backlog/WIP → publish feed (privacy gate) | **KEEP** — factory intake; template for further skills |
+| ~~`scripts/scan-repos.mjs`, `scripts/scan-sessions.mjs`~~ | Repo/session scanners that built the Chat Triage feed | **REMOVED** — regenerated `data/chat-triage.json` (real internal state); deleted with the app in PR #15 follow-up |
+| ~~`.claude/skills/triage-chats/`~~ | Skill orchestrating scan → publish `data/chat-triage.json` → deploy | **REMOVED** — public one-command re-leak procedure for the removed Chat Triage feed |
 | `.github/workflows/gen-index.yml` | Auto-regen index on push to main, `[skip ci]` commit | **KEEP** — only CI; the factory's verification Action would sit beside it |
 | `vercel.json` / Vercel project | Zero-build static deploy, PR previews, prod on main | **KEEP** — deployment is solved |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA plumbing; network-first docs, cache-first static | **KEEP** — note: `CACHE='lab-v1'` never rotates (only bites immutable assets) |
