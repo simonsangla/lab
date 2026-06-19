@@ -352,12 +352,12 @@ const html =
   (since ? '      <span class="chip">since ' + escapeHtml(formatDate(since)) + '</span>\n' : '') +
   '    </div>\n' +
   body + '\n' +
-  '    <a class="cta" href="mailto:simonsangla@gmail.com">\n' +
+  '    <a class="cta" href="apps/2026-06-19-freelance-portfolio.html">\n' +
   '      <div>\n' +
   '        <p class="t">Work with me</p>\n' +
-  '        <p class="s">Snowflake analytics, shipped at lab speed.</p>\n' +
+  '        <p class="s">Snowflake analytics &amp; data tools, shipped at lab speed.</p>\n' +
   '      </div>\n' +
-  '      <span class="btn">Get in touch</span>\n' +
+  '      <span class="btn">See services</span>\n' +
   '    </a>\n' +
   '    <footer>\n' +
   '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant<br>\n' +
