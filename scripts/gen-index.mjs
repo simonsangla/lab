@@ -52,9 +52,20 @@ const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
   .sort((a, b) => b.localeCompare(a));
 
-const apps = files.map((filename) => {
-  const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
-  const date = filename.slice(0, 10);
+// Unlisted apps opt out of the gallery with <meta name="app-visibility" content="private">.
+// The file still deploys (reachable by direct URL); it's just excluded from the index.
+function isPrivate(html) {
+  return /<meta\s+name=["']app-visibility["']\s+content=["']private["']/i.test(html);
+}
+
+const apps = files
+  .map((filename) => {
+    const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
+    return { filename, raw };
+  })
+  .filter(({ raw }) => !isPrivate(raw))
+  .map(({ filename, raw }) => {
+    const date = filename.slice(0, 10);
   const stem = filename.replace(/\.html$/i, '');
   const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
   const fallbackName = titleCase(rest.replace(/-/g, ' '));
