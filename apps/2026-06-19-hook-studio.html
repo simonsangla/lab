@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Hook Studio">
+<meta name="app-description" content="Generate scroll-stopping hooks, titles and a script outline for YouTube, TikTok or Reels from one topic.">
+<meta name="app-tags" content="content,video,social,generator">
+<title>Hook Studio &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hook Studio">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .out { display: flex; flex-direction: column; gap: 22px; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .controls .full { grid-column: 1 / -1; }
+  @media (max-width: 520px) { .controls { grid-template-columns: 1fr; } }
+  .seg { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .seg button { flex: 1; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; background: var(--surface); color: var(--muted); border: 0; border-right: 1px solid var(--border); padding: 10px 6px; cursor: pointer; }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--lab-green-tint); color: var(--lab-green-text); font-weight: 600; }
+  .section-h { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+  .hook-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .hook-card.top { border-color: var(--lab-green); box-shadow: 0 0 0 1px var(--lab-green) inset; }
+  .hook-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .hook-frame { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .hook-text { font-size: 16px; font-weight: 600; line-height: 1.35; margin: 0; }
+  .hook-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .scorebar { flex: 1; min-width: 100px; height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .scorebar > i { display: block; height: 100%; }
+  .outline { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .seg-row { display: flex; flex-direction: column; gap: 4px; }
+  .seg-row .lbl { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .seg-row .lbl .name { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--lab-green-text); }
+  .seg-row .lbl .rt { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .seg-row p { margin: 0; font-size: 14px; line-height: 1.45; }
+  .counter { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .counter.warn { color: var(--red); }
+  .titles { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .titles li { font-size: 14px; line-height: 1.4; }
+  .titles ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+  .total-rt { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 0; }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Hook Studio</p>
+      <h1>Hook Studio</h1>
+      <p class="lead">Generate scroll-stopping hooks, titles and a script outline for YouTube, TikTok or Reels from one topic.</p>
+    </header>
+
+    <div class="controls">
+      <div class="full">
+        <label for="topic">Topic</label>
+        <input id="topic" type="text" autocomplete="off" placeholder="e.g. how I saved $5k automating my finances">
+      </div>
+      <div class="full">
+        <label>Platform</label>
+        <div class="seg" id="plat" role="group" aria-label="Platform">
+          <button type="button" data-plat="youtube" aria-pressed="true">YouTube</button>
+          <button type="button" data-plat="tiktok" aria-pressed="false">TikTok</button>
+          <button type="button" data-plat="reels" aria-pressed="false">Reels</button>
+        </div>
+      </div>
+      <div class="full">
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option value="bold">Bold</option>
+          <option value="curious">Curious</option>
+          <option value="practical">Practical</option>
+          <option value="urgent">Urgent</option>
+          <option value="friendly">Friendly</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  var out = document.getElementById('out');
+  var topicEl = document.getElementById('topic');
+  var toneEl = document.getElementById('tone');
+  var platEl = document.getElementById('plat');
+  var timer = null;
+  var platform = 'youtube';
+
+  // ---- platform config: caption cap + ideal hook length (words) + speech words/sec ----
+  var PLATFORMS = {
+    youtube: { name: 'YouTube', cap: 100, idealWords: 8, wps: 2.5, label: 'Title' },
+    tiktok:  { name: 'TikTok',  cap: 150, idealWords: 6, wps: 2.7, label: 'Caption' },
+    reels:   { name: 'Reels',   cap: 125, idealWords: 6, wps: 2.6, label: 'Caption' }
+  };
+
+  // ---- hook-frame bank: {topic} {Topic} {tone} placeholders filled from inputs ----
+  var FRAMES = [
+    { frame: 'curiosity gap', t: 'The truth about {topic} nobody tells you' },
+    { frame: 'curiosity gap', t: "What if everything you know about {topic} is wrong?" },
+    { frame: 'contrarian',    t: 'Stop doing {topic} the way everyone tells you' },
+    { frame: 'contrarian',    t: 'Why {topic} is a waste of time (do this instead)' },
+    { frame: 'number',        t: '3 {tone} {topic} tricks that actually work' },
+    { frame: 'number',        t: 'I tried {topic} for 30 days. Here is what happened' },
+    { frame: 'transformation',t: 'How I went from zero to pro at {topic}' },
+    { frame: 'transformation',t: 'From struggling with {topic} to mastering it in a week' },
+    { frame: 'mistake',       t: 'The biggest {topic} mistake beginners make' },
+    { frame: 'mistake',       t: 'You are doing {topic} wrong (here is the fix)' },
+    { frame: 'question',      t: 'Can you really get good at {topic} fast?' },
+    { frame: 'question',      t: 'Want to master {topic} without the overwhelm?' }
+  ];
+
+  // ---- title bank: longer, SEO-leaning variants ----
+  var TITLES = [
+    'The {tone} guide to {topic} (step by step)',
+    '{Topic}: 5 things I wish I knew sooner',
+    'How {topic} actually works in 2026',
+    'The {topic} playbook nobody shares for free',
+    'Beginner to expert: {topic} explained simply'
+  ];
+
+  // ---- scoring banks ----
+  var POWER = /\b(secret|proven|truth|nobody|never|stop|wrong|biggest|mistake|actually|finally|hidden|exposed|shocking|insane|fast|master|pro|free|now|today|hack|trick|fix|results|guaranteed)\b/gi;
+  var FILLER = /\b(very|really|just|maybe|kind of|sort of|basically|things|stuff|some|good|nice|interesting|thing)\b/gi;
+  var SECOND = /\b(you|your|you're|youre)\b/gi;
+  var CURIOSITY = /\b(what if|truth|secret|nobody|why|how|this|here is|here's|reveal|exposed|wrong|surprising)\b/gi;
+  var NUMBER = /\b\d+\b/;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function wordCount(s) {
+    var m = String(s).trim().match(/\S+/g);
+    return m ? m.length : 0;
+  }
+  function cap1(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function fill(tpl, topic, tone) {
+    var t = topic.trim() || 'your topic';
+    return tpl
+      .replace(/\{topic\}/g, t)
+      .replace(/\{Topic\}/g, cap1(t))
+      .replace(/\{tone\}/g, tone);
+  }
+
+  // ---- deterministic 0-100 hook scorer ----
+  function score(text, plat) {
+    var s = 35; // base
+    var power = (text.match(POWER) || []).length;
+    var filler = (text.match(FILLER) || []).length;
+    var second = (text.match(SECOND) || []).length;
+    var curio = (text.match(CURIOSITY) || []).length;
+    s += clamp(power * 8, 0, 30);                 // power words
+    s += NUMBER.test(text) ? 12 : 0;              // specific number
+    s += clamp(second * 6, 0, 12);                // second-person cues
+    s += clamp(curio * 4, 0, 12);                 // curiosity cues
+    s -= filler * 7;                              // filler penalty
+    // brevity bonus: closeness to the platform's ideal word length
+    var wc = wordCount(text);
+    var diff = Math.abs(wc - plat.idealWords);
+    s += clamp(14 - diff * 3, 0, 14);
+    return clamp(Math.round(s), 0, 100);
+  }
+
+  function scoreColor(n) {
+    if (n >= 75) return 'var(--green, #22c55e)';
+    if (n >= 55) return 'var(--lab-green-text, #2bd07f)';
+    if (n >= 40) return 'var(--yellow, #facc15)';
+    return 'var(--red, #ef4444)';
+  }
+
+  // ---- platform-aware script outline ----
+  function outline(topic, tone, plat) {
+    var t = topic.trim() || 'your topic';
+    var short = plat.name === 'YouTube';
+    return [
+      { name: 'Hook', text: short
+          ? 'Open with the boldest claim about ' + t + ' in one breath, then promise the payoff.'
+          : 'First 2 seconds: state the ' + t + ' promise. Pattern-interrupt, no intro.' },
+      { name: 'Setup', text: short
+          ? 'Set the stakes: why ' + t + ' matters and the mistake most people make.'
+          : 'One sentence of context on ' + t + '. Keep momentum, no fluff.' },
+      { name: 'Payoff', text: 'Deliver the ' + tone + ' insight on ' + t + ' — the concrete, repeatable steps.' },
+      { name: 'CTA', text: short
+          ? 'Ask for a like + subscribe and tee up the next video on ' + t + '.'
+          : 'Tell them to follow and comment one word about ' + t + '.' }
+    ];
+  }
+
+  function readTime(text, wps) {
+    var secs = wordCount(text) / wps;
+    return secs;
+  }
+  function fmtSecs(s) {
+    if (s < 60) return s.toFixed(1) + 's';
+    var m = Math.floor(s / 60);
+    return m + 'm ' + Math.round(s - m * 60) + 's';
+  }
+
+  function copyHandler(btn, text) {
+    btn.addEventListener('click', function () {
+      var done = function () {
+        var old = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        try { document.body.removeChild(ta); } catch (e) {}
+        done();
+      }
+    });
+  }
+
+  function render() {
+    var topic = topicEl.value;
+    var tone = toneEl.value || 'bold';
+    var plat = PLATFORMS[platform] || PLATFORMS.youtube;
+
+    // build + score hooks
+    var hooks = FRAMES.map(function (f) {
+      var text = fill(f.t, topic, tone);
+      return { frame: f.frame, text: text, score: score(text, plat) };
+    });
+    hooks.sort(function (a, b) { return b.score - a.score; });
+    var topScore = hooks.length ? hooks[0].score : 0;
+
+    var hookHtml = hooks.map(function (h, i) {
+      var isTop = h.score === topScore && i === 0;
+      var col = scoreColor(h.score);
+      return (
+        '<div class="lab-card hook-card' + (isTop ? ' top' : '') + '">' +
+          '<div class="hook-head">' +
+            '<span class="hook-frame">' + esc(h.frame) + (isTop ? ' · strongest' : '') + '</span>' +
+            '<span class="lab-chip" style="border-color:' + col + ';color:' + col + '">' + h.score + '</span>' +
+          '</div>' +
+          '<p class="hook-text">' + esc(h.text) + '</p>' +
+          '<div class="hook-foot">' +
+            '<span class="scorebar"><i style="width:' + h.score + '%;background:' + col + '"></i></span>' +
+            '<button type="button" class="lab-btn-quiet" data-copy="' + esc(h.text) + '">Copy</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    // titles
+    var titleHtml = TITLES.map(function (tpl) {
+      return '<li>' + esc(fill(tpl, topic, tone)) + '</li>';
+    }).join('');
+
+    // outline + read time
+    var segs = outline(topic, tone, plat);
+    var totalRt = 0;
+    var outlineHtml = segs.map(function (sg) {
+      var rt = readTime(sg.text, plat.wps);
+      totalRt += rt;
+      return (
+        '<div class="seg-row">' +
+          '<div class="lbl"><span class="name">' + esc(sg.name) + '</span>' +
+            '<span class="rt">~' + fmtSecs(rt) + ' · ' + wordCount(sg.text) + ' words</span></div>' +
+          '<p>' + esc(sg.text) + '</p>' +
+        '</div>'
+      );
+    }).join('');
+
+    // caption counter vs platform cap (seed caption = strongest hook)
+    var caption = hooks.length ? hooks[0].text : '';
+    var len = caption.length;
+    var over = len > plat.cap;
+
+    out.innerHTML =
+      '<div>' +
+        '<p class="section-h">Hooks for ' + esc(plat.name) + ' · ' + esc(tone) + ' tone</p>' +
+        hookHtml +
+      '</div>' +
+      '<div class="lab-card titles">' +
+        '<p class="section-h">' + esc(plat.label) + ' / title ideas</p>' +
+        '<ul>' + titleHtml + '</ul>' +
+        '<div class="counter' + (over ? ' warn' : '') + '" id="capRow">' +
+          '<span id="capText">Caption: <strong id="capLen">' + len + '</strong> / ' + plat.cap + ' chars</span>' +
+          '<span>' + (over ? 'over cap by ' + (len - plat.cap) : 'within ' + plat.name + ' cap') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="lab-card outline">' +
+        '<p class="section-h">Script outline · ' + esc(plat.name) + '</p>' +
+        outlineHtml +
+        '<p class="total-rt">Total spoken time: ~' + fmtSecs(totalRt) + ' at ' + plat.wps + ' words/sec</p>' +
+      '</div>';
+
+    // wire copy buttons
+    var btns = out.querySelectorAll('[data-copy]');
+    for (var i = 0; i < btns.length; i++) {
+      copyHandler(btns[i], btns[i].getAttribute('data-copy'));
+    }
+  }
+
+  function debounced() {
+    clearTimeout(timer);
+    timer = setTimeout(render, 250);
+  }
+
+  topicEl.addEventListener('input', debounced);
+  toneEl.addEventListener('change', render);
+  platEl.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-plat]') : null;
+    if (!b) return;
+    platform = b.getAttribute('data-plat');
+    var all = platEl.querySelectorAll('button[data-plat]');
+    for (var i = 0; i < all.length; i++) {
+      all[i].setAttribute('aria-pressed', all[i] === b ? 'true' : 'false');
+    }
+    render(); // re-score on platform change
+  });
+
+  // ---- seed a default so first render needs no interaction (smoke-safe) ----
+  if (!topicEl.value) topicEl.value = 'growing on YouTube as a beginner';
+  render();
+})();
+</script>
+</body>
+</html>
