@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Idea Engine">
+<meta name="app-description" content="Turn one topic and an audience into a batch of content ideas and briefs — angles, formats and hooks, generated in your browser.">
+<meta name="app-tags" content="content,ideas,marketing,generator">
+<title>Idea Engine &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Idea Engine">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .out { display: flex; flex-direction: column; gap: 12px; }
+  .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .inputs { grid-template-columns: 1fr; } }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .toolbar .count { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-left: auto; }
+  .brief { padding: 16px; display: flex; flex-direction: column; gap: 9px; }
+  .brief .title { font-size: 16px; font-weight: 600; line-height: 1.35; margin: 0; letter-spacing: -0.01em; }
+  .brief .meta { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+  .brief .hook { font-size: 13.5px; color: var(--text); margin: 0; }
+  .brief .hook b, .brief .angle b { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: block; margin-bottom: 2px; }
+  .brief .angle { font-size: 13px; color: var(--muted); margin: 0; }
+  .brief .row { display: flex; justify-content: flex-end; }
+  .brief .copy-one { font-size: 11px; padding: 5px 10px; }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Idea Engine</p>
+      <h1>Idea Engine</h1>
+      <p class="lead">Turn one topic and an audience into a batch of content ideas and briefs — angles, formats and hooks, generated in your browser.</p>
+    </header>
+
+    <div class="inputs">
+      <div>
+        <label for="topic">Topic</label>
+        <input id="topic" type="text" autocomplete="off" spellcheck="false" value="email marketing">
+      </div>
+      <div>
+        <label for="audience">Audience</label>
+        <input id="audience" type="text" autocomplete="off" spellcheck="false" value="indie founders">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="lab-btn" id="shuffle" type="button">Shuffle</button>
+      <button class="lab-btn-quiet" id="copyall" type="button">Copy all (markdown)</button>
+      <span class="count" id="count"></span>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  // ---- embedded template banks (no fetch, no LLM) ----
+  // Frames use {topic}, {Topic} (title-case), {audience}, {n} (a stable number).
+  var FRAMES = [
+    { t: 'The complete guide to {topic}', angle: 'A definitive, soup-to-nuts reference {audience} can bookmark and return to.' },
+    { t: '{n} mistakes {audience} make with {topic}', angle: 'Lead with the pain — name the errors readers half-suspect they are making.' },
+    { t: 'Why most {audience} get {topic} wrong', angle: 'A contrarian take that reframes a common assumption about {topic}.' },
+    { t: '{Topic} in {n} minutes: the fast-start playbook', angle: 'Compress the essentials into a quick win for time-poor {audience}.' },
+    { t: 'How we {verb} {topic} (and what we would change)', angle: 'A first-person build log — show the messy middle, not just the result.' },
+    { t: '{n} {topic} ideas you can ship this week', angle: 'Bias toward action: concrete, low-effort moves for {audience}.' },
+    { t: 'The {topic} stack {audience} actually use in 2026', angle: 'Tools-and-workflow rundown grounded in real practitioner choices.' },
+    { t: 'Stop doing this with {topic}', angle: 'A single sharp anti-pattern, argued hard, then the better alternative.' },
+    { t: '{Topic}, explained for {audience}', angle: 'Translate jargon into the language and goals of your specific reader.' },
+    { t: 'What {n} {audience} taught me about {topic}', angle: 'Pattern-match across many examples to extract a non-obvious lesson.' },
+    { t: 'The hidden cost of ignoring {topic}', angle: 'Quantify the downside of inaction to create urgency for {audience}.' },
+    { t: 'From zero to {topic}: a {audience} roadmap', angle: 'A staged journey with milestones, so beginners see the whole path.' }
+  ];
+
+  var FORMATS = [
+    { name: 'Listicle', hint: 'numbered, skimmable, one idea per point' },
+    { name: 'Case study', hint: 'one example, start-to-finish, with numbers' },
+    { name: 'Teardown', hint: 'pick something real and annotate what works' },
+    { name: 'Checklist', hint: 'a do-this-then-that list readers can run' },
+    { name: 'Thread', hint: 'a punchy social thread, hook-first' },
+    { name: 'Script', hint: 'a short-form video / talking-head script' },
+    { name: 'Deep dive', hint: 'a long, authoritative essay with sections' },
+    { name: 'Q&A', hint: 'frame as the questions your reader is asking' }
+  ];
+
+  var LENSES = [
+    'first 90 days', 'on a tight budget', 'as a solo operator',
+    'at scale', 'without a big team', 'when you are starting from scratch'
+  ];
+
+  var HOOKS = [
+    'Open with the single number that makes {audience} stop scrolling.',
+    'Start with a confession: the {topic} mistake you made first.',
+    'Lead with a bold claim, then spend the piece earning it.',
+    'Drop the reader mid-story — show the moment {topic} broke.',
+    'Ask the uncomfortable question {audience} avoid about {topic}.',
+    'Promise one specific outcome they can get by the end.',
+    'Contrast the myth vs. the reality of {topic} in two lines.',
+    'Quote a real objection, then dismantle it.'
+  ];
+
+  var VERBS = ['rebuilt', 'fixed', 'automated', 'rethought', 'scaled', 'simplified'];
+
+  // ---- seeded PRNG (mulberry32) + string hash (FNV-1a) ----
+  function hashStr(s) {
+    var h = 2166136261 >>> 0;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---- helpers ----
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function titleCase(s) {
+    return s.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function fill(tpl, ctx) {
+    return tpl
+      .replace(/\{Topic\}/g, ctx.Topic)
+      .replace(/\{topic\}/g, ctx.topic)
+      .replace(/\{audience\}/g, ctx.audience)
+      .replace(/\{verb\}/g, ctx.verb)
+      .replace(/\{n\}/g, ctx.n);
+  }
+
+  var NUMS = [5, 7, 9, 10, 12, 3, 6];
+  var N_BRIEFS = 9;
+
+  // Build a stable batch from inputs + a shuffle salt.
+  function generate(topic, audience, salt) {
+    topic = (topic || '').trim() || 'your topic';
+    audience = (audience || '').trim() || 'your audience';
+    var seed = hashStr(topic.toLowerCase() + '|' + audience.toLowerCase() + '|' + salt);
+    var rnd = mulberry32(seed);
+
+    var briefs = [];
+    var seen = {};
+    var guard = 0;
+    while (briefs.length < N_BRIEFS && guard < 400) {
+      guard++;
+      var frame = FRAMES[(rnd() * FRAMES.length) | 0];
+      var ctx = {
+        topic: topic,
+        Topic: titleCase(topic),
+        audience: audience,
+        verb: VERBS[(rnd() * VERBS.length) | 0],
+        n: NUMS[(rnd() * NUMS.length) | 0]
+      };
+      var title = fill(frame.t, ctx);
+      var key = title.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = 1;
+
+      var fmt = FORMATS[(rnd() * FORMATS.length) | 0];
+      var lens = LENSES[(rnd() * LENSES.length) | 0];
+      var hook = fill(HOOKS[(rnd() * HOOKS.length) | 0], ctx);
+      var angle = fill(frame.angle, ctx);
+      // Append the lens to the angle for extra specificity.
+      angle = angle.replace(/\.?$/, '') + ' — angle it for the "' + lens + '" moment.';
+
+      briefs.push({ title: title, format: fmt.name, formatHint: fmt.hint, hook: hook, angle: angle });
+    }
+    return briefs;
+  }
+
+  // ---- DOM ----
+  var out = document.getElementById('out');
+  var topicEl = document.getElementById('topic');
+  var audienceEl = document.getElementById('audience');
+  var countEl = document.getElementById('count');
+  var shuffleBtn = document.getElementById('shuffle');
+  var copyAllBtn = document.getElementById('copyall');
+
+  var salt = 0;
+  var current = [];
+  var timer = null;
+
+  function copyText(text, btn, doneLabel, restoreLabel) {
+    var done = function () {
+      if (!btn) return;
+      btn.textContent = doneLabel;
+      setTimeout(function () { btn.textContent = restoreLabel; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { navigator.clipboard.writeText(text).then(done, fallback); }
+      catch (e) { fallback(); }
+    } else {
+      fallback();
+    }
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      } catch (e) {}
+      done();
+    }
+  }
+
+  function briefMarkdown(b) {
+    return '- **' + b.title + '** _(' + b.format + ')_\n' +
+           '  - Hook: ' + b.hook + '\n' +
+           '  - Angle: ' + b.angle;
+  }
+
+  function render() {
+    current = generate(topicEl ? topicEl.value : '', audienceEl ? audienceEl.value : '', salt);
+    var html = '';
+    for (var i = 0; i < current.length; i++) {
+      var b = current[i];
+      html +=
+        '<div class="lab-card brief" data-i="' + i + '">' +
+          '<p class="title">' + esc(b.title) + '</p>' +
+          '<div class="meta">' +
+            '<span class="lab-chip">' + esc(b.format) + '</span>' +
+            '<span class="angle" style="margin:0">' + esc(b.formatHint) + '</span>' +
+          '</div>' +
+          '<p class="hook"><b>Hook</b>' + esc(b.hook) + '</p>' +
+          '<p class="angle"><b>Angle</b>' + esc(b.angle) + '</p>' +
+          '<div class="row"><button class="lab-btn-quiet copy-one" type="button" data-i="' + i + '">Copy</button></div>' +
+        '</div>';
+    }
+    out.innerHTML = html;
+    if (countEl) countEl.textContent = current.length + ' briefs';
+  }
+
+  // Event delegation for per-brief copy (survives re-render).
+  out.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.copy-one') : null;
+    if (!btn) return;
+    var i = +btn.getAttribute('data-i');
+    var b = current[i];
+    if (!b) return;
+    copyText(briefMarkdown(b), btn, 'Copied ✓', 'Copy');
+  });
+
+  if (copyAllBtn) {
+    copyAllBtn.addEventListener('click', function () {
+      var topic = (topicEl ? topicEl.value : '').trim() || 'your topic';
+      var audience = (audienceEl ? audienceEl.value : '').trim() || 'your audience';
+      var md = '# Content briefs: ' + topic + ' (for ' + audience + ')\n\n' +
+        current.map(briefMarkdown).join('\n\n') + '\n';
+      copyText(md, copyAllBtn, 'Copied ✓', 'Copy all (markdown)');
+    });
+  }
+
+  if (shuffleBtn) {
+    shuffleBtn.addEventListener('click', function () {
+      salt = (salt + 1) | 0;
+      render();
+    });
+  }
+
+  function onInput() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () { salt = 0; render(); }, 250);
+  }
+  if (topicEl) topicEl.addEventListener('input', onInput);
+  if (audienceEl) audienceEl.addEventListener('input', onInput);
+
+  // First render — no interaction needed (smoke-safe).
+  render();
+})();
+</script>
+</body>
+</html>
