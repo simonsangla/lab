@@ -55,7 +55,9 @@ const files = readdirSync(APPS_DIR)
 // Unlisted apps opt out of the gallery with <meta name="app-visibility" content="private">.
 // The file still deploys (reachable by direct URL); it's just excluded from the index.
 function isPrivate(html) {
-  return /<meta\s+name=["']app-visibility["']\s+content=["']private["']/i.test(html);
+  // Tolerate any attribute order / extra attributes on the meta tag.
+  return /<meta\s+[^>]*name=["']app-visibility["'][^>]*content=["']\s*private\s*["']/i.test(html) ||
+         /<meta\s+[^>]*content=["']\s*private\s*["'][^>]*name=["']app-visibility["']/i.test(html);
 }
 
 const apps = files
