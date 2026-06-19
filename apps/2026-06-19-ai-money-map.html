@@ -75,11 +75,16 @@
   .lanes { display: grid; grid-template-columns: 1fr; gap: 16px; }
   @media (min-width: 720px) { .lanes { grid-template-columns: repeat(3, 1fr); } }
   .lane h3 { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 10px; }
-  .pick { margin-bottom: 12px; }
-  .pick .idea { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
-  .pick .how { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
-  .pick .why { font-size: 13px; margin: 0 0 8px; }
-  .pick .why b { color: var(--lab-green-text); font-weight: 600; }
+  .pick { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .pick:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+  .pick .idea { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  .pick .how { font-size: 12px; color: var(--muted); font-style: italic; margin: 0 0 8px; }
+  .pick .plan { font-size: 13px; margin: 0 0 8px; }
+  .pick .plan b { color: var(--lab-green-text); font-weight: 600; }
+  .pick .proof { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; margin: 0 0 8px; }
+  .pick .proof-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .pick .proof a { font-size: 12px; color: var(--lab-green-text); text-decoration: none; border-bottom: 1px solid var(--border); }
+  .pick .proof a:hover { border-color: var(--lab-green-text); }
   .pick-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .score-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
   .bands { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
@@ -129,7 +134,7 @@
 
     <section id="picks-section">
       <h2>Build shortlist</h2>
-      <p class="sub">Six picks across three lanes &mdash; editable seeds, scored by the same model that colors the map.</p>
+      <p class="sub">Six picks across three lanes &mdash; each developed into an angle and backed by a link to work already shipped, so it reads as <b>proof of skill</b>, not just an idea.</p>
       <div class="lanes" id="picks"></div>
     </section>
 
@@ -387,20 +392,27 @@
     return { score: build + roi + mercor, build: build, roi: roi, mercor: mercor };
   }
 
-  // ---- the 6 shortlist picks: matched to real ideas by substring ----
+  // ---- the 6 shortlist picks: each developed into an angle + linked to work
+  //      already shipped, so the lane reads as proof of skill, not a product. ----
   var PICKS = [
     { lane: 'For lab', match: 'data visualization and reporting tools',
-      why: 'Paste-data &rarr; instant charts; ships as a single-file lab app like Cohort Grid &mdash; <b>no backend</b>.' },
+      plan: 'Ship paste-data &rarr; instant-chart microtools: drop a CSV, pick a view, export a PNG &mdash; <b>no signup, no backend</b>. Each is a single HTML file, so a niche variant (funnel, pacing, cohort) is a one-day build you can bundle into a lab collection.',
+      proof: [ { label: 'Cohort Grid', href: '2026-05-29-cohort-grid.html' }, { label: 'A/B Verdict', href: '2026-05-28-ab-verdict.html' } ] },
     { lane: 'For lab', match: 'content idea generation and planning',
-      why: 'Pure client-side generator (templates + brand voice); <b>zero infra</b>, a perfect lab one-dayer.' },
+      plan: 'A fully client-side idea / brief generator seeded with templates and a brand voice &mdash; <b>zero infra</b>, runs entirely in the browser. Give it away as the free hook that funnels to a paid template pack.',
+      proof: [ { label: '8 apps shipped in the lab', href: 'https://lab.simonsangla.com' }, { label: 'Source on GitHub', href: 'https://github.com/simonsangla/lab' } ] },
     { lane: 'For Mercor profile', match: 'writing evaluation and scoring tools for educators',
-      why: 'Rubric-based scoring &mdash; mirrors your <b>Spreadsheet Evaluation Pack</b> and AI-training eval work.' },
+      plan: 'A rubric-driven scoring tool: paste student writing, score against weighted criteria, export a graded report. Same shape as <b>AI-training evaluation work</b> &mdash; transparent rubric, consistent scoring, auditable output.',
+      proof: [ { label: 'Spreadsheet Evaluation Pack', href: '2026-06-13-mercor-portfolio.html' } ] },
     { lane: 'For Mercor profile', match: 'data analytics and insights as a service',
-      why: 'Excel / Sheets / Slides deliverables &mdash; extends your <b>KPI Command Center</b> case study.' },
+      plan: 'Productize the KPI deliverable: ingest raw metrics, return an Excel / Sheets dashboard plus a one-slide executive readout. Plays straight to a <b>Snowflake analytics</b> background.',
+      proof: [ { label: 'KPI Command Center', href: '2026-06-13-mercor-portfolio.html' }, { label: 'Snowflake Cost Clock', href: '2026-05-27-snowflake-cost-clock.html' } ] },
     { lane: 'Best ROI / fast onboarding', match: 'AI-assisted content creator on YouTube',
-      why: 'Platforms you can join <b>today</b>; monetize via ads &amp; sponsorships &mdash; fastest onboarding.' },
+      plan: 'Fastest onboarding &mdash; platforms you can join <b>today</b>. Lead with a build-in-public angle: short demos of each lab microtool double as portfolio and content.',
+      proof: [ { label: 'simonsangla.com', href: 'https://simonsangla.com' }, { label: 'the lab', href: 'https://lab.simonsangla.com' } ] },
     { lane: 'Best ROI / fast onboarding', match: 'AI writing services for blogs',
-      why: 'Sell immediately on Upwork / Fiverr; <b>lowest setup</b>, quickest time-to-first-dollar.' }
+      plan: 'Sell on Upwork / Fiverr from day one &mdash; <b>lowest setup</b>, quickest first dollar. The editorial site is the credibility anchor and the live sample library.',
+      proof: [ { label: 'simonsangla.com', href: 'https://simonsangla.com' }, { label: 'Source on GitHub', href: 'https://github.com/simonsangla/lab' } ] }
   ];
   var LANE_ORDER = ['For lab', 'For Mercor profile', 'Best ROI / fast onboarding'];
 
@@ -408,7 +420,7 @@
   for (var i = 0; i < IDEAS.length; i++) {
     var s = score(IDEAS[i]);
     IDEAS[i].score = s.score; IDEAS[i].bands = s;
-    IDEAS[i].pinned = false; IDEAS[i].lane = null; IDEAS[i].why = null;
+    IDEAS[i].pinned = false; IDEAS[i].lane = null; IDEAS[i].plan = null; IDEAS[i].proof = null;
   }
   function findIdea(sub) {
     var low = sub.toLowerCase();
@@ -421,7 +433,7 @@
   var pickList = [];
   for (var i = 0; i < PICKS.length; i++) {
     var hit = findIdea(PICKS[i].match);
-    if (hit) { hit.pinned = true; hit.lane = PICKS[i].lane; hit.why = PICKS[i].why; pickList.push(hit); }
+    if (hit) { hit.pinned = true; hit.lane = PICKS[i].lane; hit.plan = PICKS[i].plan; hit.proof = PICKS[i].proof; pickList.push(hit); }
   }
 
   // group by category
@@ -565,10 +577,16 @@
       for (var i = 0; i < pickList.length; i++) {
         var p = pickList[i];
         if (p.lane !== lane) continue;
+        var proof = '<p class="proof"><span class="proof-label">Proof I can ship this</span>' +
+          p.proof.map(function (x) {
+            var ext = /^https?:/.test(x.href);
+            return '<a href="' + esc(x.href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' + esc(x.label) + (ext ? ' &#8599;' : '') + '</a>';
+          }).join('') + '</p>';
         html += '<div class="pick">' +
           '<p class="idea">' + esc(p.idea) + '</p>' +
           '<p class="how">' + esc(p.how) + '</p>' +
-          '<p class="why">' + p.why + '</p>' +
+          '<p class="plan">' + p.plan + '</p>' +
+          proof +
           '<div class="pick-foot">' +
           '<span class="lab-chip">' + esc(p.cat) + '</span>' +
           '<span class="score-badge lab-good">priority ' + p.score + '</span>' +
