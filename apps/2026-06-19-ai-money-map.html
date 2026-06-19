@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="AI Money Map">
+<meta name="app-description" content="205 ways to make money with AI, triaged: category stats, a priority mind map, and a 6-pick build shortlist.">
+<meta name="app-tags" content="ai,ideas,mindmap,strategy">
+<title>AI Money Map &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AI Money Map">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --red: #ef4444; --yellow: #f59e0b;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 30px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 60ch; }
+  header .prov { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 10px 0 0; }
+  .tabs { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; background: var(--bg); }
+  .tab { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); border-radius: 99px; padding: 8px 14px; min-height: 38px; transition: color 160ms ease, border-color 160ms ease; }
+  .tab:hover, .tab.active { color: var(--lab-green-text); border-color: var(--lab-green-text); }
+  section { scroll-margin-top: 64px; }
+  section > h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  section > .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  /* stats bars */
+  .bars { display: flex; flex-direction: column; gap: 9px; }
+  .bar-row { display: grid; grid-template-columns: 132px 1fr auto; align-items: center; gap: 12px; }
+  .bar-label { font-size: 13px; color: var(--text); text-align: right; }
+  .bar-track { background: var(--lab-green-tint); border-radius: 6px; height: 22px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--lab-green); border-radius: 6px; min-width: 3px; transition: width 600ms cubic-bezier(.2,.7,.2,1); }
+  .bar-meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .bar-meta strong { color: var(--text); font-weight: 600; }
+  .summary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  /* mind map */
+  .map-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .legend { font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .legend .swatch { width: 36px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--muted), var(--lab-green)); display: inline-block; }
+  .map-wrap { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: auto; max-height: 560px; }
+  .map-wrap svg { display: block; }
+  .node-cat { cursor: pointer; }
+  .node-cat:hover .cat-box { stroke: var(--lab-green-text); }
+  .hint { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 8px 0 0; }
+  /* shortlist */
+  .lanes { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 720px) { .lanes { grid-template-columns: repeat(3, 1fr); } }
+  .lane h3 { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 10px; }
+  .pick { margin-bottom: 12px; }
+  .pick .idea { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+  .pick .how { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+  .pick .why { font-size: 13px; margin: 0 0 8px; }
+  .pick .why b { color: var(--lab-green-text); font-weight: 600; }
+  .pick-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .score-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .bands { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 16px; }
+  footer a { color: var(--lab-green-text); }
+  @media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="../">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">AI Opportunity Map</p>
+      <h1>AI Money Map</h1>
+      <p class="lead">205 &ldquo;ways to make money with AI&rdquo; imported and triaged &mdash; see the distribution at a glance, explore a priority mind map, and act on a 6-pick build shortlist scored for lab, the Mercor profile, and fast-onboarding ROI.</p>
+      <p class="prov">Source: &ldquo;200+ Ways to Make Money with AI&rdquo; (Mindstream &times; HubSpot) &middot; 205 ideas &middot; 10 categories</p>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" type="button" data-target="stats-section">Stats</button>
+      <button class="tab" type="button" data-target="map-section">Mind map</button>
+      <button class="tab" type="button" data-target="picks-section">Shortlist</button>
+    </nav>
+
+    <section id="stats-section">
+      <h2>Category stats</h2>
+      <p class="sub">How the 205 ideas split across the 10 categories.</p>
+      <div class="bars" id="stats"></div>
+      <div class="summary" id="statsSummary"></div>
+    </section>
+
+    <section id="map-section">
+      <h2>Priority mind map</h2>
+      <p class="sub">Center &rarr; categories &rarr; ideas. Each idea is scored 0&ndash;100 for build priority (lab-buildability + fast ROI + Mercor fit). Tap a category to expand.</p>
+      <div class="map-controls">
+        <button class="lab-btn-quiet" id="expandAll" type="button">Expand all</button>
+        <button class="lab-btn-quiet" id="collapseAll" type="button">Collapse all</button>
+        <span class="legend">low <span class="swatch"></span> high priority</span>
+      </div>
+      <div class="map-wrap" id="mapWrap">
+        <div id="map"></div>
+      </div>
+      <p class="hint">&starf; = one of the 6 shortlist picks. Hover a node for the full idea and score breakdown.</p>
+    </section>
+
+    <section id="picks-section">
+      <h2>Build shortlist</h2>
+      <p class="sub">Six picks across three lanes &mdash; editable seeds, scored by the same model that colors the map.</p>
+      <div class="lanes" id="picks"></div>
+    </section>
+
+    <footer>
+      <p>Imported from a Google Sheet into <a href="../">lab.</a> &mdash; all 205 ideas embedded inline, offline, no credentials. Scoring is a transparent heuristic; the 6 picks are starting points, not gospel.</p>
+    </footer>
+  </div>
+
+<script>
+(function () {
+  // ---- dataset (imported from the source sheet, embedded inline) ----
+  var IDEAS = [
+    {"id": 1, "idea": "Become an AI-assisted content creator on YouTube, TikTok, Instagram, etc.", "cat": "Content Creation", "how": "Use AI tools to ideate, script, edit and optimize your content, and monetize through ads, sponsorships, etc."},
+    {"id": 2, "idea": "Build AI-enhanced data entry and document processing automation tools", "cat": "Productivity", "how": "Leverage AI to extract data from forms and documents, sell to businesses looking to automate back-office tasks."},
+    {"id": 3, "idea": "Build AI-enhanced email marketing platforms with personalization and optimization", "cat": "Marketing", "how": "Apply AI to email campaign creation, targeting, testing, analytics and sell to digital marketers."},
+    {"id": 4, "idea": "Build AI-enhanced language learning chatbots for conversational practice", "cat": "Education", "how": "Leverage AI to provide immersive language conversation practice, sell to language learners."},
+    {"id": 5, "idea": "Build AI-enhanced language translation and interpretation platforms", "cat": "Education", "how": "Leverage AI for real-time translation of speech and text, sell to businesses with global operations."},
+    {"id": 6, "idea": "Build AI-enhanced podcast guest booking and outreach tools", "cat": "Productivity", "how": "Leverage AI to find and pitch potential podcast guests, sell to podcast hosts and producers."},
+    {"id": 7, "idea": "Build AI-enhanced productivity tools for task automation and optimization", "cat": "Productivity", "how": "Identify common productivity pain points, leverage AI to create solutions, and market to businesses and professionals."},
+    {"id": 8, "idea": "Build AI-enhanced project management platforms with smart task allocation and scheduling", "cat": "Productivity", "how": "Leverage AI to optimize project planning and execution, and sell to businesses across industries."},
+    {"id": 9, "idea": "Build AI-enhanced survey and feedback analysis platforms", "cat": "Data/Analytics", "how": "Leverage AI to analyze open-ended responses and sentiment, sell to businesses collecting customer feedback."},
+    {"id": 10, "idea": "Build AI-enhanced video editing and collaboration platforms for remote teams", "cat": "Content Creation", "how": "Leverage AI to enable real-time, remote collaboration on video projects, sell to distributed production teams."},
+    {"id": 11, "idea": "Build AI-enhanced video game quest and mission generation tools", "cat": "Gaming", "how": "Use AI to create dynamic, branching quest lines for open-world games, sell to game development studios."},
+    {"id": 12, "idea": "Build AI-powered dating apps with smart matching and personalized experiences", "cat": "Gaming", "how": "Leverage AI to improve user matching, engagement, monetize through subscriptions or premium features."},
+    {"id": 13, "idea": "Build AI-powered fashion trend forecasting and analysis tools", "cat": "Data/Analytics", "how": "Use computer vision to analyze styles from runways and social media, sell insights to fashion brands."},
+    {"id": 14, "idea": "Build AI-powered gaming apps with procedural generation and smart NPCs", "cat": "Gaming", "how": "Learn game development and AI, create unique AI-driven games, and monetize through app stores or sponsorships."},
+    {"id": 15, "idea": "Build AI-powered online course creation and curriculum design tools", "cat": "Content Creation", "how": "Use AI to help create course outlines and suggest content based on topics, sell to online educators."},
+    {"id": 16, "idea": "Build AI-powered real estate investing tools for property valuation, market analysis", "cat": "Data/Analytics", "how": "Apply AI to real estate data, develop property analysis tools, and sell to investors and real estate professionals."},
+    {"id": 17, "idea": "Build AI-powered stock photography and video search engines", "cat": "Content Creation", "how": "Use computer vision AI to improve visual search for stock media, sell to creators and marketers."},
+    {"id": 18, "idea": "Build AI-powered virtual dressing room experiences for fashion e-commerce", "cat": "Customer Service", "how": "Allow customers to virtually try on outfits using AI and body scanning, sell to online fashion retailers."},
+    {"id": 19, "idea": "Build AI-powered virtual event and conference platforms", "cat": "Customer Service", "how": "Use AI to match attendees, recommend sessions, and facilitate networking, sell to event organizers."},
+    {"id": 20, "idea": "Build AI-powered virtual event gamification and attendee engagement tools", "cat": "Customer Service", "how": "Create AI-driven games and challenges to engage virtual event attendees, sell to event planners."},
+    {"id": 21, "idea": "Build AI-powered virtual event lead generation and qualification chatbots", "cat": "Marketing", "how": "Use AI chatbots to engage and qualify leads during virtual events, sell to B2B event marketers."},
+    {"id": 22, "idea": "Build AI-powered virtual event networking and matchmaking platforms", "cat": "Customer Service", "how": "Use AI to connect attendees with similar interests and facilitate virtual networking, sell to event organizers."},
+    {"id": 23, "idea": "Build AI-powered virtual event networking games and icebreakers", "cat": "Customer Service", "how": "Create AI-driven networking activities to help virtual event attendees connect, sell to event organizers."},
+    {"id": 24, "idea": "Build AI-powered virtual event platform integrations for CRM and marketing automation", "cat": "Marketing", "how": "Use AI to sync virtual event data with CRM and marketing tools, sell to event technology providers."},
+    {"id": 25, "idea": "Build AI-powered virtual event platform integrations for e-commerce and product demos", "cat": "Productivity", "how": "Allow exhibitors to showcase products and enable purchases within virtual event platforms using AI, sell to event organizers."},
+    {"id": 26, "idea": "Build AI-powered virtual event platform integrations for gamification and attendee challenges", "cat": "Customer Service", "how": "Create AI-driven event games and challenges to boost attendee participation, sell to virtual event planners."},
+    {"id": 27, "idea": "Build AI-powered virtual event platform integrations for networking and community-building", "cat": "Marketing", "how": "Foster year-round community engagement for virtual events using AI-powered networking features, sell to event organizers."},
+    {"id": 28, "idea": "Build AI-powered virtual event platform integrations for sponsorship and advertising", "cat": "Marketing", "how": "Help event sponsors maximize ROI with AI-driven ad placement and attendee targeting, sell to virtual event platforms."},
+    {"id": 29, "idea": "Build AI-powered virtual event platform integrations for virtual reality and augmented reality experiences", "cat": "Gaming", "how": "Incorporate AI-powered VR and AR features into virtual event platforms, sell to event technology companies."},
+    {"id": 30, "idea": "Build AI-powered virtual event platform integrations for webinar and live stream hosting", "cat": "Productivity", "how": "Enable seamless live streaming and webinar capabilities within virtual event platforms using AI, sell to event technology providers."},
+    {"id": 31, "idea": "Build AI-powered virtual event sponsorship and exhibitor matchmaking platforms", "cat": "Marketing", "how": "Match event sponsors with relevant attendees and exhibitors using AI, sell to virtual event organizers."},
+    {"id": 32, "idea": "Build AI-powered virtual home renovation and remodeling visualization tools", "cat": "Customer Service", "how": "Allow users to visualize home improvements with AI-generated images, sell to home renovation companies."},
+    {"id": 33, "idea": "Build AI-powered virtual interior design consultants for home improvement retailers", "cat": "Customer Service", "how": "Use AI to provide personalized interior design advice to customers, sell to home improvement stores."},
+    {"id": 34, "idea": "Build AI-powered virtual personal shopping assistants for fashion brands", "cat": "Customer Service", "how": "Create AI chatbots that provide personalized style advice and product recommendations, sell to fashion retailers."},
+    {"id": 35, "idea": "Build AI-powered virtual product demos and interactive tutorials", "cat": "Customer Service", "how": "Create engaging, AI-driven product demos and tutorials, sell to SaaS companies and software providers."},
+    {"id": 36, "idea": "Build AI-powered virtual product photography and 3D modeling services", "cat": "Content Creation", "how": "Use AI to create photorealistic product"},
+    {"id": 37, "idea": "Build AI-powered virtual real estate staging and visualization tools", "cat": "Customer Service", "how": "Leverage AI to digitally stage and decorate homes for online listings, sell to real estate agents."},
+    {"id": 38, "idea": "Build AI-powered virtual try-on solutions for eyewear and accessories", "cat": "Customer Service", "how": "Use AI to allow users to preview glasses and accessories on their face, sell to online eyewear retailers."},
+    {"id": 39, "idea": "Build AI-powered virtual try-on solutions for eyewear and sunglasses brands", "cat": "Customer Service", "how": "Allow customers to virtually try on glasses frames using AI and facial recognition, sell to online eyewear retailers."},
+    {"id": 40, "idea": "Build AI-powered virtual try-on solutions for home decor and furniture brands", "cat": "Customer Service", "how": "Allow customers to visualize furniture and decor in their space using AI and AR, sell to home furnishing retailers."},
+    {"id": 41, "idea": "Build AI-powered virtual try-on solutions for jewelry and accessory brands", "cat": "Customer Service", "how": "Allow customers to virtually try on jewelry and accessories using AI and AR, sell to online fashion and accessories retailers."},
+    {"id": 42, "idea": "Build AI-powered virtual try-on solutions for makeup and cosmetics brands", "cat": "Customer Service", "how": "Allow users to virtually try on makeup products using AI and facial recognition, sell to cosmetics retailers."},
+    {"id": 43, "idea": "Create AI-driven book and movie recommendation engines", "cat": "Gaming", "how": "Use AI to suggest titles based on user preferences, monetize through affiliate partnerships with booksellers and streaming services."},
+    {"id": 44, "idea": "Create AI-driven content idea generation and planning tools", "cat": "Content Creation", "how": "Use AI to brainstorm blog post, video, and social media ideas, sell to content marketers."},
+    {"id": 45, "idea": "Create AI-driven content moderation solutions for online platforms", "cat": "Content Creation", "how": "Develop AI content filtering and moderation tools and sell to social networks, forums, marketplaces."},
+    {"id": 46, "idea": "Create AI-driven logo and graphic design generation tools", "cat": "Content Creation", "how": "Develop AI tools that generate logos and graphics based on prompts, sell to freelancers and small businesses."},
+    {"id": 47, "idea": "Create AI-driven sports coaching and training apps", "cat": "Education", "how": "Use computer vision AI to analyze form and provide feedback, and monetize through individual or team subscriptions."},
+    {"id": 48, "idea": "Create AI-driven video ad creation and optimization platforms", "cat": "Content Creation", "how": "Use AI to generate video ad variations and optimize for different audiences, sell to marketers."},
+    {"id": 49, "idea": "Create AI-driven video editing and post-production plugins", "cat": "Content Creation", "how": "Develop AI-powered plugins for tasks like object removal, upscaling, sell to video editors."},
+    {"id": 50, "idea": "Create AI-driven video editing and post-production project management tools", "cat": "Content Creation", "how": "Leverage AI to automate tasks like version control and rendering, sell to video production companies."},
+    {"id": 51, "idea": "Create AI-driven voice-based customer feedback surveys and analysis", "cat": "Customer Service", "how": "Use AI-powered voice surveys to gather customer feedback, sell to businesses for customer insights."},
+    {"id": 52, "idea": "Create AI-driven voice-based customer support and troubleshooting chatbots", "cat": "Customer Service", "how": "Develop AI-powered voice assistants that guide customers through common support issues, sell to businesses with complex products."},
+    {"id": 53, "idea": "Create AI-driven voice-based fitness coaching and workout guidance apps", "cat": "Health", "how": "Develop AI-powered voice assistants that guide users through workouts and provide motivation, sell to fitness enthusiasts."},
+    {"id": 54, "idea": "Create AI-driven voice-based language learning games and quizzes", "cat": "Education", "how": "Develop engaging voice-based language learning activities powered by AI, sell to language learners."},
+    {"id": 55, "idea": "Create AI-enhanced data visualization and reporting tools", "cat": "Data/Analytics", "how": "Develop AI-powered dashboards and reporting solutions, sell to businesses looking to extract insights from data."},
+    {"id": 56, "idea": "Create AI-enhanced email spam detection and filtering solutions", "cat": "Content Creation", "how": "Leverage AI to identify and block spam more accurately, sell to email providers and businesses."},
+    {"id": 57, "idea": "Create AI-enhanced employee training and onboarding platforms", "cat": "Education", "how": "Leverage AI to personalize learning paths and recommend content, sell to HR departments."},
+    {"id": 58, "idea": "Create AI-enhanced event planning and management platforms", "cat": "Productivity", "how": "Leverage AI to streamline event logistics, vendor matching, attendee engagement, and sell to event professionals."},
+    {"id": 59, "idea": "Create AI-enhanced interior design and home decoration apps", "cat": "Customer Service", "how": "Develop AI tools to recommend furniture and decor based on style and space, monetize through affiliate sales."},
+    {"id": 60, "idea": "Create AI-enhanced podcast advertising and sponsorship matching platforms", "cat": "Marketing", "how": "Use AI to match podcasts with relevant sponsors based on content and audience, sell to podcast networks."},
+    {"id": 61, "idea": "Create AI-enhanced travel planning and recommendation platforms", "cat": "Customer Service", "how": "Build AI-powered trip planners, itinerary generators, sell to travelers or partner with travel industry players."},
+    {"id": 62, "idea": "Create AI-enhanced video editing and analysis tools for construction site monitoring and safety", "cat": "Data/Analytics", "how": "Use AI to automatically detect safety hazards and monitor progress from construction site footage, sell to construction firms and insurers."},
+    {"id": 63, "idea": "Create AI-enhanced video editing and analysis tools for security and surveillance footage", "cat": "Data/Analytics", "how": "Use AI to automatically detect and highlight unusual activity in security camera footage, sell to security firms."},
+    {"id": 64, "idea": "Create AI-enhanced video editing and analysis tools for sports coaches and analysts", "cat": "Content Creation", "how": "Leverage AI to automatically analyze game footage and highlight key moments, sell to sports teams and broadcasters."},
+    {"id": 65, "idea": "Create AI-enhanced video editing and analysis tools for sports scouting and player evaluation", "cat": "Content Creation", "how": "Use AI to analyze athlete performance and potential from video footage, sell to sports teams and recruiting agencies."},
+    {"id": 66, "idea": "Create AI-enhanced video editing and analysis tools for wildlife research and conservation", "cat": "Content Creation", "how": "Use AI to automatically identify and track animals in wildlife video footage, sell to research institutions and conservation groups."},
+    {"id": 67, "idea": "Create AI-enhanced video editing and effects plugins for 360-degree and immersive video", "cat": "Content Creation", "how": "Design AI-powered tools for editing and enhancing 360-degree video content, sell to immersive content creators."},
+    {"id": 68, "idea": "Create AI-enhanced video editing and effects plugins for live streaming", "cat": "Gaming", "how": "Develop AI-powered real-time video effects and filters for live streamers, sell to content creators."},
+    {"id": 69, "idea": "Create AI-enhanced video editing and effects plugins for virtual reality content", "cat": "Content Creation", "how": "Design AI-generated visual effects and filters optimized for VR video, sell to VR content creators."},
+    {"id": 70, "idea": "Create AI-enhanced video editing and effects templates for music videos and visualizers", "cat": "Content Creation", "how": "Design AI-generated video templates for music promotion, sell to musicians and record labels."},
+    {"id": 71, "idea": "Create AI-enhanced video editing and effects templates for product unboxing and review videos", "cat": "Marketing", "how": "Develop AI-generated video templates for influencer product reviews, sell to YouTube creators and marketers."},
+    {"id": 72, "idea": "Create AI-enhanced video editing and effects templates for social media challenges and trends", "cat": "Content Creation", "how": "Quickly create trendy video content using AI-generated templates, sell to social media influencers and content creators."},
+    {"id": 73, "idea": "Create AI-enhanced video editing and effects templates for social media stories", "cat": "Content Creation", "how": "Develop AI-generated video templates optimized for Instagram and Facebook stories, sell to social media marketers."},
+    {"id": 74, "idea": "Create AI-enhanced video editing and production tools for online course creators", "cat": "Content Creation", "how": "Streamline online course video production using AI-powered editing tools, sell to e-learning content creators."},
+    {"id": 75, "idea": "Create AI-enhanced video editing and production tools for real estate listings", "cat": "Content Creation", "how": "Automatically generate compelling property video tours using AI, sell to real estate agents and brokers."},
+    {"id": 76, "idea": "Create AI-enhanced video editing and summarization tools for corporate earnings calls", "cat": "Content Creation", "how": "Automatically generate video summaries of earnings calls using AI, sell to financial news outlets and analysts."},
+    {"id": 77, "idea": "Create AI-enhanced video editing and summarization tools for educational content creators", "cat": "Content Creation", "how": "Use AI to automatically edit and summarize long educational videos, sell to online course creators and educators."},
+    {"id": 78, "idea": "Create AI-enhanced video editing and summarization tools for news and media organizations", "cat": "Content Creation", "how": "Automatically generate video news summaries and highlights using AI, sell to news broadcasters and publishers."},
+    {"id": 79, "idea": "Create AI-enhanced video editing templates and presets", "cat": "Content Creation", "how": "Develop AI-generated video editing templates for common styles and genres, sell to amateur video creators."},
+    {"id": 80, "idea": "Create AI-enhanced video game environment and texture generation tools", "cat": "Gaming", "how": "Use AI to procedurally generate realistic environments and textures, sell to game developers."},
+    {"id": 81, "idea": "Create AI-powered fitness and wellness apps with personalized coaching", "cat": "Health", "how": "Combine AI with health expertise to build smart coaching apps and monetize through subscriptions or partnerships."},
+    {"id": 82, "idea": "Create AI-powered personal finance apps for budgeting, saving, investing", "cat": "Finance", "how": "Leverage AI to build smart money management apps and monetize through premium features or partnerships."},
+    {"id": 83, "idea": "Create and sell AI-generated artwork, such as images, music, videos", "cat": "Content Creation", "how": "Experiment with AI art generators, build a portfolio, and list your creations on AI art marketplaces."},
+    {"id": 84, "idea": "Develop AI-driven investing insights and trading algorithms", "cat": "Finance", "how": "Learn AI and machine learning, get familiar with financial markets, and sell your insights or algorithms to investors."},
+    {"id": 85, "idea": "Develop AI-driven recruiting and talent matching platforms", "cat": "Education", "how": "Use AI to optimize job matching, candidate screening, etc. and sell to corporate HR departments."},
+    {"id": 86, "idea": "Develop AI-enhanced learning management systems (LMS) for corporate training", "cat": "Education", "how": "Incorporate AI-driven content recommendations, skill assessments, and sell to companies with large workforces."},
+    {"id": 87, "idea": "Develop AI-enhanced podcast creation and editing tools", "cat": "Content Creation", "how": "Leverage AI for transcription, editing, and sell to podcasters to streamline their production process."},
+    {"id": 88, "idea": "Develop AI-enhanced podcast transcription and summary generation", "cat": "Content Creation", "how": "Leverage AI to automatically transcribe and summarize podcast episodes, sell to podcast creators."},
+    {"id": 89, "idea": "Develop AI-enhanced recipe generation and meal planning apps", "cat": "Health", "how": "Leverage AI to create recipes based on ingredients and constraints, monetize through ads or subscriptions."},
+    {"id": 90, "idea": "Develop AI-enhanced writing assistant tools for authors and screenwriters", "cat": "Content Creation", "how": "Leverage AI to provide suggestions for plot, character development, sell to writers as a creativity aid."},
+    {"id": 91, "idea": "Develop AI-enhanced writing evaluation and scoring tools for educators", "cat": "Education", "how": "Leverage AI to assess and provide feedback on student writing, sell to schools and universities."},
+    {"id": 92, "idea": "Develop AI-enhanced writing prompts and story starter generators", "cat": "Content Creation", "how": "Leverage AI to create creative writing prompts based on genre and themes, sell to writers."},
+    {"id": 93, "idea": "Develop AI-enhanced writing tools for creating compelling ad copy and headlines", "cat": "Content Creation", "how": "Generate attention-grabbing ad copy and headlines using AI, sell to digital marketers and advertisers."},
+    {"id": 94, "idea": "Develop AI-enhanced writing tools for creating compelling app store descriptions and release notes", "cat": "Content Creation", "how": "Optimize mobile app store listings using AI-generated copy, sell to app developers and marketers."},
+    {"id": 95, "idea": "Develop AI-enhanced writing tools for creating compelling crowdfunding campaign content", "cat": "Content Creation", "how": "Generate persuasive crowdfunding campaign descriptions and updates using AI, sell to entrepreneurs and creators."},
+    {"id": 96, "idea": "Develop AI-enhanced writing tools for creating compelling product descriptions", "cat": "Content Creation", "how": "Use AI to generate persuasive, SEO-optimized product descriptions for e-commerce listings, sell to online sellers."},
+    {"id": 97, "idea": "Develop AI-enhanced writing tools for creating compelling push notification and in-app message copy", "cat": "Content Creation", "how": "Boost mobile app engagement with AI-generated push notifications and in-app messages, sell to mobile marketers."},
+    {"id": 98, "idea": "Develop AI-enhanced writing tools for creating engaging chatbot and conversational AI scripts", "cat": "Content Creation", "how": "Design natural, engaging chatbot conversations using AI-powered writing tools, sell to companies implementing conversational AI."},
+    {"id": 99, "idea": "Develop AI-enhanced writing tools for creating engaging job postings and descriptions", "cat": "Content Creation", "how": "Craft compelling job listings using AI-powered writing suggestions, sell to HR departments and recruiters."},
+    {"id": 100, "idea": "Develop AI-enhanced writing tools for creating engaging podcast show notes and descriptions", "cat": "Content Creation", "how": "Generate SEO-friendly podcast show notes and descriptions using AI, sell to podcast hosts and networks."},
+    {"id": 101, "idea": "Develop AI-enhanced writing tools for creating engaging restaurant menu descriptions", "cat": "Content Creation", "how": "Generate mouthwatering menu descriptions using AI, sell to restaurants and food service businesses."},
+    {"id": 102, "idea": "Develop AI-enhanced writing tools for creating engaging social media captions and posts", "cat": "Content Creation", "how": "Generate compelling social media content using AI, sell to social media managers and influencers."},
+    {"id": 103, "idea": "Develop AI-enhanced writing tools for creating engaging UX and UI copy", "cat": "Content Creation", "how": "Generate clear, concise UX writing and microcopy using AI, sell to app and web designers."},
+    {"id": 104, "idea": "Develop AI-enhanced writing tools for creating engaging video game item descriptions", "cat": "Content Creation", "how": "Generate flavorful, lore-friendly descriptions for video game items and abilities using AI, sell to game developers."},
+    {"id": 105, "idea": "Develop AI-enhanced writing tools for creating engaging video scripts and storyboards", "cat": "Content Creation", "how": "Generate compelling video scripts and storyboards using AI, sell to video production agencies and content creators."},
+    {"id": 106, "idea": "Develop AI-enhanced writing tools for creating persuasive email subject lines and preview text", "cat": "Content Creation", "how": "Boost email open rates using AI-optimized subject lines and preview text, sell to email marketers."},
+    {"id": 107, "idea": "Develop AI-enhanced writing tools for creating persuasive landing page and website copy", "cat": "Content Creation", "how": "Generate high-converting website copy using AI, sell to digital marketers and web designers."},
+    {"id": 108, "idea": "Develop AI-enhanced writing tools for creating persuasive sales emails and sequences", "cat": "Content Creation", "how": "Generate effective sales email copy using AI, sell to B2B sales teams and entrepreneurs."},
+    {"id": 109, "idea": "Develop AI-enhanced writing tools for creating product manuals and guides", "cat": "Content Creation", "how": "Use AI to generate clear, concise product documentation from specs and features, sell to manufacturers."},
+    {"id": 110, "idea": "Develop AI-enhanced writing tools for creating technical whitepapers and case studies", "cat": "Content Creation", "how": "Use AI to assist in writing compelling technical content, sell to B2B companies and thought leaders."},
+    {"id": 111, "idea": "Develop AI-enhanced writing tools for creating video game dialogue and quests", "cat": "Gaming", "how": "Use AI to assist in writing branching dialogue and quest lines for video games, sell to game writers."},
+    {"id": 112, "idea": "Develop AI-enhanced writing tools for email marketing campaigns", "cat": "Marketing", "how": "Leverage AI to generate and optimize email subject lines and body copy, sell to email marketers."},
+    {"id": 113, "idea": "Develop AI-enhanced writing tools for grant and proposal writing", "cat": "Content Creation", "how": "Leverage AI to assist in researching and drafting compelling grant proposals, sell to nonprofits and researchers."},
+    {"id": 114, "idea": "Develop AI-enhanced writing tools for social media managers", "cat": "Content Creation", "how": "Use AI to suggest post ideas, hashtags, and optimize scheduling, sell to social media marketers."},
+    {"id": 115, "idea": "Develop AI-powered chatbots and virtual assistants for businesses", "cat": "Customer Service", "how": "Master conversational AI platforms, learn about different industries, and pitch your chatbot development services."},
+    {"id": 116, "idea": "Develop AI-powered chatbots for e-learning and online course support", "cat": "Customer Service", "how": "Create AI teaching assistants that answer student questions, and sell to online course creators."},
+    {"id": 117, "idea": "Develop AI-powered chatbots for event ticketing and customer support", "cat": "Customer Service", "how": "Create AI assistants to handle ticket inquiries and sales, sell to event venues and ticketing platforms."},
+    {"id": 118, "idea": "Develop AI-powered chatbots for hotel and travel booking support", "cat": "Travel", "how": "Create AI assistants to handle reservations and inquiries, sell to hotels and travel agencies."},
+    {"id": 119, "idea": "Develop AI-powered chatbots for legal advice and document drafting", "cat": "Content Creation", "how": "Create AI assistants to provide basic legal information and draft simple documents, sell to law firms."},
+    {"id": 120, "idea": "Develop AI-powered chatbots for mental health support and therapy", "cat": "Health", "how": "Create AI chatbots that provide coping strategies, and sell to mental health providers as a supplementary tool."},
+    {"id": 121, "idea": "Develop AI-powered chatbots for personal finance and budgeting advice", "cat": "Data/Analytics", "how": "Create AI assistants that provide personalized financial tips based on user data, sell to consumers."},
+    {"id": 122, "idea": "Develop AI-powered chatbots for travel itinerary planning and recommendations", "cat": "Travel", "how": "Create AI assistants that suggest travel activities based on user preferences, sell to travel agencies."},
+    {"id": 123, "idea": "Develop AI-powered personal stylist and fashion recommendation apps", "cat": "Customer Service", "how": "Use AI to suggest outfits based on occasion and taste, monetize through affiliate links or personal styling services."},
+    {"id": 124, "idea": "Develop AI-powered reputation management solutions for businesses and individuals", "cat": "Customer Service", "how": "Leverage AI to monitor brand mentions, sentiment analysis, and sell to companies and public figures."},
+    {"id": 125, "idea": "Offer AI writing services for blogs, articles, ads, product descriptions, etc.", "cat": "Content Creation", "how": "Learn prompt engineering, sign up for AI writing tools, and start marketing your services on freelance platforms."},
+    {"id": 126, "idea": "Offer AI-driven ad creation and optimization services", "cat": "Marketing", "how": "Leverage AI to generate ad variations, optimize targeting and placement, sell to brands and marketers."},
+    {"id": 127, "idea": "Offer AI-driven content translation and localization services", "cat": "Education", "how": "Use AI translation tools to adapt content for global markets, sell to businesses with international presence."},
+    {"id": 128, "idea": "Offer AI-driven financial fraud detection and prevention services", "cat": "Finance", "how": "Develop AI models to identify fraudulent transactions, sell to banks and financial institutions."},
+    {"id": 129, "idea": "Offer AI-driven influencer marketing campaign management services", "cat": "Marketing", "how": "Use AI to identify relevant influencers, optimize campaigns, and provide to brands investing in influencer marketing."},
+    {"id": 130, "idea": "Offer AI-driven market research and consumer insights services", "cat": "Data/Analytics", "how": "Use AI to analyze consumer data, trends, sentiment and sell actionable insights to product and marketing teams."},
+    {"id": 131, "idea": "Offer AI-driven music mastering and post-production services", "cat": "Content Creation", "how": "Utilize AI to master and enhance audio tracks, sell to independent musicians and producers."},
+    {"id": 132, "idea": "Offer AI-driven pet training and behavior analysis apps", "cat": "Education", "how": "Leverage AI to analyze pet behavior and provide training insights, monetize through subscriptions or veterinary partnerships."},
+    {"id": 133, "idea": "Offer AI-driven podcast content analysis and topic suggestion tools", "cat": "Content Creation", "how": "Leverage AI to analyze successful podcasts and suggest topics for new episodes, sell to podcast creators."},
+    {"id": 134, "idea": "Offer AI-driven podcast episode chapter generation and timestamping", "cat": "Content Creation", "how": "Leverage AI to automatically create chapters and timestamps for podcast episodes, sell to podcast hosts."},
+    {"id": 135, "idea": "Offer AI-driven podcast sponsorship and ad placement optimization", "cat": "Marketing", "how": "Use AI to dynamically insert ads into podcasts based on listener data, sell to podcast networks."},
+    {"id": 136, "idea": "Offer AI-driven resume and portfolio website building tools", "cat": "Education", "how": "Use AI to generate professional resume and portfolio sites from user input, sell to job seekers."},
+    {"id": 137, "idea": "Offer AI-driven resume parsing and candidate matching services", "cat": "Education", "how": "Develop AI tools to extract skills from resumes and match to job descriptions, sell to recruiters."},
+    {"id": 138, "idea": "Offer AI-driven social media management and optimization services", "cat": "Marketing", "how": "Use AI to help businesses plan, schedule, optimize and analyze their social content and sell your expertise."},
+    {"id": 139, "idea": "Offer AI-driven supply chain optimization and demand forecasting services", "cat": "Data/Analytics", "how": "Master AI logistics tools, learn supply chain dynamics, and market your expertise to product-based businesses."},
+    {"id": 140, "idea": "Offer AI-driven voice acting and narration services for audiobooks", "cat": "Content Creation", "how": "Utilize AI voice generation to create audiobook narration, sell to publishers and self-publishing authors."},
+    {"id": 141, "idea": "Offer AI-driven voice cloning and text-to-speech for audiobook production", "cat": "Content Creation", "how": "Create AI-narrated audiobooks with custom voices, sell to publishers and self-published authors."},
+    {"id": 142, "idea": "Offer AI-driven voice cloning and text-to-speech for corporate training simulations", "cat": "Education", "how": "Create immersive, AI-narrated training scenarios and simulations, sell to corporate learning and development teams."},
+    {"id": 143, "idea": "Offer AI-driven voice cloning and text-to-speech for documentary filmmaking", "cat": "Content Creation", "how": "Create custom AI-generated narration for documentaries, sell to independent filmmakers and production companies."},
+    {"id": 144, "idea": "Offer AI-driven voice cloning and text-to-speech for e-learning content", "cat": "Education", "how": "Utilize AI to create engaging, narrated e-learning content with custom voices, sell to corporate training departments."},
+    {"id": 145, "idea": "Offer AI-driven voice cloning and text-to-speech for explainer and tutorial videos", "cat": "Education", "how": "Create engaging, AI-narrated explainer videos for products and services, sell to businesses across industries."},
+    {"id": 146, "idea": "Offer AI-driven voice cloning and text-to-speech for language learning audiobooks", "cat": "Education", "how": "Create AI-narrated language learning audiobooks in multiple languages, sell to language learners and publishers."},
+    {"id": 147, "idea": "Offer AI-driven voice cloning and text-to-speech for podcast intro and outro segments", "cat": "Content Creation", "how": "Create custom AI-generated intro and outro segments for podcasts, sell to podcast producers."},
+    {"id": 148, "idea": "Offer AI-driven voice cloning and text-to-speech for voice-based advertising and sponsored content", "cat": "Marketing", "how": "Create AI-generated voice ads and sponsored content, sell to podcast networks and audio platforms."},
+    {"id": 149, "idea": "Offer AI-driven voice cloning and text-to-speech for YouTube video narration", "cat": "Content Creation", "how": "Provide custom AI-generated voiceovers for YouTube videos, sell to content creators and vloggers."},
+    {"id": 150, "idea": "Offer AI-driven voice cloning and text-to-speech services", "cat": "Content Creation", "how": "Utilize AI to create custom voice clones for brands and individuals, sell for commercial use."},
+    {"id": 151, "idea": "Offer AI-driven voice cloning for game character dialogue", "cat": "Gaming", "how": "Utilize AI to create unique voices for game NPCs and characters, sell to game development studios."},
+    {"id": 152, "idea": "Offer AI-driven voice-based customer feedback analysis for call center recordings", "cat": "Customer Service", "how": "Analyze customer sentiment and topics from call recordings using AI, sell to customer experience managers."},
+    {"id": 153, "idea": "Offer AI-driven voice-based customer support for booking and scheduling appointments", "cat": "Customer Service", "how": "Develop AI voice assistants to help customers book appointments and reservations, sell to service-based businesses."},
+    {"id": 154, "idea": "Offer AI-driven voice-based customer support for product returns and exchanges", "cat": "Customer Service", "how": "Develop AI voice assistants to streamline product return and exchange processes, sell to e-commerce retailers."},
+    {"id": 155, "idea": "Offer AI-driven voice-based customer support for troubleshooting technical products", "cat": "Customer Service", "how": "Develop AI voice assistants to guide customers through technical support issues, sell to electronics manufacturers."},
+    {"id": 156, "idea": "Offer AI-driven voice-based language learning and pronunciation training", "cat": "Education", "how": "Utilize AI to provide feedback on language learners' pronunciation, sell as a learning tool."},
+    {"id": 157, "idea": "Offer AI-driven voice-based language learning assessments and progress tracking", "cat": "Education", "how": "Use AI to assess language learners' speaking skills and provide personalized feedback, sell to language schools."},
+    {"id": 158, "idea": "Offer AI-driven voice-based language learning content creation tools", "cat": "Content Creation", "how": "Develop AI-powered tools to create and localize voice-based language learning material, sell to language learning content providers."},
+    {"id": 159, "idea": "Offer AI-driven voice-based language learning content localization and personalization", "cat": "Content Creation", "how": "Use AI to adapt language learning content to learners' native language and interests, sell to language learning apps."},
+    {"id": 160, "idea": "Offer AI-driven voice-based language learning progress assessments and reports", "cat": "Data/Analytics", "how": "Provide AI-powered spoken language assessments and progress tracking, sell to language learning platforms and schools."},
+    {"id": 161, "idea": "Offer AI-driven voice-to-text transcription and captioning services", "cat": "Content Creation", "how": "Utilize AI to automatically transcribe audio and video content, sell to content creators and businesses."},
+    {"id": 162, "idea": "Offer AI-enhanced language learning apps with personalized lessons", "cat": "Education", "how": "Combine AI with language instruction to build adaptive learning apps, and monetize through subscriptions."},
+    {"id": 163, "idea": "Offer AI-enhanced video editing and post-production services", "cat": "Content Creation", "how": "Master AI video tools, build a portfolio, and market your services to content creators and businesses."},
+    {"id": 164, "idea": "Offer AI-powered language translation and cultural adaptation for video games", "cat": "Gaming", "how": "Utilize AI to localize game text, voice acting, and cultural references, sell to game publishers."},
+    {"id": 165, "idea": "Offer AI-powered language translation and interpretation for telemedicine", "cat": "Education", "how": "Provide real-time AI translation for doctor-patient video consultations, sell to telemedicine platforms."},
+    {"id": 166, "idea": "Offer AI-powered language translation and localization for e-commerce product listings", "cat": "Education", "how": "Utilize AI to translate and adapt product descriptions for global markets, sell to online retailers."},
+    {"id": 167, "idea": "Offer AI-powered language translation and localization for mobile app store listings", "cat": "Education", "how": "Optimize mobile app listings for global app stores using AI translation and localization, sell to app developers."},
+    {"id": 168, "idea": "Offer AI-powered language translation and localization for mobile apps", "cat": "Education", "how": "Use AI to adapt app text and UI for different languages and regions, sell to app developers."},
+    {"id": 169, "idea": "Offer AI-powered language translation and subtitling for corporate training videos", "cat": "Education", "how": "Provide AI-generated translations and subtitles for employee training content, sell to multinational corporations."},
+    {"id": 170, "idea": "Offer AI-powered language translation for live video captioning", "cat": "Education", "how": "Utilize AI for real-time translation of video captions, sell to video conferencing and streaming platforms."},
+    {"id": 171, "idea": "Offer AI-powered resume building and job application enhancement services", "cat": "Education", "how": "Use AI to optimize resumes and cover letters based on job postings and sell to job seekers."},
+    {"id": 172, "idea": "Offer AI-powered video editing and summarization services", "cat": "Content Creation", "how": "Utilize AI to automatically edit and summarize long videos, sell to content creators and businesses."},
+    {"id": 173, "idea": "Offer AI-powered video game level design and world-building services", "cat": "Gaming", "how": "Utilize AI to generate game environments and levels, sell to game development studios."},
+    {"id": 174, "idea": "Offer AI-powered video game testing and bug identification services", "cat": "Gaming", "how": "Use AI to automatically test games and identify glitches, sell to game development studios."},
+    {"id": 175, "idea": "Offer AI-powered virtual product photography and 3D modeling services", "cat": "Content Creation", "how": "Use AI to create photorealistic product images and 3D models, sell to e-commerce businesses."},
+    {"id": 176, "idea": "Offer AI-powered voice acting and audio production services", "cat": "Content Creation", "how": "Utilize AI voice generation to create voiceovers for commercials, audiobooks, etc. and sell to production companies."},
+    {"id": 177, "idea": "Offer personalized AI-driven shopping experiences for ecommerce brands", "cat": "Customer Service", "how": "Learn AI recommendation systems, partner with ecommerce platforms, and pitch your services to online retailers."},
+    {"id": 178, "idea": "Provide AI-driven data analytics and insights as a service", "cat": "Data/Analytics", "how": "Get proficient with AI analytics tools, identify target industries, and promote your data science expertise."},
+    {"id": 179, "idea": "Provide AI-driven predictive maintenance solutions for machinery and equipment", "cat": "Data/Analytics", "how": "Develop expertise in industrial AI, build predictive models, and pitch to manufacturing and heavy industry clients."},
+    {"id": 180, "idea": "Provide AI-powered customer feedback analysis and sentiment tracking", "cat": "Customer Service", "how": "Use AI to analyze product reviews, social media, and surveys, sell insights to product and marketing teams."},
+    {"id": 181, "idea": "Provide AI-powered customer service automation solutions", "cat": "Customer Service", "how": "Develop AI customer support platforms, chatbots, ticketing systems and pitch to businesses looking to scale support."},
+    {"id": 182, "idea": "Provide AI-powered landscape design and garden planning services", "cat": "Customer Service", "how": "Use AI to generate garden layouts based on climate and preferences, sell to homeowners and landscaping businesses."},
+    {"id": 183, "idea": "Provide AI-powered language translation and cultural adaptation for marketing content", "cat": "Marketing", "how": "Use AI to adapt marketing messages and visuals for different regions and cultures, sell to global brands."},
+    {"id": 184, "idea": "Provide AI-powered language translation and interpretation for multilingual customer support", "cat": "Education", "how": "Offer real-time AI translation for customer support chats and calls, sell to global businesses."},
+    {"id": 185, "idea": "Provide AI-powered language translation and interpretation for online therapy and counseling", "cat": "Education", "how": "Offer real-time AI translation for online therapy sessions, sell to mental health platforms and providers."},
+    {"id": 186, "idea": "Provide AI-powered language translation and localization for e-commerce customer support", "cat": "Education", "how": "Offer multilingual AI-powered chatbots and support for global e-commerce brands, sell to online retailers."},
+    {"id": 187, "idea": "Provide AI-powered language translation and localization for gaming communities and forums", "cat": "Gaming", "how": "Offer real-time AI translation for in-game chats and gaming forums, sell to video game publishers and community managers."},
+    {"id": 188, "idea": "Provide AI-powered language translation and localization for online course platforms", "cat": "Education", "how": "Help e-learning platforms expand globally by offering AI-powered course translation, sell to online education providers."},
+    {"id": 189, "idea": "Provide AI-powered language translation and localization for online marketplace listings and seller communications", "cat": "Education", "how": "Help global online marketplaces expand by offering AI-powered translation for listings and seller messages, sell to e-commerce platforms."},
+    {"id": 190, "idea": "Provide AI-powered language translation and localization for user-generated content platforms", "cat": "Education", "how": "Offer real-time AI translation for user reviews, comments, and forum posts, sell to global online communities."},
+    {"id": 191, "idea": "Provide AI-powered language translation and subtitling for cooking and recipe videos", "cat": "Education", "how": "Offer AI-generated translations and subtitles for cooking content, sell to food bloggers and culinary brands."},
+    {"id": 192, "idea": "Provide AI-powered language translation and subtitling for online courses", "cat": "Education", "how": "Leverage AI to automatically translate and subtitle course videos, sell to online course creators."},
+    {"id": 193, "idea": "Provide AI-powered language translation and subtitling for online fitness classes", "cat": "Education", "how": "Offer AI-generated translations and subtitles for fitness video content, sell to online fitness platforms and instructors."},
+    {"id": 194, "idea": "Provide AI-powered language translation and subtitling for travel and tourism videos", "cat": "Education", "how": "Offer AI-generated translations and subtitles for destination marketing videos, sell to tourism boards and travel companies."},
+    {"id": 195, "idea": "Provide AI-powered language translation and transcription for academic research interviews", "cat": "Education", "how": "Transcribe and translate qualitative research interviews using AI, sell to universities and research institutions."},
+    {"id": 196, "idea": "Provide AI-powered language translation and transcription for legal depositions and interviews", "cat": "Education", "how": "Transcribe and translate legal proceedings using AI, sell to law firms and court reporting agencies."},
+    {"id": 197, "idea": "Provide AI-powered language translation and transcription for market research interviews", "cat": "Data/Analytics", "how": "Transcribe and translate market research interviews using AI, sell to global market research firms."},
+    {"id": 198, "idea": "Provide AI-powered language translation and transcription for podcast interviews", "cat": "Education", "how": "Automatically transcribe and translate podcast interviews using AI, sell to podcast producers."},
+    {"id": 199, "idea": "Provide AI-powered language translation and transcription for user research and feedback", "cat": "Education", "how": "Transcribe and translate user interviews and feedback using AI, sell to UX researchers and product managers."},
+    {"id": 200, "idea": "Provide AI-powered sales forecasting and lead scoring solutions", "cat": "Data/Analytics", "how": ""},
+    {"id": 201, "idea": "Provide AI-powered SEO and digital marketing services", "cat": "Marketing", "how": "Master AI SEO tools, learn online marketing strategies, and offer your services to businesses of all sizes."},
+    {"id": 202, "idea": "Provide AI-powered social media post and ad generation services", "cat": "Content Creation", "how": "Use AI to create optimized social media content and ads, sell to small businesses and marketers."},
+    {"id": 203, "idea": "Provide AI-powered social media sentiment analysis and brand monitoring", "cat": "Data/Analytics", "how": "Use AI to track brand mentions and analyze sentiment, sell to PR and marketing agencies."},
+    {"id": 204, "idea": "Provide AI-powered video game NPC dialogue generation services", "cat": "Gaming", "how": "Leverage AI to create dynamic, branching dialogue for game characters, sell to game studios."},
+    {"id": 205, "idea": "Provide AI-powered virtual try-on solutions for fashion and beauty brands", "cat": "Customer Service", "how": "Develop AI virtual fitting and makeup preview tools, sell to ecommerce retailers in fashion and cosmetics."}
+  ];
+
+  var CATEGORY_ORDER = [
+    'Content Creation', 'Education', 'Customer Service', 'Marketing',
+    'Data/Analytics', 'Gaming', 'Productivity', 'Health', 'Finance', 'Travel'
+  ];
+
+  // ---- transparent priority scoring: 0-100 = build(0-40)+roi(0-30)+mercor(0-30) ----
+  var BUILD_BASE = {
+    'Productivity': 25, 'Data/Analytics': 25, 'Content Creation': 25, 'Gaming': 25,
+    'Education': 18, 'Marketing': 18, 'Customer Service': 12,
+    'Health': 6, 'Finance': 6, 'Travel': 6
+  };
+  function hits(text, words) {
+    var n = 0;
+    for (var i = 0; i < words.length; i++) if (text.indexOf(words[i]) !== -1) n++;
+    return n;
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function score(idea) {
+    var t = idea.idea.toLowerCase();
+    // build: can it ship as a standalone single-file client-side app?
+    var build = BUILD_BASE[idea.cat] || 10;
+    build += clamp(hits(t, ['generator', 'template', 'calculator', 'tracker', 'quiz', 'dashboard', 'converter', 'planner', 'visualiz', 'prompt']) * 5, 0, 15);
+    build -= hits(t, ['marketplace', 'platform', 'api', 'saas', 'subscription', 'community', 'agency']) * 8;
+    build = clamp(build, 0, 40);
+    // roi: fast onboarding / fast time-to-first-dollar on a platform you can start today
+    var roi = 5;
+    roi += hits(t, ['sell', 'service', 'freelance', 'gig', 'guide', 'template', 'offer']) > 0 ? 15 : 0;
+    roi += hits(t, ['youtube', 'tiktok', 'instagram', 'etsy', 'gumroad', 'fiverr', 'upwork', 'substack', 'shopify', 'podcast', 'social media']) > 0 ? 10 : 0;
+    roi -= hits(t, ['build a platform', 'enterprise', 'long-term']) * 10;
+    roi = clamp(roi, 0, 30);
+    // mercor: does it produce an office-suite / data / evaluation artifact?
+    var mercor = 0;
+    mercor += hits(t, ['spreadsheet', 'excel', 'sheets', 'slides', 'deck', 'report', 'evaluation', 'scoring', 'rubric', 'analytics', 'insights', 'data', 'annotation', 'document', 'survey', 'forecast']) > 0 ? 20 : 0;
+    mercor += (idea.cat === 'Data/Analytics' || idea.cat === 'Education') ? 10 : 0;
+    mercor = clamp(mercor, 0, 30);
+    return { score: build + roi + mercor, build: build, roi: roi, mercor: mercor };
+  }
+
+  // ---- the 6 shortlist picks: matched to real ideas by substring ----
+  var PICKS = [
+    { lane: 'For lab', match: 'data visualization and reporting tools',
+      why: 'Paste-data &rarr; instant charts; ships as a single-file lab app like Cohort Grid &mdash; <b>no backend</b>.' },
+    { lane: 'For lab', match: 'content idea generation and planning',
+      why: 'Pure client-side generator (templates + brand voice); <b>zero infra</b>, a perfect lab one-dayer.' },
+    { lane: 'For Mercor profile', match: 'writing evaluation and scoring tools for educators',
+      why: 'Rubric-based scoring &mdash; mirrors your <b>Spreadsheet Evaluation Pack</b> and AI-training eval work.' },
+    { lane: 'For Mercor profile', match: 'data analytics and insights as a service',
+      why: 'Excel / Sheets / Slides deliverables &mdash; extends your <b>KPI Command Center</b> case study.' },
+    { lane: 'Best ROI / fast onboarding', match: 'AI-assisted content creator on YouTube',
+      why: 'Platforms you can join <b>today</b>; monetize via ads &amp; sponsorships &mdash; fastest onboarding.' },
+    { lane: 'Best ROI / fast onboarding', match: 'AI writing services for blogs',
+      why: 'Sell immediately on Upwork / Fiverr; <b>lowest setup</b>, quickest time-to-first-dollar.' }
+  ];
+  var LANE_ORDER = ['For lab', 'For Mercor profile', 'Best ROI / fast onboarding'];
+
+  // ---- enrich ideas once ----
+  var i, idea;
+  for (i = 0; i < IDEAS.length; i++) {
+    var s = score(IDEAS[i]);
+    IDEAS[i].score = s.score; IDEAS[i].bands = s;
+    IDEAS[i].pinned = false; IDEAS[i].lane = null; IDEAS[i].why = null;
+  }
+  function findIdea(sub) {
+    var low = sub.toLowerCase();
+    for (var k = 0; k < IDEAS.length; k++) {
+      if (IDEAS[k].pinned) continue;
+      if (IDEAS[k].idea.toLowerCase().indexOf(low) !== -1) return IDEAS[k];
+    }
+    return null;
+  }
+  var pickList = [];
+  for (i = 0; i < PICKS.length; i++) {
+    var hit = findIdea(PICKS[i].match);
+    if (hit) { hit.pinned = true; hit.lane = PICKS[i].lane; hit.why = PICKS[i].why; pickList.push(hit); }
+  }
+
+  // group by category
+  var groups = {};
+  for (i = 0; i < CATEGORY_ORDER.length; i++) groups[CATEGORY_ORDER[i]] = [];
+  for (i = 0; i < IDEAS.length; i++) if (groups[IDEAS[i].cat]) groups[IDEAS[i].cat].push(IDEAS[i]);
+  // sort each category by score desc so high-priority ideas surface first when expanded
+  for (i = 0; i < CATEGORY_ORDER.length; i++) {
+    groups[CATEGORY_ORDER[i]].sort(function (a, b) { return b.score - a.score; });
+  }
+
+  // ---- brand-token color reader (falls back to hex on file:// / smoke) ----
+  function token(name, fallbackHex) {
+    try {
+      if (typeof getComputedStyle === 'function') {
+        var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        if (v) return v;
+      }
+    } catch (e) {}
+    return fallbackHex;
+  }
+  function parseColor(str, fb) {
+    var m = String(str).trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!m) return fb;
+    var hex = m[1];
+    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
+  }
+  var C_LOW = parseColor(token('--muted', '#8a8a8a'), { r: 138, g: 138, b: 138 });
+  var C_HIGH = parseColor(token('--lab-green', '#009A44'), { r: 0, g: 154, b: 68 });
+  function scoreColor(sc) {
+    var t = clamp(sc / 100, 0, 1);
+    return 'rgb(' + Math.round(C_LOW.r + (C_HIGH.r - C_LOW.r) * t) + ',' +
+      Math.round(C_LOW.g + (C_HIGH.g - C_LOW.g) * t) + ',' +
+      Math.round(C_LOW.b + (C_HIGH.b - C_LOW.b) * t) + ')';
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ---- state ----
+  var state = { expanded: {} };
+
+  var statsEl = document.getElementById('stats');
+  var summaryEl = document.getElementById('statsSummary');
+  var mapEl = document.getElementById('map');
+  var picksEl = document.getElementById('picks');
+
+  // ---- render: stats ----
+  function renderStats() {
+    var max = 0, total = 0, c, n;
+    for (i = 0; i < CATEGORY_ORDER.length; i++) { n = groups[CATEGORY_ORDER[i]].length; if (n > max) max = n; total += n; }
+    var html = '';
+    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+      c = CATEGORY_ORDER[i]; n = groups[c].length;
+      var pct = Math.round(n / total * 100);
+      html += '<div class="bar-row">' +
+        '<div class="bar-label">' + esc(c) + '</div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + (n / max * 100) + '%"></div></div>' +
+        '<div class="bar-meta"><strong>' + n + '</strong> &middot; ' + pct + '%</div>' +
+        '</div>';
+    }
+    statsEl.innerHTML = html;
+    summaryEl.innerHTML =
+      '<span class="lab-chip">' + total + ' ideas</span>' +
+      '<span class="lab-chip">' + CATEGORY_ORDER.length + ' categories</span>' +
+      '<span class="lab-chip">Top: Content Creation (' + groups['Content Creation'].length + ')</span>' +
+      '<span class="lab-chip">6 shortlisted</span>';
+  }
+
+  // ---- render: mind map (zero-dep inline SVG, horizontal indented tree) ----
+  var ROW = 28, X_CENTER = 24, X_CAT = 250, X_LEAF = 470, W = 1000, CAT_W = 196, LEAF_MAX = 50;
+  function truncate(str, len) { return str.length > len ? str.slice(0, len - 1) + '…' : str; }
+  function renderMap() {
+    var nodes = [], edges = [];
+    var y = ROW;
+    var catYs = [];
+    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+      var cat = CATEGORY_ORDER[i];
+      var cy = y; catYs.push(cy);
+      var open = !!state.expanded[cat];
+      // average score for the category, shown on the node
+      var arr = groups[cat], avg = 0;
+      for (var a = 0; a < arr.length; a++) avg += arr[a].score;
+      avg = arr.length ? Math.round(avg / arr.length) : 0;
+      nodes.push(
+        '<g class="node-cat" data-cat="' + esc(cat) + '">' +
+        '<title>' + esc(cat) + ' &mdash; ' + arr.length + ' ideas, avg priority ' + avg + '</title>' +
+        '<rect class="cat-box" x="' + X_CAT + '" y="' + (cy - 11) + '" width="' + CAT_W + '" height="22" rx="6" fill="var(--surface)" stroke="var(--border)"></rect>' +
+        '<circle cx="' + (X_CAT + 12) + '" cy="' + cy + '" r="5" fill="' + scoreColor(avg) + '"></circle>' +
+        '<text x="' + (X_CAT + 24) + '" y="' + (cy + 4) + '" font-size="12" font-family="var(--font-mono)" fill="var(--text)">' +
+        (open ? '▾ ' : '▸ ') + esc(cat) + ' (' + arr.length + ')</text>' +
+        '</g>'
+      );
+      // edge center -> category
+      edges.push('<path d="M' + (X_CENTER + 14) + ' ' + 0 + ' C' + (X_CAT - 40) + ' ' + 0 + ',' + (X_CAT - 40) + ' ' + cy + ',' + X_CAT + ' ' + cy + '" fill="none" stroke="var(--border)" stroke-width="1" data-edge="' + esc(cat) + '"></path>');
+      y += ROW;
+      if (open) {
+        for (var j = 0; j < arr.length; j++) {
+          var it = arr[j], ly = y;
+          edges.push('<path d="M' + (X_CAT + CAT_W) + ' ' + cy + ' C' + (X_LEAF - 30) + ' ' + cy + ',' + (X_LEAF - 30) + ' ' + ly + ',' + X_LEAF + ' ' + ly + '" fill="none" stroke="var(--border)" stroke-width="1"></path>');
+          var star = it.pinned ? '<text x="' + (X_LEAF - 4) + '" y="' + (ly + 4) + '" font-size="13" text-anchor="end" fill="var(--lab-green)">★</text>' : '';
+          nodes.push(
+            '<g>' +
+            '<title>' + esc(it.idea) + ' — priority ' + it.score + ' (build ' + it.bands.build + ' / roi ' + it.bands.roi + ' / mercor ' + it.bands.mercor + ')</title>' +
+            '<circle cx="' + (X_LEAF + 8) + '" cy="' + ly + '" r="' + (3 + it.score / 100 * 4) + '" fill="' + scoreColor(it.score) + '"' + (it.pinned ? ' stroke="var(--lab-green)" stroke-width="1.5"' : '') + '></circle>' +
+            star +
+            '<text x="' + (X_LEAF + 20) + '" y="' + (ly + 4) + '" font-size="11.5" font-family="var(--font-display)" fill="var(--text)">' + esc(truncate(it.idea, LEAF_MAX)) + '</text>' +
+            '<text x="' + (W - 8) + '" y="' + (ly + 4) + '" font-size="11" text-anchor="end" font-family="var(--font-mono)" fill="var(--muted)">' + it.score + '</text>' +
+            '</g>'
+          );
+          y += ROW;
+        }
+      }
+    }
+    var totalH = y + ROW / 2;
+    // center node, vertically centered against the category column
+    var midY = catYs.length ? (catYs[0] + catYs[catYs.length - 1]) / 2 : ROW;
+    // re-aim the center->category edges from the true center Y
+    var centerEdges = '';
+    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+      centerEdges += '<path d="M' + (X_CENTER + 14) + ' ' + midY + ' C' + (X_CAT - 50) + ' ' + midY + ',' + (X_CAT - 50) + ' ' + catYs[i] + ',' + X_CAT + ' ' + catYs[i] + '" fill="none" stroke="var(--border)" stroke-width="1"></path>';
+    }
+    var center =
+      '<g><circle cx="' + (X_CENTER + 4) + '" cy="' + midY + '" r="9" fill="var(--lab-green)"></circle>' +
+      '<text x="' + (X_CENTER + 4) + '" y="' + (midY + 26) + '" font-size="11" font-family="var(--font-mono)" fill="var(--muted)">205</text></g>';
+
+    mapEl.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + totalH + '" width="' + W + '" height="' + totalH + '" style="max-width:none;min-width:' + W + 'px" xmlns="http://www.w3.org/2000/svg">' +
+      centerEdges + nodes.join('') + center +
+      '</svg>';
+  }
+
+  // ---- render: shortlist ----
+  function renderPicks() {
+    var html = '';
+    for (var L = 0; L < LANE_ORDER.length; L++) {
+      var lane = LANE_ORDER[L];
+      html += '<div class="lane lab-card"><h3>' + esc(lane) + '</h3>';
+      for (i = 0; i < pickList.length; i++) {
+        var p = pickList[i];
+        if (p.lane !== lane) continue;
+        html += '<div class="pick">' +
+          '<p class="idea">' + esc(p.idea) + '</p>' +
+          '<p class="how">' + esc(p.how) + '</p>' +
+          '<p class="why">' + p.why + '</p>' +
+          '<div class="pick-foot">' +
+          '<span class="lab-chip">' + esc(p.cat) + '</span>' +
+          '<span class="score-badge lab-good">priority ' + p.score + '</span>' +
+          '<span class="bands">build ' + p.bands.build + ' &middot; roi ' + p.bands.roi + ' &middot; mercor ' + p.bands.mercor + '</span>' +
+          '</div></div>';
+      }
+      html += '</div>';
+    }
+    picksEl.innerHTML = html;
+  }
+
+  function render() { renderStats(); renderMap(); renderPicks(); }
+
+  // ---- wire ----
+  function wire() {
+    var tabs = document.getElementById('tabs');
+    if (tabs) tabs.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.tab') : null;
+      if (!btn) return;
+      var els = tabs.querySelectorAll ? tabs.querySelectorAll('.tab') : [];
+      for (var k = 0; k < els.length; k++) els[k].classList.remove('active');
+      btn.classList.add('active');
+      var sec = document.getElementById(btn.getAttribute('data-target'));
+      if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    // event delegation on the map container survives innerHTML re-renders
+    if (mapEl) mapEl.addEventListener('click', function (e) {
+      var g = e.target && e.target.closest ? e.target.closest('[data-cat]') : null;
+      if (!g) return;
+      var cat = g.getAttribute('data-cat');
+      state.expanded[cat] = !state.expanded[cat];
+      renderMap();
+    });
+    var ex = document.getElementById('expandAll');
+    var co = document.getElementById('collapseAll');
+    if (ex) ex.addEventListener('click', function () {
+      for (var k = 0; k < CATEGORY_ORDER.length; k++) state.expanded[CATEGORY_ORDER[k]] = true;
+      renderMap();
+    });
+    if (co) co.addEventListener('click', function () {
+      state.expanded = {}; renderMap();
+    });
+  }
+
+  render();
+  wire();
+})();
+</script>
+</body>
+</html>
