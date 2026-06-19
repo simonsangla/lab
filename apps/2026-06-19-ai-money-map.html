@@ -405,8 +405,7 @@
   var LANE_ORDER = ['For lab', 'For Mercor profile', 'Best ROI / fast onboarding'];
 
   // ---- enrich ideas once ----
-  var i, idea;
-  for (i = 0; i < IDEAS.length; i++) {
+  for (var i = 0; i < IDEAS.length; i++) {
     var s = score(IDEAS[i]);
     IDEAS[i].score = s.score; IDEAS[i].bands = s;
     IDEAS[i].pinned = false; IDEAS[i].lane = null; IDEAS[i].why = null;
@@ -420,17 +419,17 @@
     return null;
   }
   var pickList = [];
-  for (i = 0; i < PICKS.length; i++) {
+  for (var i = 0; i < PICKS.length; i++) {
     var hit = findIdea(PICKS[i].match);
     if (hit) { hit.pinned = true; hit.lane = PICKS[i].lane; hit.why = PICKS[i].why; pickList.push(hit); }
   }
 
   // group by category
   var groups = {};
-  for (i = 0; i < CATEGORY_ORDER.length; i++) groups[CATEGORY_ORDER[i]] = [];
-  for (i = 0; i < IDEAS.length; i++) if (groups[IDEAS[i].cat]) groups[IDEAS[i].cat].push(IDEAS[i]);
+  for (var i = 0; i < CATEGORY_ORDER.length; i++) groups[CATEGORY_ORDER[i]] = [];
+  for (var i = 0; i < IDEAS.length; i++) if (groups[IDEAS[i].cat]) groups[IDEAS[i].cat].push(IDEAS[i]);
   // sort each category by score desc so high-priority ideas surface first when expanded
-  for (i = 0; i < CATEGORY_ORDER.length; i++) {
+  for (var i = 0; i < CATEGORY_ORDER.length; i++) {
     groups[CATEGORY_ORDER[i]].sort(function (a, b) { return b.score - a.score; });
   }
 
@@ -475,9 +474,9 @@
   // ---- render: stats ----
   function renderStats() {
     var max = 0, total = 0, c, n;
-    for (i = 0; i < CATEGORY_ORDER.length; i++) { n = groups[CATEGORY_ORDER[i]].length; if (n > max) max = n; total += n; }
+    for (var i = 0; i < CATEGORY_ORDER.length; i++) { n = groups[CATEGORY_ORDER[i]].length; if (n > max) max = n; total += n; }
     var html = '';
-    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+    for (var i = 0; i < CATEGORY_ORDER.length; i++) {
       c = CATEGORY_ORDER[i]; n = groups[c].length;
       var pct = Math.round(n / total * 100);
       html += '<div class="bar-row">' +
@@ -501,7 +500,7 @@
     var nodes = [], edges = [];
     var y = ROW;
     var catYs = [];
-    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+    for (var i = 0; i < CATEGORY_ORDER.length; i++) {
       var cat = CATEGORY_ORDER[i];
       var cy = y; catYs.push(cy);
       var open = !!state.expanded[cat];
@@ -518,8 +517,8 @@
         (open ? '▾ ' : '▸ ') + esc(cat) + ' (' + arr.length + ')</text>' +
         '</g>'
       );
-      // edge center -> category
-      edges.push('<path d="M' + (X_CENTER + 14) + ' ' + 0 + ' C' + (X_CAT - 40) + ' ' + 0 + ',' + (X_CAT - 40) + ' ' + cy + ',' + X_CAT + ' ' + cy + '" fill="none" stroke="var(--border)" stroke-width="1" data-edge="' + esc(cat) + '"></path>');
+      // edge center -> category is drawn after this loop (centerEdges), once the
+      // true center Y is known; only leaf edges are collected in `edges`.
       y += ROW;
       if (open) {
         for (var j = 0; j < arr.length; j++) {
@@ -544,7 +543,7 @@
     var midY = catYs.length ? (catYs[0] + catYs[catYs.length - 1]) / 2 : ROW;
     // re-aim the center->category edges from the true center Y
     var centerEdges = '';
-    for (i = 0; i < CATEGORY_ORDER.length; i++) {
+    for (var i = 0; i < CATEGORY_ORDER.length; i++) {
       centerEdges += '<path d="M' + (X_CENTER + 14) + ' ' + midY + ' C' + (X_CAT - 50) + ' ' + midY + ',' + (X_CAT - 50) + ' ' + catYs[i] + ',' + X_CAT + ' ' + catYs[i] + '" fill="none" stroke="var(--border)" stroke-width="1"></path>';
     }
     var center =
@@ -553,7 +552,7 @@
 
     mapEl.innerHTML =
       '<svg viewBox="0 0 ' + W + ' ' + totalH + '" width="' + W + '" height="' + totalH + '" style="max-width:none;min-width:' + W + 'px" xmlns="http://www.w3.org/2000/svg">' +
-      centerEdges + nodes.join('') + center +
+      centerEdges + edges.join('') + nodes.join('') + center +
       '</svg>';
   }
 
@@ -563,7 +562,7 @@
     for (var L = 0; L < LANE_ORDER.length; L++) {
       var lane = LANE_ORDER[L];
       html += '<div class="lane lab-card"><h3>' + esc(lane) + '</h3>';
-      for (i = 0; i < pickList.length; i++) {
+      for (var i = 0; i < pickList.length; i++) {
         var p = pickList[i];
         if (p.lane !== lane) continue;
         html += '<div class="pick">' +
