@@ -93,7 +93,7 @@ const html = `<!doctype html>
 <script src="/assets/lab-nav.js" defer></script>
 </head>
 <body>
-  <a class="back" href="../">&larr; lab.</a>
+  <a class="back" href="/">&larr; lab.</a>
   <div class="wrap">
     <header>
       <p class="kicker">${esc(name)}</p>
@@ -115,6 +115,15 @@ const html = `<!doctype html>
   }
   render();
 })();
+</script>
+<script>
+  // PWA: register the shared service worker so this app is installable/offline
+  // even when opened directly. Guarded, so it's inert under the smoke harness.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 </script>
 </body>
 </html>
