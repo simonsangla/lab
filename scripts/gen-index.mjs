@@ -52,9 +52,22 @@ const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
   .sort((a, b) => b.localeCompare(a));
 
-const apps = files.map((filename) => {
-  const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
-  const date = filename.slice(0, 10);
+// Unlisted apps opt out of the gallery with <meta name="app-visibility" content="private">.
+// The file still deploys (reachable by direct URL); it's just excluded from the index.
+function isPrivate(html) {
+  // Tolerate any attribute order / extra attributes on the meta tag.
+  return /<meta\s+[^>]*name=["']app-visibility["'][^>]*content=["']\s*private\s*["']/i.test(html) ||
+         /<meta\s+[^>]*content=["']\s*private\s*["'][^>]*name=["']app-visibility["']/i.test(html);
+}
+
+const apps = files
+  .map((filename) => {
+    const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
+    return { filename, raw };
+  })
+  .filter(({ raw }) => !isPrivate(raw))
+  .map(({ filename, raw }) => {
+    const date = filename.slice(0, 10);
   const stem = filename.replace(/\.html$/i, '');
   const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
   const fallbackName = titleCase(rest.replace(/-/g, ' '));
@@ -339,12 +352,12 @@ const html =
   (since ? '      <span class="chip">since ' + escapeHtml(formatDate(since)) + '</span>\n' : '') +
   '    </div>\n' +
   body + '\n' +
-  '    <a class="cta" href="mailto:simonsangla@gmail.com">\n' +
+  '    <a class="cta" href="apps/2026-06-19-freelance-portfolio.html">\n' +
   '      <div>\n' +
   '        <p class="t">Work with me</p>\n' +
-  '        <p class="s">Snowflake analytics, shipped at lab speed.</p>\n' +
+  '        <p class="s">Snowflake analytics &amp; data tools, shipped at lab speed.</p>\n' +
   '      </div>\n' +
-  '      <span class="btn">Get in touch</span>\n' +
+  '      <span class="btn">See services</span>\n' +
   '    </a>\n' +
   '    <footer>\n' +
   '      Built by <a href="https://simonsangla.com">Simon Sangla</a> &middot; Snowflake Analytics Consultant<br>\n' +

@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Chart Forge">
+<meta name="app-description" content="Paste a CSV and get an instant bar, line or area chart you can export as a PNG — no signup, no backend.">
+<meta name="app-tags" content="data,visualization,charts,tools">
+<title>Chart Forge &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chart Forge">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .out { display: flex; flex-direction: column; gap: 12px; }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Chart Forge</p>
+      <h1>Chart Forge</h1>
+      <p class="lead">Paste a CSV and get an instant bar, line or area chart you can export as a PNG — no signup, no backend.</p>
+    </header>
+
+    <div class="lab-card" style="padding:16px; display:flex; flex-direction:column; gap:14px">
+      <div>
+        <label for="csv">CSV &mdash; label column, then one or more numeric series</label>
+        <textarea id="csv" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end">
+        <div style="flex:0 0 auto">
+          <label for="type">Chart type</label>
+          <select id="type">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="area">Area</option>
+          </select>
+        </div>
+        <button id="dl" class="lab-btn-quiet" type="button">Export PNG</button>
+      </div>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  var out = document.getElementById('out');
+  var csvEl = document.getElementById('csv');
+  var typeEl = document.getElementById('type');
+  var dlEl = document.getElementById('dl');
+
+  var timer = null;
+  var lastChart = null; // { headers, labels, series, type } cached for PNG export
+
+  var SEED = 'Month,Revenue,Expenses\n' +
+    'Jan,42,30\n' +
+    'Feb,48,33\n' +
+    'Mar,55,31\n' +
+    'Apr,51,38\n' +
+    'May,67,41\n' +
+    'Jun,73,44';
+
+  // --- CSV parse (lifted from cohort-grid ~158-180; multi-series, never throws) ---
+  function parseCsv(text) {
+    var lines = String(text).trim().split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+    if (lines.length < 2) return { error: 'Need a header row plus at least one data row.' };
+    var rows = lines.map(function (l) { return l.split(',').map(function (c) { return c.trim(); }); });
+    var headers = rows[0];
+    if (headers.length < 2) return { error: 'Need a label column and at least one numeric series.' };
+    var dataRows = rows.slice(1);
+    var labels = [];
+    var series = [];
+    var seriesCount = headers.length - 1;
+    for (var s = 0; s < seriesCount; s++) series.push({ name: headers[s + 1] || ('Series ' + (s + 1)), values: [] });
+    for (var i = 0; i < dataRows.length; i++) {
+      var r = dataRows[i];
+      if (r.length < 2) return { error: 'Row ' + (i + 2) + ' has no numeric values.' };
+      labels.push(r[0] === '' ? '(' + (i + 1) + ')' : r[0]);
+      for (var j = 0; j < seriesCount; j++) {
+        var raw = r[j + 1];
+        var n = parseFloat(raw);
+        if (raw === undefined || raw === '' || isNaN(n)) {
+          return { error: 'Row ' + (i + 2) + ', column "' + (headers[j + 1] || (j + 2)) + '" is not a number.' };
+        }
+        series[j].values.push(n);
+      }
+    }
+    if (!labels.length) return { error: 'No data rows found.' };
+    return { headers: headers, labels: labels, series: series };
+  }
+
+  // --- Brand-token reader + color utils (lifted from cohort-grid 207-246) ---
+  function token(name, fallbackHex) {
+    try {
+      if (typeof getComputedStyle === 'function') {
+        var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        if (v) return v;
+      }
+    } catch (e) {}
+    return fallbackHex;
+  }
+  function parseColor(str, fallback) {
+    var s = String(str).trim();
+    var m = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (m) {
+      var hex = m[1];
+      if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
+    }
+    var rgb = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (rgb) return { r: +rgb[1], g: +rgb[2], b: +rgb[3] };
+    return fallback;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function rgbToCss(c) { return 'rgb(' + c.r + ',' + c.g + ',' + c.b + ')'; }
+
+  // Series palette: anchor on brand green, then distinct accents. file:// hex
+  // fallbacks mirror the dark theme; token() upgrades them to the live values.
+  var PALETTE_FALLBACK = ['#2bd07f', '#facc15', '#ef4444', '#60a5fa', '#c084fc', '#f97316'];
+  function seriesColors(n) {
+    var anchors = [
+      token('--green', '#2bd07f'),
+      token('--yellow', '#facc15'),
+      token('--red', '#ef4444')
+    ];
+    var cols = [];
+    for (var i = 0; i < n; i++) {
+      cols.push(i < anchors.length ? anchors[i] : PALETTE_FALLBACK[i % PALETTE_FALLBACK.length]);
+    }
+    return cols;
+  }
+
+  // --- Nice axis ticks: round-to-1/2/5 * 10^n ---
+  function niceNum(range, round) {
+    if (range <= 0) return 1;
+    var exp = Math.floor(Math.log(range) / Math.LN10);
+    var f = range / Math.pow(10, exp);
+    var nf;
+    if (round) { nf = f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10; }
+    else { nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10; }
+    return nf * Math.pow(10, exp);
+  }
+  function niceScale(lo, hi, maxTicks) {
+    if (lo === hi) { hi = lo + 1; if (lo > 0) lo = 0; }
+    var range = niceNum(hi - lo, false);
+    var step = niceNum(range / (maxTicks - 1), true);
+    var niceMin = Math.floor(lo / step) * step;
+    var niceMax = Math.ceil(hi / step) * step;
+    var ticks = [];
+    for (var v = niceMin; v <= niceMax + step * 0.5; v += step) ticks.push(+v.toFixed(10));
+    return { min: niceMin, max: niceMax, step: step, ticks: ticks };
+  }
+
+  function fmt(n) {
+    if (!isFinite(n)) return '0';
+    var a = Math.abs(n);
+    if (a >= 1000000) return (n / 1000000).toFixed(a >= 10000000 ? 0 : 1) + 'M';
+    if (a >= 1000) return (n / 1000).toFixed(a >= 10000 ? 0 : 1) + 'k';
+    if (a >= 100 || n % 1 === 0) return String(Math.round(n));
+    return (Math.round(n * 100) / 100).toString();
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // --- Stats per series ---
+  function statsFor(values) {
+    var min = Infinity, max = -Infinity, sum = 0;
+    for (var i = 0; i < values.length; i++) {
+      var v = values[i];
+      if (v < min) min = v;
+      if (v > max) max = v;
+      sum += v;
+    }
+    return { min: min, max: max, sum: sum, avg: sum / values.length };
+  }
+
+  // --- Deterministic insight ---
+  function buildInsight(data) {
+    var labels = data.labels, series = data.series;
+    // largest series by total
+    var topIdx = 0, topSum = -Infinity;
+    for (var s = 0; s < series.length; s++) {
+      var sum = statsFor(series[s].values).sum;
+      if (sum > topSum) { topSum = sum; topIdx = s; }
+    }
+    var top = series[topIdx];
+    // biggest period-over-period jump across all series
+    var jumpSeries = top.name, jumpFrom = labels[0], jumpTo = labels.length > 1 ? labels[1] : labels[0], jumpDelta = -Infinity;
+    for (var t = 0; t < series.length; t++) {
+      var vals = series[t].values;
+      for (var k = 1; k < vals.length; k++) {
+        var d = vals[k] - vals[k - 1];
+        if (d > jumpDelta) { jumpDelta = d; jumpSeries = series[t].name; jumpFrom = labels[k - 1]; jumpTo = labels[k]; }
+      }
+    }
+    // peak: highest single value across all series, with its label
+    var peakVal = -Infinity, peakLabel = labels[0], peakSeries = top.name;
+    for (var u = 0; u < series.length; u++) {
+      var vv = series[u].values;
+      for (var m = 0; m < vv.length; m++) {
+        if (vv[m] > peakVal) { peakVal = vv[m]; peakLabel = labels[m]; peakSeries = series[u].name; }
+      }
+    }
+    var parts = ['"' + top.name + '" leads with a total of ' + fmt(topSum) + '.'];
+    if (labels.length > 1 && jumpDelta > 0) {
+      parts.push('Biggest jump: ' + jumpSeries + ' +' + fmt(jumpDelta) + ' from ' + jumpFrom + ' to ' + jumpTo + '.');
+    }
+    parts.push('Peak ' + fmt(peakVal) + ' at "' + peakLabel + '" (' + peakSeries + ').');
+    return parts.join(' ');
+  }
+
+  // --- SVG chart (theme-tokened via CSS vars) ---
+  var W = 720, H = 320, PAD_L = 52, PAD_R = 16, PAD_T = 16, PAD_B = 44;
+  function chartSvg(data, type) {
+    var labels = data.labels, series = data.series;
+    var cols = seriesColors(series.length);
+    var lo = Infinity, hi = -Infinity;
+    for (var s = 0; s < series.length; s++) {
+      var st = statsFor(series[s].values);
+      if (st.min < lo) lo = st.min;
+      if (st.max > hi) hi = st.max;
+    }
+    if (lo > 0) lo = 0; // baseline at zero when all positive
+    if (hi < 0) hi = 0;
+    var scale = niceScale(lo, hi, 6);
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    var y0 = PAD_T + plotH;
+    function yOf(v) { return PAD_T + plotH - ((v - scale.min) / (scale.max - scale.min)) * plotH; }
+    var n = labels.length;
+
+    var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(type) + ' chart" style="display:block">'];
+
+    // gridlines + y axis labels
+    for (var g = 0; g < scale.ticks.length; g++) {
+      var ty = yOf(scale.ticks[g]);
+      svg.push('<line x1="' + PAD_L + '" y1="' + ty.toFixed(1) + '" x2="' + (W - PAD_R) + '" y2="' + ty.toFixed(1) + '" stroke="var(--border)" stroke-width="1" />');
+      svg.push('<text x="' + (PAD_L - 8) + '" y="' + (ty + 3).toFixed(1) + '" fill="var(--muted)" font-size="10" font-family="var(--font-mono)" text-anchor="end">' + esc(fmt(scale.ticks[g])) + '</text>');
+    }
+
+    // x positions
+    var xs = [];
+    if (type === 'bar') {
+      for (var b = 0; b < n; b++) xs.push(PAD_L + plotW * (b + 0.5) / n);
+    } else {
+      for (var c = 0; c < n; c++) xs.push(n === 1 ? PAD_L + plotW / 2 : PAD_L + plotW * c / (n - 1));
+    }
+
+    if (type === 'bar') {
+      var band = plotW / n;
+      var ns = series.length;
+      var groupW = band * 0.72;
+      var barW = groupW / ns;
+      var zeroY = yOf(Math.max(0, scale.min));
+      for (var bi = 0; bi < n; bi++) {
+        var bx = PAD_L + band * bi + (band - groupW) / 2;
+        for (var sb = 0; sb < ns; sb++) {
+          var val = series[sb].values[bi];
+          var topY = yOf(val);
+          var yTop = Math.min(topY, zeroY);
+          var hgt = Math.max(0.5, Math.abs(topY - zeroY));
+          svg.push('<rect x="' + (bx + sb * barW + 0.5).toFixed(1) + '" y="' + yTop.toFixed(1) + '" width="' + Math.max(1, barW - 1).toFixed(1) + '" height="' + hgt.toFixed(1) + '" fill="' + cols[sb] + '" rx="1.5"><title>' + esc(series[sb].name + ' @ ' + labels[bi] + ': ' + val) + '</title></rect>');
+        }
+      }
+    } else {
+      // line / area
+      for (var li = 0; li < series.length; li++) {
+        var vals = series[li].values;
+        var pts = [];
+        for (var p = 0; p < n; p++) pts.push(xs[p].toFixed(1) + ',' + yOf(vals[p]).toFixed(1));
+        if (type === 'area') {
+          var areaD = 'M' + xs[0].toFixed(1) + ',' + yOf(0 > scale.min ? 0 : scale.min).toFixed(1) +
+            ' L' + pts.join(' L') +
+            ' L' + xs[n - 1].toFixed(1) + ',' + yOf(0 > scale.min ? 0 : scale.min).toFixed(1) + ' Z';
+          svg.push('<path d="' + areaD + '" fill="' + cols[li] + '" fill-opacity="0.16" stroke="none" />');
+        }
+        svg.push('<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + cols[li] + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />');
+        for (var d = 0; d < n; d++) {
+          svg.push('<circle cx="' + xs[d].toFixed(1) + '" cy="' + yOf(vals[d]).toFixed(1) + '" r="2.6" fill="' + cols[li] + '"><title>' + esc(series[li].name + ' @ ' + labels[d] + ': ' + vals[d]) + '</title></circle>');
+        }
+      }
+    }
+
+    // zero baseline accent if it sits inside the plot
+    if (scale.min < 0 && scale.max > 0) {
+      svg.push('<line x1="' + PAD_L + '" y1="' + yOf(0).toFixed(1) + '" x2="' + (W - PAD_R) + '" y2="' + yOf(0).toFixed(1) + '" stroke="var(--text)" stroke-width="1" stroke-opacity="0.4" />');
+    }
+
+    // x labels (thin to avoid overlap)
+    var maxLabels = 12;
+    var stepL = Math.ceil(n / maxLabels);
+    for (var xl = 0; xl < n; xl++) {
+      if (xl % stepL !== 0 && xl !== n - 1) continue;
+      svg.push('<text x="' + xs[xl].toFixed(1) + '" y="' + (y0 + 16) + '" fill="var(--muted)" font-size="10" font-family="var(--font-mono)" text-anchor="middle">' + esc(labels[xl]) + '</text>');
+    }
+
+    svg.push('</svg>');
+    return { svg: svg.join(''), cols: cols };
+  }
+
+  function legendHtml(series, cols) {
+    var items = series.map(function (s, i) {
+      return '<span class="lab-chip" style="background:transparent;border:1px solid var(--border);color:var(--text);display:inline-flex;align-items:center;gap:7px">' +
+        '<span style="width:10px;height:10px;border-radius:3px;background:' + cols[i] + ';display:inline-block"></span>' + esc(s.name) + '</span>';
+    });
+    return '<div style="display:flex;flex-wrap:wrap;gap:8px">' + items.join('') + '</div>';
+  }
+
+  function statsTable(data) {
+    var rows = data.series.map(function (s) {
+      var st = statsFor(s.values);
+      return '<tr>' +
+        '<td style="padding:5px 10px;font-weight:600">' + esc(s.name) + '</td>' +
+        '<td style="padding:5px 10px;text-align:right;color:var(--muted)">' + esc(fmt(st.min)) + '</td>' +
+        '<td style="padding:5px 10px;text-align:right;color:var(--muted)">' + esc(fmt(st.max)) + '</td>' +
+        '<td style="padding:5px 10px;text-align:right">' + esc(fmt(st.sum)) + '</td>' +
+        '<td style="padding:5px 10px;text-align:right">' + esc(fmt(st.avg)) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px">' +
+      '<thead><tr style="color:var(--muted)">' +
+      '<th style="padding:5px 10px;text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Series</th>' +
+      '<th style="padding:5px 10px;text-align:right;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Min</th>' +
+      '<th style="padding:5px 10px;text-align:right;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Max</th>' +
+      '<th style="padding:5px 10px;text-align:right;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Sum</th>' +
+      '<th style="padding:5px 10px;text-align:right;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px">Avg</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function errorCard(msg) {
+    return '<div class="lab-card" style="padding:16px;border-color:var(--red)">' +
+      '<p style="margin:0;font-family:var(--font-mono);font-size:13px;color:var(--red)">Couldn\'t chart that CSV: ' + esc(msg) + '</p>' +
+      '<p style="margin:8px 0 0;color:var(--muted);font-size:13px">Expected a header row, then rows of <code>label,number,number…</code>.</p>' +
+      '</div>';
+  }
+
+  function render() {
+    var parsed = parseCsv(csvEl.value);
+    if (parsed.error) {
+      lastChart = null;
+      dlEl.disabled = true;
+      dlEl.style.opacity = '0.5';
+      out.innerHTML = errorCard(parsed.error);
+      return;
+    }
+    var type = typeEl.value;
+    var drawn = chartSvg(parsed, type);
+    lastChart = { headers: parsed.headers, labels: parsed.labels, series: parsed.series, type: type };
+    dlEl.disabled = false;
+    dlEl.style.opacity = '';
+
+    var html = '';
+    html += '<div class="lab-card" style="padding:16px">' + drawn.svg + '</div>';
+    html += '<div class="lab-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">';
+    html += legendHtml(parsed.series, drawn.cols);
+    html += '<p style="margin:0;font-size:13px;line-height:1.5"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--lab-green-text);display:block;margin-bottom:4px">Insight</span>' + esc(buildInsight(parsed)) + '</p>';
+    html += '<div style="overflow-x:auto">' + statsTable(parsed) + '</div>';
+    html += '</div>';
+    out.innerHTML = html;
+  }
+
+  // --- Canvas → PNG export (adapted from cohort-grid ~377-432; redraws chart) ---
+  function exportPng() {
+    var d = lastChart;
+    if (!d) return;
+    var cw = W, ch = H;
+    var canvas = document.createElement('canvas');
+    canvas.width = cw * 2;
+    canvas.height = ch * 2;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(2, 2);
+
+    // pull live brand values once (canvas can't read CSS vars)
+    var bgHex = token('--surface', '#141414');
+    var borderHex = token('--border', '#242424');
+    var mutedHex = token('--muted', '#8a8a8a');
+    var textHex = token('--text', '#e8e8e8');
+    var cols = seriesColors(d.series.length);
+
+    ctx.fillStyle = bgHex;
+    ctx.fillRect(0, 0, cw, ch);
+
+    var labels = d.labels, series = d.series;
+    var lo = Infinity, hi = -Infinity;
+    for (var s = 0; s < series.length; s++) {
+      var st = statsFor(series[s].values);
+      if (st.min < lo) lo = st.min;
+      if (st.max > hi) hi = st.max;
+    }
+    if (lo > 0) lo = 0;
+    if (hi < 0) hi = 0;
+    var scale = niceScale(lo, hi, 6);
+    var plotW = cw - PAD_L - PAD_R, plotH = ch - PAD_T - PAD_B;
+    function yOf(v) { return PAD_T + plotH - ((v - scale.min) / (scale.max - scale.min)) * plotH; }
+    var n = labels.length;
+
+    ctx.font = '10px monospace';
+    ctx.textBaseline = 'middle';
+    for (var g = 0; g < scale.ticks.length; g++) {
+      var ty = yOf(scale.ticks[g]);
+      ctx.strokeStyle = borderHex;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PAD_L, ty);
+      ctx.lineTo(cw - PAD_R, ty);
+      ctx.stroke();
+      ctx.fillStyle = mutedHex;
+      ctx.textAlign = 'right';
+      ctx.fillText(fmt(scale.ticks[g]), PAD_L - 8, ty);
+    }
+
+    var xs = [];
+    if (d.type === 'bar') { for (var b = 0; b < n; b++) xs.push(PAD_L + plotW * (b + 0.5) / n); }
+    else { for (var c = 0; c < n; c++) xs.push(n === 1 ? PAD_L + plotW / 2 : PAD_L + plotW * c / (n - 1)); }
+
+    if (d.type === 'bar') {
+      var band = plotW / n, ns = series.length, groupW = band * 0.72, barW = groupW / ns;
+      var zeroY = yOf(Math.max(0, scale.min));
+      for (var bi = 0; bi < n; bi++) {
+        var bx = PAD_L + band * bi + (band - groupW) / 2;
+        for (var sb = 0; sb < ns; sb++) {
+          var val = series[sb].values[bi];
+          var topY = yOf(val);
+          var yTop = Math.min(topY, zeroY);
+          var hgt = Math.max(0.5, Math.abs(topY - zeroY));
+          ctx.fillStyle = cols[sb];
+          ctx.fillRect(bx + sb * barW + 0.5, yTop, Math.max(1, barW - 1), hgt);
+        }
+      }
+    } else {
+      var zeroY2 = yOf(0 > scale.min ? 0 : scale.min);
+      for (var li = 0; li < series.length; li++) {
+        var vals = series[li].values;
+        if (d.type === 'area') {
+          ctx.beginPath();
+          ctx.moveTo(xs[0], zeroY2);
+          for (var p = 0; p < n; p++) ctx.lineTo(xs[p], yOf(vals[p]));
+          ctx.lineTo(xs[n - 1], zeroY2);
+          ctx.closePath();
+          ctx.globalAlpha = 0.16;
+          ctx.fillStyle = cols[li];
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        ctx.beginPath();
+        for (var q = 0; q < n; q++) { if (q === 0) ctx.moveTo(xs[q], yOf(vals[q])); else ctx.lineTo(xs[q], yOf(vals[q])); }
+        ctx.strokeStyle = cols[li];
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        for (var dd = 0; dd < n; dd++) {
+          ctx.beginPath();
+          ctx.arc(xs[dd], yOf(vals[dd]), 2.6, 0, Math.PI * 2);
+          ctx.fillStyle = cols[li];
+          ctx.fill();
+        }
+      }
+    }
+
+    if (scale.min < 0 && scale.max > 0) {
+      ctx.strokeStyle = textHex;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      ctx.moveTo(PAD_L, yOf(0));
+      ctx.lineTo(cw - PAD_R, yOf(0));
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.fillStyle = mutedHex;
+    ctx.textAlign = 'center';
+    var maxLabels = 12, stepL = Math.ceil(n / maxLabels);
+    for (var xl = 0; xl < n; xl++) {
+      if (xl % stepL !== 0 && xl !== n - 1) continue;
+      ctx.fillText(labels[xl], xs[xl], PAD_T + plotH + 16);
+    }
+
+    canvas.toBlob(function (blob) {
+      if (!blob) return;
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'chart-forge.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }, 'image/png');
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(render, 300);
+  }
+
+  csvEl.addEventListener('input', schedule);
+  typeEl.addEventListener('change', render);
+  dlEl.addEventListener('click', exportPng);
+  window.addEventListener('beforeunload', function () { clearTimeout(timer); });
+
+  csvEl.value = SEED;
+  render();
+})();
+</script>
+</body>
+</html>

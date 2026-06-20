@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Rubric Scorer">
+<meta name="app-description" content="Paste student writing and score it against weighted criteria with readability metrics and an exportable graded report.">
+<meta name="app-tags" content="education,writing,evaluation,scoring">
+<title>Rubric Scorer &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rubric Scorer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+  .out { display: flex; flex-direction: column; gap: 14px; }
+  .weights { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .weights .w label { margin-bottom: 4px; }
+  .weights input { padding: 8px 10px; text-align: center; }
+  .wnote { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 6px 0 0; }
+  .verdict { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px; }
+  .band { font-family: var(--font-mono); font-weight: 700; font-size: 22px; letter-spacing: 0.04em; padding: 6px 16px; border-radius: 999px; }
+  .verdict .pts { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+  .verdict .pts b { color: var(--text); font-size: 26px; }
+  .crit { padding: 16px; }
+  .crit-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
+  .crit-head h3 { font-size: 16px; margin: 0; font-weight: 600; }
+  .crit-head .sc { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+  .crit-head .wt { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .meter { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; margin: 0 0 12px; }
+  .meter > i { display: block; height: 100%; border-radius: 999px; }
+  .feedback { font-size: 14px; margin: 0 0 12px; }
+  .metrics { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+  .metric { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: 12px; border-top: 1px dashed var(--border); padding: 4px 0 0; }
+  .metric:first-child { border-top: 0; padding-top: 0; }
+  .metric .k { color: var(--muted); }
+  .metric .v { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .audit-h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 4px 0 6px; }
+  .empty-state { font-family: var(--font-mono); font-size: 13px; color: var(--muted); padding: 18px; text-align: center; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Rubric Scorer</p>
+      <h1>Rubric Scorer</h1>
+      <p class="lead">Paste student writing and score it against weighted criteria with readability metrics and an exportable graded report.</p>
+    </header>
+
+    <div>
+      <label for="txt">Student writing</label>
+      <textarea id="txt" placeholder="Paste a paragraph or essay&hellip;"></textarea>
+    </div>
+
+    <div>
+      <label>Rubric weights (relative &mdash; normalized to 100%)</label>
+      <div class="weights">
+        <div class="w"><label for="w0">Clarity</label><input id="w0" type="number" min="0" max="100" step="1" value="25" inputmode="numeric"></div>
+        <div class="w"><label for="w1">Structure</label><input id="w1" type="number" min="0" max="100" step="1" value="25" inputmode="numeric"></div>
+        <div class="w"><label for="w2">Evidence</label><input id="w2" type="number" min="0" max="100" step="1" value="25" inputmode="numeric"></div>
+        <div class="w"><label for="w3">Mechanics</label><input id="w3" type="number" min="0" max="100" step="1" value="25" inputmode="numeric"></div>
+      </div>
+      <p class="wnote" id="wnote"></p>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  var txt = document.getElementById('txt');
+  var out = document.getElementById('out');
+  var wnote = document.getElementById('wnote');
+  var wInputs = [
+    document.getElementById('w0'), document.getElementById('w1'),
+    document.getElementById('w2'), document.getElementById('w3')
+  ];
+  var timer = null;
+  var lastReport = '';
+
+  var SAMPLE =
+    'The novel argues that ambition without conscience is self-destructive. ' +
+    'Macbeth begins as a loyal soldier, but the witches’ prophecy plants a dangerous seed. ' +
+    'For example, after he murders Duncan, his guilt manifests as hallucinations and sleeplessness. ' +
+    'Lady Macbeth was overwhelmed by the same conscience she once dismissed, and her famous sleepwalking scene was written to dramatize that collapse.\n\n' +
+    'Moreover, the play’s imagery reinforces this theme. Blood, which cannot be washed away, symbolizes inescapable guilt. ' +
+    'Therefore the audience understands that power seized by violence corrupts the person who seizes it. ' +
+    'In conclusion, Shakespeare uses Macbeth’s downfall to warn that unchecked ambition consumes those who indulge it.';
+
+  // ---- deterministic readability metrics (regex counts, hello-lab style) ----
+  var TRANSITIONS = [
+    'however', 'therefore', 'moreover', 'furthermore', 'consequently', 'thus',
+    'meanwhile', 'nevertheless', 'nonetheless', 'additionally', 'similarly',
+    'conversely', 'accordingly', 'subsequently', 'for example', 'for instance',
+    'in addition', 'in contrast', 'on the other hand', 'as a result',
+    'in conclusion', 'to summarize', 'in summary', 'first', 'second', 'third',
+    'finally', 'next', 'because', 'although', 'whereas', 'instead'
+  ];
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function round1(v) { return Math.round(v * 10) / 10; }
+
+  function syllables(word) {
+    word = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (!word) return 0;
+    if (word.length <= 3) return 1;
+    var w = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+    var groups = w.match(/[aeiouy]{1,2}/g);
+    return groups ? groups.length : 1;
+  }
+
+  function analyze(text) {
+    var trimmed = text.trim();
+    var words = trimmed.match(/[A-Za-z][A-Za-z'’]*/g) || [];
+    var wordCount = words.length;
+    var sentences = trimmed.split(/[.!?]+(?:\s|$)/).filter(function (s) { return s.trim().length > 0; });
+    var sentCount = Math.max(sentences.length, 1);
+    var paras = trimmed.split(/\n\s*\n+/).filter(function (p) { return p.trim().length > 0; });
+    var paraCount = Math.max(paras.length, 1);
+
+    var syl = 0;
+    var unique = {};
+    for (var i = 0; i < words.length; i++) {
+      syl += syllables(words[i]);
+      unique[words[i].toLowerCase()] = 1;
+    }
+    var uniqueCount = 0;
+    for (var k in unique) { if (unique.hasOwnProperty(k)) uniqueCount++; }
+
+    var avgSentLen = wordCount / sentCount;
+    var avgSyl = wordCount ? syl / wordCount : 0;
+    // Flesch Reading Ease
+    var flesch = wordCount
+      ? 206.835 - 1.015 * avgSentLen - 84.6 * avgSyl
+      : 0;
+    flesch = clamp(round1(flesch), 0, 121);
+
+    var lower = ' ' + trimmed.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    var transHits = 0;
+    for (var t = 0; t < TRANSITIONS.length; t++) {
+      var phrase = TRANSITIONS[t];
+      var re = new RegExp('\\b' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+      transHits += (lower.match(re) || []).length;
+    }
+    var transDensity = sentCount ? transHits / sentCount : 0;
+
+    // passive-voice proxy: was/were/been/is/are/be + (optional adverb) + word ending "ed/en"
+    var passive = (trimmed.match(/\b(?:was|were|been|is|are|be|being)\b(?:\s+\w+ly)?\s+\w+(?:ed|en)\b/gi) || []).length;
+    var passiveDensity = sentCount ? passive / sentCount : 0;
+
+    var lexVar = wordCount ? uniqueCount / wordCount : 0;
+
+    return {
+      wordCount: wordCount, sentCount: sentences.length, paraCount: paras.length,
+      avgSentLen: round1(avgSentLen), flesch: flesch,
+      uniqueCount: uniqueCount, lexVar: lexVar,
+      transHits: transHits, transDensity: transDensity,
+      passive: passive, passiveDensity: passiveDensity
+    };
+  }
+
+  // ---- map metrics -> 0-4 criterion scores (clamped, ai-money-map style) ----
+  function tier(score) { // 0..4 -> tier index 0..3 for templated feedback
+    if (score >= 3.25) return 0;     // strong
+    if (score >= 2.25) return 1;     // solid
+    if (score >= 1.25) return 2;     // developing
+    return 3;                        // needs work
+  }
+
+  function scoreClarity(m) {
+    // ideal sentence length ~17 words; Flesch in the 50-70 range reads well
+    var lenPenalty = Math.abs(m.avgSentLen - 17) / 7;     // 0 at 17, 1 at +/-7
+    var fleschFit = 1 - Math.abs(m.flesch - 60) / 45;     // 1 at 60, 0 at +/-45
+    var raw = 2.2 + (1 - clamp(lenPenalty, 0, 1.6)) * 1.1 + clamp(fleschFit, -0.6, 1) * 0.9;
+    return clamp(round1(raw), 0, 4);
+  }
+  function scoreStructure(m) {
+    var paraBonus = clamp(m.paraCount - 1, 0, 3) * 0.45;      // rewards multiple paragraphs
+    var transBonus = clamp(m.transDensity * 6, 0, 1.8);       // transition density
+    var lengthFloor = m.sentCount >= 4 ? 0 : -1.2;            // too short to be structured
+    var raw = 1.6 + paraBonus + transBonus + lengthFloor;
+    return clamp(round1(raw), 0, 4);
+  }
+  function scoreEvidence(m) {
+    var lexBonus = clamp((m.lexVar - 0.4) * 6, -1, 1.8);     // richer vocabulary
+    var depthBonus = clamp((m.wordCount - 60) / 90, 0, 1.6); // more developed = longer
+    var raw = 1.5 + lexBonus + depthBonus;
+    return clamp(round1(raw), 0, 4);
+  }
+  function scoreMechanics(m) {
+    var passivePenalty = clamp(m.passiveDensity * 4, 0, 2.2); // heavy passive lowers score
+    var runOnPenalty = m.avgSentLen > 30 ? 0.8 : 0;
+    var raw = 4 - passivePenalty - runOnPenalty;
+    return clamp(round1(raw), 0, 4);
+  }
+
+  var FEEDBACK = {
+    Clarity: [
+      'Sentences are crisp and easy to follow; the reading ease lands in a comfortable range.',
+      'Mostly clear. A few sentences run long or short of the ideal ~17-word target.',
+      'Clarity wavers — sentence length and reading ease drift from a readable range.',
+      'Hard to follow. Tighten sentence length toward ~15–20 words and simplify phrasing.'
+    ],
+    Structure: [
+      'Well organized: multiple paragraphs linked by clear transition words.',
+      'Reasonable structure. Add a few more transitions to signal how ideas connect.',
+      'Structure is thin — more paragraphs and transition words would guide the reader.',
+      'Little visible structure. Break the text into paragraphs and signpost with transitions.'
+    ],
+    Evidence: [
+      'Developed and specific, with a varied vocabulary that suggests concrete support.',
+      'Adequately developed; add another example or detail to deepen the argument.',
+      'Underdeveloped — vocabulary and length suggest claims need more support.',
+      'Very thin on development. Add examples, evidence, and elaboration.'
+    ],
+    Mechanics: [
+      'Clean and direct: little passive voice, sentences stay an manageable length.',
+      'Generally sound; watch a couple of passive constructions or longer sentences.',
+      'Mechanics need attention — passive voice or run-ons are creeping in.',
+      'Frequent passive voice and/or run-on sentences. Revise toward active, shorter sentences.'
+    ]
+  };
+  // fix typo guard above kept deterministic
+  FEEDBACK.Mechanics[0] = 'Clean and direct: little passive voice, and sentences stay a manageable length.';
+
+  var CRITERIA = [
+    { key: 'Clarity',   metricsOf: clarityMetrics,   score: scoreClarity },
+    { key: 'Structure', metricsOf: structureMetrics, score: scoreStructure },
+    { key: 'Evidence',  label: 'Evidence / Development', metricsOf: evidenceMetrics, score: scoreEvidence },
+    { key: 'Mechanics', metricsOf: mechanicsMetrics,  score: scoreMechanics }
+  ];
+
+  function clarityMetrics(m) {
+    return [
+      ['Avg sentence length', m.avgSentLen + ' words'],
+      ['Flesch reading ease', m.flesch],
+      ['Sentences', m.sentCount]
+    ];
+  }
+  function structureMetrics(m) {
+    return [
+      ['Paragraphs', m.paraCount],
+      ['Transition words', m.transHits],
+      ['Transitions / sentence', round1(m.transDensity)]
+    ];
+  }
+  function evidenceMetrics(m) {
+    return [
+      ['Total words', m.wordCount],
+      ['Unique words', m.uniqueCount],
+      ['Lexical variety', Math.round(m.lexVar * 100) + '%']
+    ];
+  }
+  function mechanicsMetrics(m) {
+    return [
+      ['Passive constructions', m.passive],
+      ['Passive / sentence', round1(m.passiveDensity)],
+      ['Avg sentence length', m.avgSentLen + ' words']
+    ];
+  }
+
+  function getWeights() {
+    var raw = wInputs.map(function (el) {
+      var v = parseFloat(el.value);
+      return isFinite(v) && v >= 0 ? v : 0;
+    });
+    var sum = raw[0] + raw[1] + raw[2] + raw[3];
+    if (sum <= 0) { raw = [25, 25, 25, 25]; sum = 100; }
+    return { raw: raw, sum: sum, norm: raw.map(function (v) { return v / sum; }) };
+  }
+
+  function bandFor(pct) {
+    if (pct >= 89) return { letter: 'A', cls: 'lab-good', word: 'Excellent' };
+    if (pct >= 76) return { letter: 'B', cls: 'lab-good', word: 'Proficient' };
+    if (pct >= 63) return { letter: 'C', cls: 'lab-warn', word: 'Developing' };
+    if (pct >= 50) return { letter: 'D', cls: 'lab-warn', word: 'Marginal' };
+    return { letter: 'F', cls: 'lab-bad', word: 'Insufficient' };
+  }
+
+  function meterColor(score) {
+    if (score >= 3.25) return 'var(--green, #22c55e)';
+    if (score >= 2.25) return 'var(--lab-green, #009A44)';
+    if (score >= 1.25) return 'var(--yellow, #facc15)';
+    return 'var(--red, #ef4444)';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function compute(text) {
+    var m = analyze(text);
+    var w = getWeights();
+    var crits = CRITERIA.map(function (c, i) {
+      var sc = c.score(m);
+      return {
+        key: c.key,
+        label: c.label || c.key,
+        score: sc,
+        tier: tier(sc),
+        weightPct: Math.round(w.norm[i] * 100),
+        norm: w.norm[i],
+        metrics: c.metricsOf(m),
+        feedback: FEEDBACK[c.key][tier(sc)]
+      };
+    });
+    var weighted = 0;
+    for (var i = 0; i < crits.length; i++) weighted += crits[i].score * crits[i].norm;
+    var pct = Math.round(weighted / 4 * 100);
+    return { m: m, weights: w, crits: crits, weighted: round1(weighted), pct: pct, band: bandFor(pct) };
+  }
+
+  function buildReport(r) {
+    var lines = [];
+    lines.push('# Rubric report');
+    lines.push('');
+    lines.push('**Grade: ' + r.band.letter + ' (' + r.band.word + ')** — ' + r.pct + '% · weighted ' + r.weighted + ' / 4');
+    lines.push('');
+    lines.push('| Criterion | Score | Weight |');
+    lines.push('| --- | --- | --- |');
+    r.crits.forEach(function (c) {
+      lines.push('| ' + c.label + ' | ' + c.score + ' / 4 | ' + c.weightPct + '% |');
+    });
+    lines.push('');
+    r.crits.forEach(function (c) {
+      lines.push('## ' + c.label + ' — ' + c.score + '/4 (' + c.weightPct + '%)');
+      lines.push(c.feedback);
+      c.metrics.forEach(function (row) { lines.push('- ' + row[0] + ': ' + row[1]); });
+      lines.push('');
+    });
+    lines.push('Metrics (whole text): ' + r.m.wordCount + ' words · ' + r.m.sentCount +
+      ' sentences · ' + r.m.paraCount + ' paragraphs · Flesch ' + r.m.flesch + '.');
+    return lines.join('\n');
+  }
+
+  function render() {
+    var text = txt.value;
+    var w = getWeights();
+    wnote.textContent = 'Weights: ' +
+      w.raw.map(function (v, i) { return CRITERIA[i].key + ' ' + Math.round(w.norm[i] * 100) + '%'; }).join('  ·  ');
+
+    var words = (text.trim().match(/[A-Za-z][A-Za-z'’]*/g) || []).length;
+    if (words < 15) {
+      lastReport = '';
+      out.innerHTML = '<div class="lab-card empty-state">Paste at least a few sentences (15+ words) of student writing to generate a scored report.</div>';
+      return;
+    }
+
+    var r = compute(text);
+    lastReport = buildReport(r);
+
+    var html = '';
+    html += '<div class="lab-card verdict">' +
+      '<span class="band ' + r.band.cls + '">' + r.band.letter + '</span>' +
+      '<div><div class="pts"><b>' + r.pct + '%</b> &nbsp;weighted score</div>' +
+      '<div class="pts">' + esc(r.band.word) + ' &middot; ' + r.weighted + ' / 4 across ' + r.crits.length + ' criteria</div></div>' +
+      '</div>';
+
+    r.crits.forEach(function (c) {
+      var pct = c.score / 4 * 100;
+      var metrics = c.metrics.map(function (row) {
+        return '<div class="metric"><span class="k">' + esc(row[0]) + '</span><span class="v">' + esc(row[1]) + '</span></div>';
+      }).join('');
+      html += '<div class="lab-card crit">' +
+        '<div class="crit-head"><h3>' + esc(c.label) + '</h3>' +
+          '<span class="sc">' + c.score + ' / 4 &nbsp;<span class="wt">&times;' + c.weightPct + '%</span></span></div>' +
+        '<div class="meter"><i style="width:' + pct + '%;background:' + meterColor(c.score) + '"></i></div>' +
+        '<p class="feedback">' + esc(c.feedback) + '</p>' +
+        '<p class="audit-h">Metric inputs</p>' +
+        '<div class="metrics">' + metrics + '</div>' +
+      '</div>';
+    });
+
+    html += '<div class="actions"><button class="lab-btn" id="copy" type="button">Copy report (Markdown)</button></div>';
+    out.innerHTML = html;
+
+    var btn = document.getElementById('copy');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var done = function () {
+          btn.textContent = 'Copied ✓';
+          setTimeout(function () { btn.textContent = 'Copy report (Markdown)'; }, 1500);
+        };
+        var data = lastReport;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(data).then(done, done);
+        } else {
+          try {
+            var ta2 = document.createElement('textarea');
+            ta2.value = data;
+            document.body.appendChild(ta2);
+            ta2.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta2);
+          } catch (e) {}
+          done();
+        }
+      });
+    }
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(render, 220);
+  }
+
+  txt.addEventListener('input', schedule);
+  wInputs.forEach(function (el) { el.addEventListener('input', schedule); });
+
+  // Seed sample + full first render (no interaction needed; smoke-safe).
+  txt.value = SAMPLE;
+  render();
+})();
+</script>
+</body>
+</html>

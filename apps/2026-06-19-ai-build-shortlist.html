@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="AI Build Shortlist">
+<meta name="app-description" content="Six highest-leverage AI plays — each developed into a build angle and now shipped as a working lab tool you can open.">
+<meta name="app-tags" content="ai,strategy,portfolio,showcase">
+<title>AI Build Shortlist &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AI Build Shortlist">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 30px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  header .method { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin: 12px 0 0; }
+  .lanes { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 760px) { .lanes { grid-template-columns: repeat(3, 1fr); } }
+  .lane h2 { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 12px; }
+  .pick { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .pick:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+  .pick .idea { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  .pick .how { font-size: 12px; color: var(--muted); font-style: italic; margin: 0 0 8px; }
+  .pick .plan { font-size: 13px; margin: 0 0 8px; }
+  .pick .plan b { color: var(--lab-green-text); font-weight: 600; }
+  .pick .proof { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; margin: 0 0 8px; }
+  .pick .proof-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .pick .proof a { font-size: 12px; color: var(--lab-green-text); text-decoration: none; border-bottom: 1px solid var(--border); }
+  .pick .proof a:hover { border-color: var(--lab-green-text); }
+  .pick .built { margin: 0 0 8px; }
+  .pick .built a { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--lab-green-dark); background: var(--lab-green-tint); padding: 5px 11px; border-radius: 8px; text-decoration: none; border: 0; }
+  .pick .built a:hover { color: #fff; background: var(--lab-green); }
+  .pick-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 16px; }
+  footer a { color: var(--lab-green-text); }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">AI Build Shortlist</p>
+      <h1>Six AI plays I&rsquo;d ship</h1>
+      <p class="lead">From a 205-idea triage of &ldquo;ways to make money with AI&rdquo;, these are the six highest-leverage bets &mdash; one per role I play. Each is developed into a concrete build angle and, more importantly, <b style="color:var(--lab-green-text)">now shipped as a working tool you can open right here</b>. The point isn&rsquo;t the idea; it&rsquo;s the proof I can execute it.</p>
+      <p class="method">Scored for build-ability &middot; fast ROI &middot; analytics/eval fit. Three lanes, two picks each &mdash; every pick links the live tool I built for it.</p>
+    </header>
+
+    <div class="lanes">
+      <section class="lane lab-card">
+        <h2>For the lab</h2>
+
+        <div class="pick">
+          <p class="idea">AI-enhanced data visualization &amp; reporting tools</p>
+          <p class="how">Source: AI dashboards/reporting that extract insights from data, sold to businesses.</p>
+          <p class="plan">Ship paste-data &rarr; instant-chart microtools: drop a CSV, pick a view, export a PNG &mdash; <b>no signup, no backend</b>. Each is a single HTML file, so a niche variant (funnel, pacing, cohort) is a one-day build you can bundle into a lab collection.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="2026-05-29-cohort-grid.html">Cohort Grid</a><a href="2026-05-28-ab-verdict.html">A/B Verdict</a></p>
+          <p class="built"><a href="2026-06-19-chart-forge.html">Built it &middot; Chart Forge &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Data/Analytics</span></div>
+        </div>
+
+        <div class="pick">
+          <p class="idea">AI-driven content idea generation &amp; planning</p>
+          <p class="how">Source: brainstorm blog/video/social ideas with AI, sold to content marketers.</p>
+          <p class="plan">A fully client-side idea / brief generator seeded with templates and a brand voice &mdash; <b>zero infra</b>, runs entirely in the browser. Give it away as the free hook that funnels to a paid template pack.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="https://lab.simonsangla.com" target="_blank" rel="noopener">apps shipped in the lab &#8599;</a><a href="https://github.com/simonsangla/lab" target="_blank" rel="noopener">Source on GitHub &#8599;</a></p>
+          <p class="built"><a href="2026-06-19-idea-engine.html">Built it &middot; Idea Engine &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Content Creation</span></div>
+        </div>
+      </section>
+
+      <section class="lane lab-card">
+        <h2>For the Mercor profile</h2>
+
+        <div class="pick">
+          <p class="idea">AI writing evaluation &amp; scoring for educators</p>
+          <p class="how">Source: AI that assesses and gives feedback on student writing, sold to schools.</p>
+          <p class="plan">A rubric-driven scoring tool: paste student writing, score against weighted criteria, export a graded report. Same shape as <b>AI-training evaluation work</b> &mdash; transparent rubric, consistent scoring, auditable output.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="2026-06-13-mercor-portfolio.html">Spreadsheet Evaluation Pack</a></p>
+          <p class="built"><a href="2026-06-19-rubric-scorer.html">Built it &middot; Rubric Scorer &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Education</span></div>
+        </div>
+
+        <div class="pick">
+          <p class="idea">AI-driven data analytics &amp; insights as a service</p>
+          <p class="how">Source: get proficient with AI analytics tools, target industries, promote data-science expertise.</p>
+          <p class="plan">Productize the KPI deliverable: ingest raw metrics, return an Excel / Sheets dashboard plus a one-slide executive readout. Plays straight to a <b>Snowflake analytics</b> background.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="2026-06-13-mercor-portfolio.html">KPI Command Center</a><a href="2026-05-27-snowflake-cost-clock.html">Snowflake Cost Clock</a></p>
+          <p class="built"><a href="2026-06-19-insight-deck.html">Built it &middot; Insight Deck &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Data/Analytics</span></div>
+        </div>
+      </section>
+
+      <section class="lane lab-card">
+        <h2>Best ROI / fast onboarding</h2>
+
+        <div class="pick">
+          <p class="idea">AI-assisted content creator (YouTube, TikTok, Instagram)</p>
+          <p class="how">Source: use AI to ideate, script, edit and optimize; monetize via ads &amp; sponsorships.</p>
+          <p class="plan">Fastest onboarding &mdash; platforms you can join <b>today</b>. Lead with a build-in-public angle: short demos of each lab microtool double as portfolio and content.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="https://simonsangla.com" target="_blank" rel="noopener">simonsangla.com &#8599;</a><a href="https://lab.simonsangla.com" target="_blank" rel="noopener">the lab &#8599;</a></p>
+          <p class="built"><a href="2026-06-19-hook-studio.html">Built it &middot; Hook Studio &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Content Creation</span></div>
+        </div>
+
+        <div class="pick">
+          <p class="idea">AI writing services (blogs, articles, ads, product copy)</p>
+          <p class="how">Source: learn prompt engineering, use AI writing tools, market on freelance platforms.</p>
+          <p class="plan">Sell on Upwork / Fiverr from day one &mdash; <b>lowest setup</b>, quickest first dollar. The editorial site is the credibility anchor and the live sample library.</p>
+          <p class="proof"><span class="proof-label">Proof I can ship this</span><a href="https://simonsangla.com" target="_blank" rel="noopener">simonsangla.com &#8599;</a><a href="https://github.com/simonsangla/lab" target="_blank" rel="noopener">Source on GitHub &#8599;</a></p>
+          <p class="built"><a href="2026-06-19-copy-forge.html">Built it &middot; Copy Forge &#8594;</a></p>
+          <div class="pick-foot"><span class="lab-chip">Content Creation</span></div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <p>Six picks, distilled from a 205-idea triage and scored for build-ability, fast ROI, and analytics/evaluation fit. Built by <a href="https://simonsangla.com" target="_blank" rel="noopener">Simon Sangla</a> &mdash; every &ldquo;proof&rdquo; link is something already shipped.</p>
+    </footer>
+  </div>
+</body>
+</html>
