@@ -24,7 +24,20 @@ Every page links `lab-theme.css`; every app links `lab-nav.js` and uses `.lab-*`
 | `2026-06-13-mercor-portfolio.html` | 18 | 8 | ⚠️ Separately-built 642 KB file with its own palette (`#2563eb` blue); loosest token-contract follower. Heaviest migration item. |
 | other 14 apps | 3–18 | 8–27 | Contract-following. Most `rawhex` is the by-design inline `:root` fallback; the migration surface is **JS color literals** + any bespoke button/card that should adopt a `.lab-*` class. |
 
-### Gaps (the real migration surface)
+### Loop result (2026-06-21) — already compliant
+
+A deep app-by-app audit (the `lab-brand-polish` loop) found **no genuine
+migration work left**. Every app already routes color through the shared tokens:
+JS ramps use `var(--token, #hex)` or the canvas `token('--x', #hex)` helper; the
+only two *raw* literals are intentional — cohort-grid's `#ffffff` contrast ink
+(theme-agnostic) and chart-forge's `PALETTE_FALLBACK` (a categorical multi-series
+palette that requires distinct colors). Every non-`.lab-*` `<button>` is a
+stepper / tab / segmented toggle (correctly not a CTA). `mercor-portfolio` routes
+through `var(--lab-green-tint/--accent/--text)`; its blue is only the inline
+`:root` `file://` fallback. The homepage kicker (the one real reinvention) was
+fixed this pass. **Net: 0 per-app commits needed; the system is unified.**
+
+### Gaps (originally suspected — now closed)
 1. **Bespoke re-implementations of existing components** — the homepage kicker was the clearest (now fixed). Audit each app for bespoke buttons/cards/chips/kickers that duplicate a `.lab-*` component instead of adopting it (technique 2).
 2. **Off-brand raw hex in JS** — color literals injected via inline `style`/canvas that bypass tokens stay off-brand on live (technique 1: `var(--token, #hex)`).
 3. **`mercor-portfolio`** — its own palette/structure; needs the most work to route through tokens (or an explicit decision to exempt it as an embedded artifact).
@@ -33,21 +46,22 @@ Every page links `lab-theme.css`; every app links `lab-nav.js` and uses `.lab-*`
 
 ## Migration cost
 
-| Item | Effort | Risk |
+| Item | Effort | Status |
 |---|---|---|
-| Homepage `.lab-kicker` adoption | done this pass | none |
-| Per app: adopt components + tokenize JS color literals + verify on live theme | ~10–20 min/app × ~14 | low (restyle only, gated by lint+smoke) |
-| `mercor-portfolio` | ~30–60 min (palette + size) or decision to exempt | medium |
-| Automated drift guard (extend `scripts/lint-app.mjs`) | ~1–2 h once | low |
-| **Total** | **~0.5–1.5 days** for the apps + ~2 h tooling | low overall |
+| Homepage `.lab-kicker` + gallery masthead adoption | done this pass | ✅ done |
+| Per app: adopt components + tokenize JS color literals | audited 15/15 | ✅ already compliant (loop found 0 gaps) |
+| `mercor-portfolio` | audited | ✅ already token-routed (blue is `file://` fallback only) |
+| Automated drift guard (extend `scripts/lint-app.mjs`) | ~1–2 h once | ⬜ recommended (prevention, not migration) |
+| **Total remaining** | **~1–2 h** (the optional drift lint) | low |
 
-No new architecture — all effort is routing existing pages through the existing modules.
+No new architecture, and — as it turns out — no migration backlog either. The
+only forward item is the optional drift-lint that keeps it this way.
 
 ## Recommendation
 
 1. **Keep `lab-theme.css` as the single source** (it already mirrors `@simon/tokens`). Never fork it per page; when a recurring visual is missing, add it **once** to `lab-theme.css`, then consume it.
 2. **Homepage**: done — uses `.lab-kicker`; keep its page-specific *layout* CSS (`.service/.work/.steps/.stats/.contact/.topbar`) since those are genuinely unique and have no shared equivalent.
-3. **Apps**: run `lab-brand-polish` app-by-app (a good `/loop` target — one gated commit per app) to close gaps #1–#2. Order: cheapest first (the 06-19 forge apps), `mercor-portfolio` last.
+3. **Apps**: ✅ done — the app-by-app `lab-brand-polish` loop audited all 15 and found them already compliant (see "Loop result" above). Re-run the loop only when new apps land.
 4. **Automate the audit** so drift can't return: extend `scripts/lint-app.mjs` to warn on (a) a `<style>` block redefining a `.lab-*` class, and (b) raw hex inside `<script>` not wrapped in `var(--token, …)`. This turns the manual audit above into a gate.
 5. **Decide on `mercor-portfolio`**: migrate to tokens, or formally exempt it (embedded portfolio artifact) and document the exception.
 
