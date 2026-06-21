@@ -52,6 +52,8 @@
   .topbar .topbar-link { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--lab-green-text); text-decoration: none; }
   .topbar .topbar-link:hover { text-decoration: underline; }
   .wrap { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+  /* .kicker / .section-kicker: file:// fallback only; the shared .lab-kicker
+     (lab-theme.css, loaded later, equal single-class specificity) wins on live. */
   .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 10px; }
   header h1 { font-weight: 700; font-size: 32px; margin: 0; letter-spacing: -0.015em; line-height: 1.12; }
   @media (min-width: 720px) { header h1 { font-size: 40px; } }
@@ -117,7 +119,7 @@
   <div class="wrap">
 
     <header>
-      <p class="kicker">Senior Data &amp; Analytics &middot; Freelance</p>
+      <p class="kicker lab-kicker">Senior Data &amp; Analytics &middot; Freelance</p>
       <h1>Senior data &amp; analytics, <b>shipped at lab speed</b>.</h1>
       <p class="lead">I&rsquo;m Simon Sangla &mdash; 15 years turning messy data into decisions, as Senior Lead Analyst at TripAdvisor and across senior analyst and BI-consulting roles (MSc, Universit&eacute; Paris 1 Panth&eacute;on-Sorbonne). Now independent, I pair that depth with a modern Snowflake + AI stack and ship the dashboards, models and tools your team actually uses in days, not quarters. Every service below is backed by something I&rsquo;ve already built and put online, solo.</p>
       <div class="cta-row">
@@ -133,7 +135,7 @@
     </header>
 
     <section>
-      <p class="section-kicker">What I do for hire</p>
+      <p class="section-kicker lab-kicker">What I do for hire</p>
       <div class="services">
 
         <div class="service lab-card">
@@ -185,7 +187,7 @@
     </section>
 
     <section>
-      <p class="section-kicker">Selected work &mdash; all live, all mine</p>
+      <p class="section-kicker lab-kicker">Selected work &mdash; all live, all mine</p>
       <div class="work lab-card" style="padding: 6px 20px;">
         <a class="item" href="/apps/2026-06-19-insight-deck.html"><span class="n"><span>Insight Deck</span></span><span class="d">Metrics CSV &rarr; KPI cards + ranked auto-insights and an exec readout.</span></a>
         <a class="item" href="/apps/2026-06-19-chart-forge.html"><span class="n"><span>Chart Forge</span></span><span class="d">Paste a CSV, get a bar/line/area chart, export a PNG &mdash; no backend.</span></a>
@@ -195,7 +197,7 @@
     </section>
 
     <section>
-      <p class="section-kicker">How I work</p>
+      <p class="section-kicker lab-kicker">How I work</p>
       <div class="steps">
         <div class="step lab-card">
           <p class="num">01</p>
@@ -216,7 +218,7 @@
     </section>
 
     <section>
-      <p class="section-kicker">Why me</p>
+      <p class="section-kicker lab-kicker">Why me</p>
       <div class="stats">
         <div class="stat lab-card"><div class="big">15 years</div><div class="small">senior data analytics &mdash; ex-TripAdvisor, MSc Sorbonne</div></div>
         <div class="stat lab-card"><div class="big" id="stat-count">A dozen+</div><div class="small">micro-tools shipped solo, each in under a day</div></div>

@@ -1,13 +1,20 @@
 ---
 name: lab-brand-polish
-description: Use when polishing, restyling, or brand-checking apps in the lab PWA (simonsangla/lab) - unifying an app to the shared white-editorial identity (ported from simonsangla.com: IBM Plex Sans/Mono, mono UPPERCASE green kicker labels, Basque green #009A44 accent), adopting the reusable .lab-* components, or auditing an app for brand drift. Triggers on "polish the lab app", "make it on-brand", "brand unity", "apply simonsangla.com design", "use the shared component", "lab-theme", "lab-nav", or before shipping any new lab app.
+description: Use when polishing, restyling, or brand-checking the lab PWA (simonsangla/lab) - the homepage (index.html) and every app - against the ONE centralized design system (assets/lab-theme.css tokens-from-@simon/tokens + reusable .lab-* components + lab-nav.js), unifying to the shared white-editorial identity (IBM Plex Sans/Mono, mono UPPERCASE green kicker labels, Basque green #009A44 accent) by consuming the shared modules instead of reinventing them, or auditing for brand drift / design-system migration. Triggers on "polish the lab app", "make it on-brand", "brand unity", "unified design system", "centralized/reusable components", "apply simonsangla.com design", "use the shared component", "lab-theme", "lab-nav", "audit brand drift", or before shipping any new lab app.
 ---
 
 # Lab Brand Polish
 
-Bring any lab app onto the one shared brand identity by routing it through the
-reusable components, without homogenizing the apps. Unify the **system**, keep
-each app's **character**.
+Bring any lab page onto the one shared brand identity by routing it through the
+reusable components, without homogenizing the pages. Unify the **system**, keep
+each page's **character**. Applies to **every page**: the homepage
+(`index.html`) and all `apps/*.html`.
+
+**Never reinvent the wheel.** Before writing any visual CSS, search
+`assets/lab-theme.css` for an existing token/component and consume it. Bespoke
+re-implementations of something the sheet already provides (a kicker, a button,
+a card) are the #1 source of drift. The full audit + migration plan + cost is
+in [docs/DESIGN_SYSTEM.md](../../../docs/DESIGN_SYSTEM.md).
 
 ## Source of truth (read these first)
 
@@ -24,6 +31,11 @@ each app's **character**.
    `--bg(white) --surface --border --accent(green) --text --muted --green --yellow --orange --red`.
    Any raw hex that bypasses a token stays off-brand on the live theme.
 5. Type comes from the shared tokens too: `--font-display` (IBM Plex Sans) for body/headings, `--font-mono` (IBM Plex Mono) for labels/kickers/code. The fonts load via `@import` in lab-theme.css, so apps need no font `<link>` of their own on live.
+
+**Homepage exception (`index.html`):** the landing page follows items 1, 2, 4, 5
+but **not** 3 — it IS the lab home, so it has no `lab-nav.js` / `<a class="back">`
+(it links *out* to `/gallery.html`). Everything else (tokens, `.lab-*`
+components, `.lab-kicker` labels) applies identically.
 
 ## Reusable components (use instead of bespoke)
 
@@ -85,7 +97,16 @@ but its selector MUST be a single class (specificity `0,1,0`) so the later-loade
 
 ## Workflow
 
-1. **Audit** the app against the contract + the table above. List every bespoke button/card/chip and every raw hex injected in JS.
+1. **Audit** the page against the contract + the table above. List every bespoke button/card/chip/kicker that should adopt a `.lab-*` class, and every raw hex injected in JS. Quick coverage scan across all pages:
+   ```bash
+   for f in index.html apps/*.html; do
+     printf '%-44s theme=%s nav=%s lab-uses=%s rawhex=%s\n' "$(basename "$f")" \
+       "$(grep -c lab-theme.css "$f")" "$(grep -c lab-nav.js "$f")" \
+       "$(grep -oE 'lab-(btn|btn-quiet|card|chip|kicker|good|warn|mid|bad)\b' "$f" | wc -l)" \
+       "$(grep -oE '#[0-9a-fA-F]{6}\b' "$f" | wc -l)"
+   done
+   ```
+   `lab-uses=0` or a `<style>` redefining a `.lab-*` class ⇒ reinvention; high `rawhex` outside the inline `:root` fallback ⇒ untokenized color.
 2. **Adopt components** (technique 2) for buttons, surfaces, pills.
 3. **Tokenize JS color ramps** (technique 1); for canvas, read computed tokens.
 4. **Light polish within brand** only: empty-state hint, a card surface, `>=44px` targets, a `prefers-reduced-motion`-gated transition. NO redesign; preserve layout + character.
