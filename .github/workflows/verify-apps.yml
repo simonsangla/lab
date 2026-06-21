@@ -6,6 +6,7 @@ on:
       - 'apps/**'
       - 'scripts/**'
       - 'index.html'
+      - 'gallery.html'
       - 'sw.js'
       - 'manifest.webmanifest'
   deployment_status:
@@ -27,7 +28,7 @@ jobs:
       - name: G3 gallery regenerated and committed
         run: |
           node scripts/gen-index.mjs
-          git diff --exit-code index.html || { echo "::error::index.html is stale - run 'npm run gen' and commit the result"; exit 1; }
+          git diff --exit-code gallery.html || { echo "::error::gallery.html is stale - run 'npm run gen' and commit the result"; exit 1; }
 
   # Browser verification against the Vercel preview (the agent sandbox cannot
   # reach vercel.app or run a browser - this must live in CI)

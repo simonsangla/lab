@@ -2,7 +2,9 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const APPS_DIR = 'apps';
-const OUT = 'index.html';
+const OUT = 'gallery.html';
+// Apps present in apps/ but deliberately omitted from the public gallery.
+const HIDDEN = new Set(['2026-06-19-ai-money-map.html']);
 const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const GRADIENT_COUNT = 7; // .g1 ... .g7 in the stylesheet below
@@ -50,6 +52,7 @@ function formatDate(iso) {
 
 const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
+  .filter((f) => !HIDDEN.has(f))
   .sort((a, b) => b.localeCompare(a));
 
 const apps = files.map((filename) => {
@@ -139,10 +142,10 @@ const html =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
   '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">\n' +
-  '<title>lab. &mdash; Simon Sangla</title>\n' +
+  '<title>lab. &mdash; all apps</title>\n' +
   '<meta name="description" content="One day. One app. No excuses.">\n' +
   '<meta property="og:type" content="website">\n' +
-  '<meta property="og:url" content="https://lab.simonsangla.com/">\n' +
+  '<meta property="og:url" content="https://lab.simonsangla.com/gallery.html">\n' +
   '<meta property="og:title" content="lab. \u2014 One day. One app. No excuses.">\n' +
   '<meta property="og:description" content="' + N + ' micro-apps shipped, one per day, by Simon Sangla \u2014 Snowflake analytics consultant.">\n' +
   '<meta property="og:image" content="https://lab.simonsangla.com/og.png">\n' +
@@ -198,6 +201,7 @@ const html =
   '    margin: 0; line-height: 1.1;\n' +
   '  }\n' +
   '  .masthead h1 .dot { color: var(--green); }\n' +
+  '  .masthead h1 a, .home-link { color: inherit; text-decoration: none; }\n' +
   '  .avatar {\n' +
   '    width: 44px; height: 44px; border-radius: 50%;\n' +
   '    background: linear-gradient(135deg, var(--green), var(--green-dark));\n' +
@@ -327,8 +331,9 @@ const html =
   '  <div class="wrap">\n' +
   '    <p class="eyebrow" id="eyebrow">One day. One app.</p>\n' +
   '    <header class="masthead">\n' +
-  '      <h1>lab<span class="dot">.</span></h1>\n' +
+  '      <h1><a class="home-link" href="/">lab<span class="dot">.</span></a></h1>\n' +
   '      <div class="site-nav">\n' +
+  '        <a class="site-link" href="/">Hire me</a>\n' +
   '        <a class="site-link" href="https://simonsangla.com">simonsangla.com</a>\n' +
   '        <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla - main site">SS</a>\n' +
   '      </div>\n' +

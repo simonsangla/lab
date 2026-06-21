@@ -15,10 +15,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Generate index
+      - name: Generate gallery
         run: node scripts/gen-index.mjs
-      - name: Commit updated index.html
+      - name: Commit updated gallery.html
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: 'chore: regenerate index.html [skip ci]'
-          file_pattern: index.html
+          commit_message: 'chore: regenerate gallery.html [skip ci]'
+          file_pattern: gallery.html

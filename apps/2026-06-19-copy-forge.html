@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Copy Forge">
+<meta name="app-description" content="Generate and score ad and product-copy variants for any product and audience, right in the browser.">
+<meta name="app-tags" content="copywriting,marketing,ads,generator">
+<title>Copy Forge &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Copy Forge">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 70px; resize: vertical; }
+  .out { display: flex; flex-direction: column; gap: 14px; }
+  .controls { display: grid; gap: 14px; }
+  .row2 { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; }
+  .cap-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 6px; }
+  .cap-note { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .cap-note.over { color: var(--red, #ef4444); font-weight: 700; }
+  .winner-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .winner-bar .lead-note { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .v-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .v-card.is-winner { border-color: var(--lab-green); box-shadow: 0 0 0 1px var(--lab-green) inset; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .v-frame { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .v-winner-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); }
+  .v-copy { font-size: 16px; font-weight: 600; line-height: 1.45; margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .v-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .v-len { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+  .v-len.over { color: var(--red, #ef4444); font-weight: 700; }
+  .badge { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; padding: 5px 11px; border-radius: 8px; }
+  .v-actions { display: flex; gap: 8px; }
+  .v-actions .lab-btn-quiet { min-height: 38px; font-size: 13px; padding: 6px 14px; }
+  .axis-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .empty-state { font-family: var(--font-mono); font-size: 13px; color: var(--muted); padding: 8px 0; }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/gallery.html">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Copy Forge</p>
+      <h1>Copy Forge</h1>
+      <p class="lead">Generate and score ad and product-copy variants for any product and audience, right in the browser.</p>
+    </header>
+
+    <div class="controls">
+      <div class="row2">
+        <div class="field">
+          <label for="product">Product</label>
+          <textarea id="product" spellcheck="false">a budgeting app</textarea>
+        </div>
+        <div class="field">
+          <label for="audience">Audience</label>
+          <textarea id="audience" spellcheck="false">freelancers with irregular income</textarea>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="benefit">Key benefit</label>
+          <textarea id="benefit" spellcheck="false">never miss a tax payment again</textarea>
+        </div>
+        <div class="field">
+          <label for="format">Format</label>
+          <select id="format">
+            <option value="product">Product description</option>
+            <option value="google">Google ad headline</option>
+            <option value="social">Social ad</option>
+            <option value="email">Email subject line</option>
+          </select>
+          <div class="cap-line">
+            <span class="cap-note" id="capNote"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="winner-bar">
+      <button class="lab-btn" id="copyWinner" type="button">Copy winner</button>
+      <span class="lead-note" id="winnerNote"></span>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  // ---- elements ----
+  var elProduct = document.getElementById('product');
+  var elAudience = document.getElementById('audience');
+  var elBenefit = document.getElementById('benefit');
+  var elFormat = document.getElementById('format');
+  var elCapNote = document.getElementById('capNote');
+  var elWinnerNote = document.getElementById('winnerNote');
+  var elCopyWinner = document.getElementById('copyWinner');
+  var out = document.getElementById('out');
+  var timer = null;
+  var lastWinnerText = '';
+
+  // ---- format config: length caps + the clarity ideal (chars/sentence-len) ----
+  var FORMATS = {
+    product: { label: 'Product description', cap: 0,   idealLen: 110, niceMax: 240,
+               note: 'No hard cap. Aim for one tight, vivid sentence.' },
+    google:  { label: 'Google ad headline',  cap: 30,  idealLen: 26,  niceMax: 30,
+               note: 'Google headline cap: 30 characters.' },
+    social:  { label: 'Social ad',           cap: 125, idealLen: 80,  niceMax: 125,
+               note: 'Primary text reads best under 125 characters.' },
+    email:   { label: 'Email subject line',  cap: 60,  idealLen: 42,  niceMax: 60,
+               note: 'Subject lines clip past ~60 characters in most inboxes.' }
+  };
+
+  // ---- copy-frame banks per format: deterministic templates filled from inputs ----
+  // Each frame: { name, key, fn(P,A,B) -> string }. P/A/B are trimmed input pieces.
+  function cap1(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function lc(s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
+  // strip a leading article so phrases compose cleanly
+  function noun(s) { return s.replace(/^(a|an|the)\s+/i, ''); }
+
+  var BANKS = {
+    product: [
+      { name: 'Benefit-led', key: 'benefit',
+        fn: function (P, A, B) { return cap1(noun(P)) + ' built for ' + lc(A) + ' — so you ' + lc(B) + '.'; } },
+      { name: 'Problem–agitate–solve', key: 'pas',
+        fn: function (P, A, B) { return 'Tired of the guesswork? ' + cap1(noun(P)) + ' helps ' + lc(A) + ' finally ' + lc(B) + '.'; } },
+      { name: 'Social proof', key: 'proof',
+        fn: function (P, A, B) { return 'Thousands of ' + lc(A) + ' already trust ' + lc(noun(P)) + ' to ' + lc(B) + '.'; } },
+      { name: 'How it works', key: 'how',
+        fn: function (P, A, B) { return cap1(noun(P)) + ' tracks the details for ' + lc(A) + ', so you ' + lc(B) + ' on autopilot.'; } },
+      { name: 'Urgency', key: 'urgency',
+        fn: function (P, A, B) { return 'Start today: ' + lc(noun(P)) + ' that lets ' + lc(A) + ' ' + lc(B) + ' from day one.'; } }
+    ],
+    google: [
+      { name: 'Benefit-led', key: 'benefit',
+        fn: function (P, A, B) { return cap1(lc(B)); } },
+      { name: 'Problem–agitate–solve', key: 'pas',
+        fn: function (P, A, B) { return 'Stop Struggling To ' + cap1(lc(B)); } },
+      { name: 'Social proof', key: 'proof',
+        fn: function (P, A, B) { return 'Trusted By ' + cap1(lc(A)); } },
+      { name: 'How it works', key: 'how',
+        fn: function (P, A, B) { return cap1(noun(P)) + ' For ' + cap1(lc(A)); } },
+      { name: 'Urgency', key: 'urgency',
+        fn: function (P, A, B) { return 'Try ' + cap1(noun(P)) + ' Free Today'; } }
+    ],
+    social: [
+      { name: 'Benefit-led', key: 'benefit',
+        fn: function (P, A, B) { return cap1(lc(A)) + ': ' + lc(B) + ' with ' + lc(noun(P)) + '. 👇'; } },
+      { name: 'Problem–agitate–solve', key: 'pas',
+        fn: function (P, A, B) { return 'Still struggling to ' + lc(B) + '? ' + cap1(noun(P)) + ' was made for ' + lc(A) + '.'; } },
+      { name: 'Social proof', key: 'proof',
+        fn: function (P, A, B) { return 'Why ' + lc(A) + ' swear by ' + lc(noun(P)) + ': they finally ' + lc(B) + '.'; } },
+      { name: 'How it works', key: 'how',
+        fn: function (P, A, B) { return 'Here’s how ' + lc(A) + ' ' + lc(B) + ' — in one tap with ' + lc(noun(P)) + '.'; } },
+      { name: 'Urgency', key: 'urgency',
+        fn: function (P, A, B) { return 'Don’t wait — ' + lc(B) + ' today. ' + cap1(noun(P)) + ' is free to start.'; } }
+    ],
+    email: [
+      { name: 'Benefit-led', key: 'benefit',
+        fn: function (P, A, B) { return cap1(lc(B)) + ' — starting today'; } },
+      { name: 'Problem–agitate–solve', key: 'pas',
+        fn: function (P, A, B) { return 'Still can’t ' + lc(B) + '?'; } },
+      { name: 'Social proof', key: 'proof',
+        fn: function (P, A, B) { return 'Why ' + lc(A) + ' switched to ' + lc(noun(P)); } },
+      { name: 'How it works', key: 'how',
+        fn: function (P, A, B) { return 'The 2-minute way to ' + lc(B); } },
+      { name: 'Urgency', key: 'urgency',
+        fn: function (P, A, B) { return 'Last chance: ' + lc(B); } }
+    ]
+  };
+
+  // ---- scoring ----
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  var POWER_WORDS = ['free','now','today','new','instantly','instant','proven','guaranteed',
+    'easy','effortless','finally','never','best','trusted','save','boost','unlock','exclusive',
+    'fast','simple','smart','powerful','results','transform','stop','start','more','less'];
+  var STRONG_VERBS = ['get','save','boost','unlock','transform','build','grow','cut','win',
+    'master','ship','launch','track','stop','start','switch','swear','trust','make','turn','help'];
+  var FILLER = ['very','really','just','quite','actually','basically','simply','that','some',
+    'maybe','perhaps','kind of','sort of'];
+
+  // count how many of `words` appear as whole-ish words in lowercase text
+  function hitCount(text, words) {
+    var n = 0;
+    for (var i = 0; i < words.length; i++) {
+      var re = new RegExp('\\b' + words[i].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+      if (re.test(text)) n++;
+    }
+    return n;
+  }
+  function wordsOf(s) { return (s.toLowerCase().match(/[a-z0-9']+/g) || []); }
+  function sentencesOf(s) { return (s.match(/[^.!?]+[.!?]*/g) || [s]).filter(function (x) { return x.trim(); }); }
+
+  // Punch: power-word density + strong verbs, 0-100
+  function scorePunch(text) {
+    var w = wordsOf(text);
+    var wc = Math.max(1, w.length);
+    var powers = hitCount(text, POWER_WORDS);
+    var verbs = hitCount(text, STRONG_VERBS);
+    var density = powers / wc;               // ~0.05-0.2 typical
+    var bangs = (text.match(/[!?]/g) || []).length;
+    var s = 18 + density * 320 + verbs * 9 + Math.min(bangs, 1) * 8;
+    return Math.round(clamp(s, 0, 100));
+  }
+
+  // Clarity: reading-ease proxy (short words/sentences) vs the format ideal length
+  function scoreClarity(text, fmt) {
+    var w = wordsOf(text);
+    var wc = Math.max(1, w.length);
+    var sents = sentencesOf(text).length;
+    var wordsPerSent = wc / sents;
+    var longWords = 0, fillerHits = hitCount(text, FILLER);
+    for (var i = 0; i < w.length; i++) if (w[i].length >= 11) longWords++;
+    // start high, dock for long sentences, long words, filler
+    var s = 100;
+    s -= Math.max(0, wordsPerSent - 12) * 3.5;
+    s -= (longWords / wc) * 120;
+    s -= fillerHits * 6;
+    // dock for deviating from the format's ideal character length
+    var devLen = Math.abs(text.length - fmt.idealLen);
+    s -= (devLen / Math.max(20, fmt.idealLen)) * 22;
+    return Math.round(clamp(s, 0, 100));
+  }
+
+  // Fit: benefit + audience keyword presence in the copy
+  function scoreFit(text, audience, benefit) {
+    var t = text.toLowerCase();
+    var aKeys = wordsOf(audience).filter(function (x) { return x.length > 3; });
+    var bKeys = wordsOf(benefit).filter(function (x) { return x.length > 3; });
+    function coverage(keys) {
+      if (!keys.length) return 0;
+      var hit = 0;
+      for (var i = 0; i < keys.length; i++) if (t.indexOf(keys[i]) !== -1) hit++;
+      return hit / keys.length;
+    }
+    var aCov = coverage(aKeys);
+    var bCov = coverage(bKeys);
+    // benefit weighted slightly heavier than audience
+    var s = 12 + aCov * 38 + bCov * 50;
+    return Math.round(clamp(s, 0, 100));
+  }
+
+  function combine(p, c, f) {
+    // weighted blend: punch + fit drive ads, clarity keeps it readable
+    return Math.round(clamp(p * 0.38 + f * 0.37 + c * 0.25, 0, 100));
+  }
+
+  function badgeClass(score) {
+    if (score >= 75) return 'lab-good';
+    if (score >= 55) return 'lab-good-tint';
+    if (score >= 40) return 'lab-mid';
+    return 'lab-bad';
+  }
+  function chipClass(score) {
+    // chips stay on the green tint, but flag a weak axis with a muted look via title
+    return 'lab-chip';
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---- clipboard (fallback must never throw) ----
+  function copyText(text, btn, doneLabel, restoreLabel) {
+    var done = function () {
+      if (btn) {
+        btn.textContent = doneLabel;
+        setTimeout(function () { btn.textContent = restoreLabel; }, 1400);
+      }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    fallback();
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      } catch (e) { /* never throw */ }
+      done();
+    }
+  }
+
+  // ---- build + render ----
+  function buildVariants() {
+    var P = (elProduct.value || '').trim() || 'this product';
+    var A = (elAudience.value || '').trim() || 'busy people';
+    var B = (elBenefit.value || '').trim() || 'get more done';
+    var fmtKey = elFormat.value in FORMATS ? elFormat.value : 'product';
+    var fmt = FORMATS[fmtKey];
+    var bank = BANKS[fmtKey];
+
+    var variants = bank.map(function (frame) {
+      var text;
+      try { text = frame.fn(P, A, B); } catch (e) { text = String(B); }
+      text = String(text).replace(/\s+/g, ' ').trim();
+      var punch = scorePunch(text);
+      var clarity = scoreClarity(text, fmt);
+      var fit = scoreFit(text, A, B);
+      var combined = combine(punch, clarity, fit);
+      var over = fmt.cap > 0 && text.length > fmt.cap;
+      return {
+        frame: frame.name, text: text, len: text.length,
+        punch: punch, clarity: clarity, fit: fit, combined: combined, over: over
+      };
+    });
+
+    // sort by combined score desc; over-cap variants sink below in-cap ones
+    variants.sort(function (a, b) {
+      if (a.over !== b.over) return a.over ? 1 : -1;
+      return b.combined - a.combined;
+    });
+    return { fmt: fmt, variants: variants };
+  }
+
+  function chip(label, val) {
+    return '<span class="lab-chip" title="' + esc(label) + ' ' + val + '/100">' +
+      esc(label) + ' ' + val + '</span>';
+  }
+
+  function render() {
+    var built = buildVariants();
+    var fmt = built.fmt;
+    var variants = built.variants;
+
+    // format cap note (live, on the controls)
+    elCapNote.textContent = fmt.note;
+
+    var html = variants.map(function (v, i) {
+      var isWinner = i === 0;
+      var lenStr = fmt.cap > 0
+        ? (v.len + '/' + fmt.cap + ' chars')
+        : (v.len + ' chars');
+      return '' +
+        '<div class="lab-card v-card' + (isWinner ? ' is-winner' : '') + '">' +
+          '<div class="v-head">' +
+            '<span class="v-frame">' + esc(v.frame) + '</span>' +
+            (isWinner ? '<span class="v-winner-tag">★ Winner</span>' : '') +
+          '</div>' +
+          '<p class="v-copy">' + esc(v.text) + '</p>' +
+          '<div class="axis-row">' +
+            chip('Punch', v.punch) +
+            chip('Clarity', v.clarity) +
+            chip('Fit', v.fit) +
+          '</div>' +
+          '<div class="v-meta">' +
+            '<span class="badge ' + badgeClass(v.combined) + '">' + v.combined + ' / 100</span>' +
+            (v.over ? '<span class="badge lab-warn">Over cap</span>' : '') +
+            '<span class="v-len' + (v.over ? ' over' : '') + '">' + esc(lenStr) + '</span>' +
+          '</div>' +
+          '<div class="v-actions">' +
+            '<button class="lab-btn-quiet copy-one" type="button" data-text="' + esc(v.text) + '">Copy</button>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    out.innerHTML = html || '<p class="empty-state">Fill in the fields above to generate variants.</p>';
+
+    // winner note + remember winner text for the Copy winner button
+    if (variants.length) {
+      var top = variants[0];
+      lastWinnerText = top.text;
+      elWinnerNote.textContent = 'Top: ' + top.frame + ' — ' + top.combined + '/100' +
+        (top.over ? ' (over cap)' : '');
+    } else {
+      lastWinnerText = '';
+      elWinnerNote.textContent = '';
+    }
+
+    // wire per-variant copy buttons
+    var btns = out.querySelectorAll('.copy-one');
+    for (var i = 0; i < btns.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          copyText(btn.getAttribute('data-text') || '', btn, 'Copied ✓', 'Copy');
+        });
+      })(btns[i]);
+    }
+  }
+
+  // ---- events ----
+  function scheduleRender() {
+    clearTimeout(timer);
+    timer = setTimeout(render, 280);
+  }
+  elProduct.addEventListener('input', scheduleRender);
+  elAudience.addEventListener('input', scheduleRender);
+  elBenefit.addEventListener('input', scheduleRender);
+  elFormat.addEventListener('change', render); // re-evaluate immediately on format change
+
+  elCopyWinner.addEventListener('click', function () {
+    copyText(lastWinnerText, elCopyWinner, 'Copied winner ✓', 'Copy winner');
+  });
+
+  // ---- first render on load (no interaction required, no fetch) ----
+  render();
+})();
+</script>
+</body>
+</html>

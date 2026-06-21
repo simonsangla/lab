@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-name" content="Insight Deck">
+<meta name="app-description" content="Paste a metrics CSV and get auto-generated insights, KPI cards and a copyable executive readout.">
+<meta name="app-tags" content="analytics,kpi,insights,reporting">
+<title>Insight Deck &mdash; lab.</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#009A44">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Insight Deck">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* file:// dark fallback. /assets/lab-theme.css (loaded after) remaps these to
+     the light brand identity on live. Variable names match the shared sheet. */
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --border: #242424;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #2bd07f;
+    --red: #ef4444; --yellow: #facc15; --green: #22c55e;
+    --lab-green: #009A44; --lab-green-text: #2bd07f; --lab-green-dark: #2bd07f;
+    --lab-green-tint: #10231a;
+    --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100dvh; line-height: 1.5;
+    padding: max(64px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior-y: contain;
+  }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  .back { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: none; position: absolute; top: 20px; left: 20px; }
+  .back:hover, .back:active { color: var(--lab-green-text); }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 8px; }
+  header h1 { font-weight: 700; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  header .lead { color: var(--muted); font-size: 15px; margin: 8px 0 0; max-width: 64ch; }
+  label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px; }
+  textarea, input, select { width: 100%; font-family: var(--font-mono); font-size: 13px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .out { display: flex; flex-direction: column; gap: 22px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .kpi { padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .kpi .name { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+  .kpi .val { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .kpi .delta { font-family: var(--font-mono); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  .kpi .delta.up { color: var(--green); }
+  .kpi .delta.down { color: var(--red); }
+  .kpi .delta.flat { color: var(--muted); }
+  .kpi .meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .kpi svg { display: block; width: 100%; height: 34px; }
+  .insights { padding: 4px 0 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .insights li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; }
+  .insights .rank { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--muted); min-width: 22px; padding-top: 2px; }
+  .sect-h { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+  .err { color: var(--red); font-family: var(--font-mono); font-size: 13px; padding: 12px 14px; }
+  .flag { font-weight: 600; color: var(--red); }
+</style>
+<link rel="stylesheet" href="/assets/lab-theme.css">
+<script src="/assets/lab-nav.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/gallery.html">&larr; lab.</a>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Insight Deck</p>
+      <h1>Insight Deck</h1>
+      <p class="lead">Paste a metrics CSV and get auto-generated insights, KPI cards and a copyable executive readout.</p>
+    </header>
+
+    <div>
+      <label for="csv">Metrics CSV &mdash; first column is the period, each other column a metric series</label>
+      <textarea id="csv" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="lab-btn" id="sample" type="button">Load sample</button>
+        <button class="lab-btn-quiet" id="copy" type="button">Copy executive readout</button>
+      </div>
+    </div>
+
+    <div class="out" id="out"></div>
+  </div>
+<script>
+(function () {
+  var out = document.getElementById('out');
+  var ta = document.getElementById('csv');
+  var sampleBtn = document.getElementById('sample');
+  var copyBtn = document.getElementById('copy');
+  var timer = null;
+  var lastReadout = '';
+
+  var SAMPLE = [
+    'Month,Revenue,Active Users,Churn %,Gross Margin %,Support Tickets',
+    '2025-08,920000,18400,3.1,71,640',
+    '2025-09,968000,19250,3.0,71,612',
+    '2025-10,1010000,20100,2.9,72,598',
+    '2025-11,1064000,21400,2.8,72,575',
+    '2025-12,1112000,22600,2.7,73,560',
+    '2026-01,1158000,23800,3.4,73,910'
+  ].join('\n');
+
+  // --- CSV parse (lifted from cohort-grid) ---
+  function parseCsv(text) {
+    var lines = String(text).trim().split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+    if (lines.length < 2) return { error: 'Need a header row and at least one period row.' };
+    var rows = lines.map(function (l) { return l.split(',').map(function (c) { return c.trim(); }); });
+    var headers = rows[0];
+    if (headers.length < 2) return { error: 'Need a period column plus at least one metric column.' };
+    var dataRows = rows.slice(1);
+    var periods = [];
+    var series = [];
+    for (var c = 1; c < headers.length; c++) series.push({ name: headers[c] || ('Metric ' + c), values: [] });
+    for (var i = 0; i < dataRows.length; i++) {
+      var r = dataRows[i];
+      if (r.length < headers.length) return { error: 'Row ' + (i + 2) + ' has fewer columns than the header.' };
+      periods.push(r[0]);
+      for (var j = 1; j < headers.length; j++) {
+        var n = parseFloat(r[j]);
+        if (isNaN(n)) return { error: 'Row ' + (i + 2) + ', "' + headers[j] + '" is not a number: "' + r[j] + '".' };
+        series[j - 1].values.push(n);
+      }
+    }
+    if (periods.length < 2) return { error: 'Need at least two periods to compute a change.' };
+    return { periods: periods, series: series };
+  }
+
+  // --- brand-token color utils (lifted from cohort-grid) ---
+  function token(name, fallbackHex) {
+    try {
+      if (typeof getComputedStyle === 'function') {
+        var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        if (v) return v;
+      }
+    } catch (e) {}
+    return fallbackHex;
+  }
+  var COL_UP = token('--green', '#22c55e');
+  var COL_DOWN = token('--red', '#ef4444');
+  var COL_FLAT = token('--muted', '#8a8a8a');
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // Compact number formatting for KPI values.
+  function fmtNum(n) {
+    var a = Math.abs(n);
+    if (a >= 1e9) return trim(n / 1e9) + 'B';
+    if (a >= 1e6) return trim(n / 1e6) + 'M';
+    if (a >= 1e3) return trim(n / 1e3) + 'K';
+    if (a === Math.round(a)) return String(Math.round(n));
+    return trim(n);
+  }
+  function trim(n) {
+    var s = (Math.round(n * 100) / 100).toString();
+    return s;
+  }
+  function fmtPct(p) {
+    var s = (Math.round(Math.abs(p) * 10) / 10).toString();
+    return s + '%';
+  }
+  function fmtSig(z) { return (Math.round(z * 10) / 10).toFixed(1); }
+
+  // --- per-metric stats (deterministic) ---
+  function analyze(name, values) {
+    var n = values.length;
+    var latest = values[n - 1];
+    var prev = values[n - 2];
+    var pct = prev === 0 ? (latest === 0 ? 0 : Infinity) : ((latest - prev) / Math.abs(prev)) * 100;
+    var min = values[0], max = values[0], sum = 0;
+    for (var i = 0; i < n; i++) { sum += values[i]; if (values[i] < min) min = values[i]; if (values[i] > max) max = values[i]; }
+    var mean = sum / n;
+    var variance = 0;
+    for (var k = 0; k < n; k++) variance += (values[k] - mean) * (values[k] - mean);
+    var sd = Math.sqrt(variance / n);
+    var z = sd === 0 ? 0 : (latest - mean) / sd;
+    // simple linear fit slope (least squares), x = period index
+    var sx = 0, sy = 0, sxy = 0, sxx = 0;
+    for (var x = 0; x < n; x++) { sx += x; sy += values[x]; sxy += x * values[x]; sxx += x * x; }
+    var denom = n * sxx - sx * sx;
+    var slope = denom === 0 ? 0 : (n * sxy - sx * sy) / denom;
+    var dir = pct > 0.5 ? 'up' : (pct < -0.5 ? 'down' : 'flat');
+    var range = max - min;
+    var slopeNorm = mean !== 0 ? (slope / Math.abs(mean)) : 0; // per-period drift vs scale
+    return {
+      name: name, values: values, n: n,
+      latest: latest, prev: prev, pct: pct, dir: dir,
+      min: min, max: max, mean: mean, sd: sd, z: z, slope: slope, slopeNorm: slopeNorm,
+      isMax: latest === max && range > 0, isMin: latest === min && range > 0,
+      outlier: Math.abs(z) >= 2 && sd > 0
+    };
+  }
+
+  // A metric where "up is bad" by name (churn / cost / tickets / bounce / error).
+  function badWhenUp(name) {
+    return /churn|cost|ticket|bounce|error|complaint|refund|defect|incident|attrition|fraud|latency|downtime/i.test(name);
+  }
+
+  // --- ranked deterministic narrative (ranking shape adapted from ai-money-map) ---
+  // Each insight gets a signal-strength score; strongest insights lead the readout.
+  function insightFor(m, fastest) {
+    var bad = badWhenUp(m.name);
+    var moved = isFinite(m.pct) ? Math.abs(m.pct) : 200;
+    // signal score: outliers dominate, then magnitude of move, then trend persistence.
+    var sig = clamp(Math.abs(m.z) * 22, 0, 60);
+    sig += clamp(moved * 1.4, 0, 28);
+    sig += clamp(Math.abs(m.slopeNorm) * 100 * 1.2, 0, 12);
+    if (m.isMax || m.isMin) sig += 4;
+
+    var val = fmtNum(m.latest);
+    var sentence, flagged = false;
+
+    if (m.outlier) {
+      flagged = true;
+      var sideWord = m.z > 0 ? 'above' : 'below';
+      sentence = '<span class="flag">' + esc(m.name) + ' flagged</span>: latest point ' + esc(val) +
+        ' sits ' + fmtSig(Math.abs(m.z)) + 'σ ' + sideWord + ' its mean of ' + esc(fmtNum(m.mean)) +
+        (bad && m.z > 0 ? ' — worth investigating.' : '.');
+    } else if (m.dir === 'flat') {
+      sentence = esc(m.name) + ' held roughly flat at ' + esc(val) +
+        (Math.abs(m.slopeNorm) > 0.01 ? ' with a gentle ' + (m.slope > 0 ? 'upward' : 'downward') + ' drift.' : ' across the series.');
+    } else {
+      var rose = m.dir === 'up';
+      var verb = rose ? 'rose' : 'fell';
+      var goodMove = rose !== bad; // up&good, or down&bad-metric => good
+      sentence = esc(m.name) + ' ' + verb + ' ' + fmtPct(m.pct) + ' to ' + esc(val);
+      var tail = [];
+      if (fastest && fastest.name === m.name) tail.push(rose ? 'the fastest gain in the series' : 'the steepest drop in the series');
+      if (m.isMax) tail.push('a new high'); else if (m.isMin) tail.push('a new low');
+      if (!tail.length) tail.push(goodMove ? 'a healthy move' : 'a soft spot to watch');
+      sentence += ' — ' + tail.join(', ') + '.';
+    }
+    return { name: m.name, sentence: sentence, sig: sig, flagged: flagged };
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
+  }
+
+  // inline-SVG sparkline (bars) — safe at load (no canvas getContext)
+  function sparkline(m) {
+    var vals = m.values, n = vals.length;
+    var w = 100, h = 34, gap = 2;
+    var bw = (w - gap * (n - 1)) / n;
+    var lo = m.min, hi = m.max, span = (hi - lo) || 1;
+    var bars = '';
+    for (var i = 0; i < n; i++) {
+      var t = (vals[i] - lo) / span;
+      var bh = Math.max(2, t * (h - 2));
+      var x = i * (bw + gap);
+      var y = h - bh;
+      var isLast = i === n - 1;
+      var fill = isLast ? (m.dir === 'up' ? COL_UP : (m.dir === 'down' ? COL_DOWN : COL_FLAT)) : 'var(--border)';
+      if (m.outlier && isLast) fill = COL_DOWN;
+      bars += '<rect x="' + r2(x) + '" y="' + r2(y) + '" width="' + r2(bw) + '" height="' + r2(bh) +
+        '" rx="1" fill="' + fill + '"></rect>';
+    }
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' + bars + '</svg>';
+  }
+  function r2(n) { return Math.round(n * 100) / 100; }
+
+  function kpiCard(m) {
+    var dirClass = m.dir;
+    var arrow = m.dir === 'up' ? '&#9650;' : (m.dir === 'down' ? '&#9660;' : '&#9654;');
+    var deltaTxt = isFinite(m.pct) ? fmtPct(m.pct) : 'n/a';
+    var flagChip = m.outlier ? ' <span class="lab-chip lab-good-tint" style="background:var(--red);color:#fff">' + fmtSig(Math.abs(m.z)) + 'σ</span>' : '';
+    return '<div class="lab-card kpi">' +
+      '<span class="name">' + esc(m.name) + flagChip + '</span>' +
+      '<span class="val">' + esc(fmtNum(m.latest)) + '</span>' +
+      '<span class="delta ' + dirClass + '">' + arrow + ' ' + deltaTxt + ' <span style="color:var(--muted);font-weight:500">PoP</span></span>' +
+      sparkline(m) +
+      '<span class="meta"><span>min ' + esc(fmtNum(m.min)) + '</span><span>max ' + esc(fmtNum(m.max)) + '</span></span>' +
+      '</div>';
+  }
+
+  function buildReadout(ranked, periods) {
+    var lines = ['# Executive readout', '', '_Periods: ' + periods[0] + ' → ' + periods[periods.length - 1] +
+      ' (' + periods.length + ' points)_', ''];
+    for (var i = 0; i < ranked.length; i++) {
+      lines.push((i + 1) + '. ' + stripTags(ranked[i].sentence));
+    }
+    return lines.join('\n');
+  }
+  function stripTags(s) { return String(s).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"'); }
+
+  function render(text) {
+    var parsed = parseCsv(text);
+    if (parsed.error) {
+      lastReadout = '';
+      out.innerHTML = '<div class="lab-card err">Could not read that CSV — ' + esc(parsed.error) + '</div>';
+      return;
+    }
+    var metrics = parsed.series.map(function (s) { return analyze(s.name, s.values); });
+
+    // "fastest in the series": metric with the largest absolute PoP move.
+    var fastest = null;
+    metrics.forEach(function (m) {
+      if (!isFinite(m.pct) || m.dir === 'flat') return;
+      if (!fastest || Math.abs(m.pct) > Math.abs(fastest.pct)) fastest = m;
+    });
+
+    var insights = metrics.map(function (m) { return insightFor(m, fastest); });
+    insights.sort(function (a, b) { return b.sig - a.sig; });
+
+    var cards = metrics.map(kpiCard).join('');
+    var list = insights.map(function (ins, i) {
+      return '<li><span class="rank">' + (i + 1) + '.</span><span>' + ins.sentence + '</span></li>';
+    }).join('');
+
+    lastReadout = buildReadout(insights, parsed.periods);
+
+    out.innerHTML =
+      '<div><p class="sect-h">KPI cards — latest value &amp; period-over-period</p>' +
+        '<div class="cards">' + cards + '</div></div>' +
+      '<div class="lab-card" style="padding:18px"><p class="sect-h">Ranked insights</p>' +
+        '<ul class="insights">' + list + '</ul></div>';
+  }
+
+  // --- copy executive readout (clipboard + execCommand fallback, lifted from hello-lab) ---
+  function copyReadout() {
+    var text = lastReadout || '(nothing to copy)';
+    var done = function () {
+      copyBtn.textContent = 'Copied ✓';
+      setTimeout(function () { copyBtn.textContent = 'Copy executive readout'; }, 1500);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
+    } catch (e) {}
+    fallback();
+    function fallback() {
+      try {
+        var t2 = document.createElement('textarea');
+        t2.value = text;
+        document.body.appendChild(t2);
+        t2.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(t2);
+      } catch (e) {}
+      done();
+    }
+  }
+
+  ta.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { render(ta.value); }, 300);
+  });
+  sampleBtn.addEventListener('click', function () { ta.value = SAMPLE; render(SAMPLE); });
+  copyBtn.addEventListener('click', copyReadout);
+
+  // Seed default render on load (no interaction needed for smoke).
+  ta.value = SAMPLE;
+  render(SAMPLE);
+})();
+</script>
+</body>
+</html>
