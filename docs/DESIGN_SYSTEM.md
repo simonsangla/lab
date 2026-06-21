@@ -51,18 +51,17 @@ fixed this pass. **Net: 0 per-app commits needed; the system is unified.**
 | Homepage `.lab-kicker` + gallery masthead adoption | done this pass | ✅ done |
 | Per app: adopt components + tokenize JS color literals | audited 15/15 | ✅ already compliant (loop found 0 gaps) |
 | `mercor-portfolio` | audited | ✅ already token-routed (blue is `file://` fallback only) |
-| Automated drift guard (extend `scripts/lint-app.mjs`) | ~1–2 h once | ⬜ recommended (prevention, not migration) |
-| **Total remaining** | **~1–2 h** (the optional drift lint) | low |
+| Automated drift guard (G6 in `scripts/lint-app.mjs`) | done this pass | ✅ done — warns on bare `.lab-*` redefinition + untokenized `<script>` hex |
+| **Total remaining** | **0** | low |
 
-No new architecture, and — as it turns out — no migration backlog either. The
-only forward item is the optional drift-lint that keeps it this way.
+No new architecture, no migration backlog, and now a guard so it stays that way.
 
 ## Recommendation
 
 1. **Keep `lab-theme.css` as the single source** (it already mirrors `@simon/tokens`). Never fork it per page; when a recurring visual is missing, add it **once** to `lab-theme.css`, then consume it.
 2. **Homepage**: done — uses `.lab-kicker`; keep its page-specific *layout* CSS (`.service/.work/.steps/.stats/.contact/.topbar`) since those are genuinely unique and have no shared equivalent.
 3. **Apps**: ✅ done — the app-by-app `lab-brand-polish` loop audited all 15 and found them already compliant (see "Loop result" above). Re-run the loop only when new apps land.
-4. **Automate the audit** so drift can't return: extend `scripts/lint-app.mjs` to warn on (a) a `<style>` block redefining a `.lab-*` class, and (b) raw hex inside `<script>` not wrapped in `var(--token, …)`. This turns the manual audit above into a gate.
+4. **Automated drift guard** — ✅ done. `scripts/lint-app.mjs` G6 warns (never errors, so CI stays green) on (a) an inline `<style>` redefining a bare `.lab-*` component and (b) raw hex in `<script>` not routed through `var(--token,#hex)`/`token()`. Theme-agnostic `#ffffff`/`#000000` are auto-allowed; mark any other deliberate literal with a `lab-allow-hex` comment. Runs over all apps + the homepage. This turns the manual audit into a standing gate.
 5. **Decide on `mercor-portfolio`**: migrate to tokens, or formally exempt it (embedded portfolio artifact) and document the exception.
 
 ## Verification (per migrated page)

@@ -34,10 +34,52 @@ function scripts(html) {
   return out;
 }
 
+function styleBlocks(html) {
+  const out = [];
+  const re = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi;
+  let m;
+  while ((m = re.exec(html))) out.push(m[1]);
+  return out;
+}
+
 let errors = 0;
 let warnings = 0;
 const err = (f, msg) => { console.error('ERROR ' + f + ': ' + msg); errors++; };
 const warn = (f, msg) => { console.error('warn  ' + f + ': ' + msg); warnings++; };
+
+// G6: brand-drift WARNINGS (never fail CI) — surface design-system reinvention.
+//   - inline <style> redefining a shared .lab-* component (consume it instead)
+//   - raw color literal in <script> not routed through a token (var(--x,#hex) /
+//     token('--x',#hex))
+// Theme-agnostic #ffffff/#000000 are allowed automatically; mark any other
+// deliberate literal (e.g. a categorical chart palette) with a `lab-allow-hex`
+// comment on the same line.
+function brandDrift(file, html) {
+  for (const css of styleBlocks(html)) {
+    const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    let r; const ruleRe = /([^{}]+)\{[^{}]*\}/g;
+    while ((r = ruleRe.exec(clean))) {
+      for (const sel of r[1].split(',').map((s) => s.trim())) {
+        // Bare component selector (optionally one pseudo) = redefining the shared
+        // component itself. A scoped/compound selector (".x .lab-btn", ".lab-btn.y")
+        // is an allowed contextual tweak.
+        if (/^\.lab-[a-z0-9-]+(?::[a-z-]+)?$/i.test(sel)) {
+          warn(file, 'inline <style> redefines shared component ' + sel + ' — consume it from lab-theme.css (use a differently-named fallback class), do not redefine it per app');
+          break;
+        }
+      }
+    }
+  }
+  for (const src of scripts(html)) {
+    for (const line of src.split('\n')) {
+      const hexes = line.match(/#[0-9a-fA-F]{6}\b/g);
+      if (!hexes || /lab-allow-hex/.test(line)) continue;
+      if (/var\(\s*--|token\(/.test(line)) continue;                  // routed through a token
+      if (hexes.every((h) => /^#(?:ffffff|000000)$/i.test(h))) continue; // theme-agnostic ink/surface
+      warn(file, 'raw color in <script> not routed through a token: ' + line.trim().slice(0, 72) + '  (use var(--token,#hex)/token(), or mark lab-allow-hex)');
+    }
+  }
+}
 
 const tmp = mkdtempSync(join(tmpdir(), 'lint-app-'));
 
@@ -78,9 +120,18 @@ for (const file of files) {
       err(file, 'inline script #' + i + ' failed node --check:\n' + String(e.stderr).trim());
     }
   });
+
+  // G6: brand-drift (warnings only)
+  brandDrift(file, html);
 }
 } finally {
   rmSync(tmp, { recursive: true, force: true });
+}
+
+// On a default run (no explicit files) the hand-authored homepage is in scope
+// for the drift guard too, even though it skips the app filename/meta contract.
+if (!process.argv.slice(2).length) {
+  try { brandDrift('index.html', readFileSync('index.html', 'utf8')); } catch { /* no homepage */ }
 }
 console.log('[lint-app] ' + files.length + ' files, ' + errors + ' errors, ' + warnings + ' warnings');
 process.exit(errors ? 1 : 0);

@@ -112,10 +112,16 @@ but its selector MUST be a single class (specificity `0,1,0`) so the later-loade
 4. **Light polish within brand** only: empty-state hint, a card surface, `>=44px` targets, a `prefers-reduced-motion`-gated transition. NO redesign; preserve layout + character.
 5. **Gate** locally from the repo root and fix until clean:
    ```bash
-   node scripts/lint-app.mjs apps/<file>   # meta/filename/theme-link + inline-JS syntax; 0 errors
+   node scripts/lint-app.mjs apps/<file>   # meta/filename/theme-link + inline-JS syntax (0 errors) + G6 brand-drift (warnings)
    node scripts/smoke.mjs apps/<file>      # loads/renders, no errors; 0 failures
-   node scripts/gen-index.mjs && git diff --exit-code index.html   # gallery idempotent
+   node scripts/gen-index.mjs && git diff --exit-code gallery.html   # gallery idempotent
    ```
+   **G6 brand-drift** warns (never fails CI) when an inline `<style>` redefines a
+   bare `.lab-*` component or a `<script>` injects raw hex not routed through
+   `var(--token,#hex)`/`token()`. Theme-agnostic `#ffffff`/`#000000` are
+   auto-allowed; mark any other deliberate literal (e.g. a categorical chart
+   palette) with a `lab-allow-hex` comment on the line. Keep the warning count at
+   **0** — a warning means drift to fix (adopt the component / tokenize the color).
 6. **Verify on the live theme** in a preview (see gotcha below), confirming tokens resolve to brand colors and there are no console errors.
 
 ## Hard rules
