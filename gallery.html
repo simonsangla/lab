@@ -80,6 +80,8 @@
   }
   .site-link:hover { text-decoration: underline; }
   @media (max-width: 460px) { .site-link { display: none; } }
+  .headline { color: var(--text); font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 6px 0 0; max-width: 16ch; }
+  .headline .accent { display: block; color: var(--green); }
   .lede { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 10px 0 0; max-width: 56ch; }
   .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }
   .chip {
@@ -184,6 +186,7 @@
   }
   @media (min-width: 720px) {
     .masthead h1 { font-size: 40px; }
+    .headline { font-size: 46px; }
     .hero { padding: 32px; }
     .hero h2 { font-size: 36px; }
     .list { padding: 6px 24px; }
@@ -202,7 +205,8 @@
         <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla - main site">SS</a>
       </div>
     </header>
-    <p class="lede">One day. One app. No excuses. Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>
+    <h2 class="headline">One day. One app. <span class="accent">No excuses.</span></h2>
+    <p class="lede">Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>
     <div class="stats">
       <span class="chip">14 apps shipped</span>
       <span class="chip">since May 26, 2026</span>

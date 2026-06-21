@@ -61,9 +61,10 @@
   /* .kicker / .section-kicker: file:// fallback only; the shared .lab-kicker
      (lab-theme.css, loaded later, equal single-class specificity) wins on live. */
   .kicker { font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lab-green-text); margin: 0 0 10px; }
-  header h1 { font-weight: 700; font-size: 32px; margin: 0; letter-spacing: -0.015em; line-height: 1.12; }
-  @media (min-width: 720px) { header h1 { font-size: 40px; } }
-  header h1 b { color: var(--lab-green-text); font-weight: 700; }
+  header h1 { font-weight: 800; font-size: 36px; margin: 0; letter-spacing: -0.03em; line-height: 1.05; }
+  @media (min-width: 720px) { header h1 { font-size: 48px; } }
+  /* green accent clause drops to its own line — the simonsangla.com headline signature */
+  header h1 b { display: block; color: var(--lab-green); font-weight: 800; }
   header .lead { color: var(--muted); font-size: 16px; margin: 14px 0 0; max-width: 60ch; }
   .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
   .proofbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }

@@ -223,6 +223,8 @@ const html =
   '  }\n' +
   '  .site-link:hover { text-decoration: underline; }\n' +
   '  @media (max-width: 460px) { .site-link { display: none; } }\n' +
+  '  .headline { color: var(--text); font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 6px 0 0; max-width: 16ch; }\n' +
+  '  .headline .accent { display: block; color: var(--green); }\n' +
   '  .lede { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 10px 0 0; max-width: 56ch; }\n' +
   '  .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }\n' +
   '  .chip {\n' +
@@ -327,6 +329,7 @@ const html =
   '  }\n' +
   '  @media (min-width: 720px) {\n' +
   '    .masthead h1 { font-size: 40px; }\n' +
+  '    .headline { font-size: 46px; }\n' +
   '    .hero { padding: 32px; }\n' +
   '    .hero h2 { font-size: 36px; }\n' +
   '    .list { padding: 6px 24px; }\n' +
@@ -345,7 +348,8 @@ const html =
   '        <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla - main site">SS</a>\n' +
   '      </div>\n' +
   '    </header>\n' +
-  '    <p class="lede">One day. One app. No excuses. Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
+  '    <h2 class="headline">One day. One app. <span class="accent">No excuses.</span></h2>\n' +
+  '    <p class="lede">Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
   '    <div class="stats">\n' +
   '      <span class="chip">' + N + ' apps shipped</span>\n' +
   (since ? '      <span class="chip">since ' + escapeHtml(formatDate(since)) + '</span>\n' : '') +
