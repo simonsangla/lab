@@ -140,20 +140,6 @@
     } catch (e) {}
     return fallbackHex;
   }
-  function parseColor(str, fallback) {
-    var s = String(str).trim();
-    var m = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-    if (m) {
-      var hex = m[1];
-      if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-      return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
-    }
-    var rgb = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-    if (rgb) return { r: +rgb[1], g: +rgb[2], b: +rgb[3] };
-    return fallback;
-  }
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function rgbToCss(c) { return 'rgb(' + c.r + ',' + c.g + ',' + c.b + ')'; }
 
   // Series palette: anchor on brand green, then distinct accents. file:// hex
   // fallbacks mirror the dark theme; token() upgrades them to the live values.

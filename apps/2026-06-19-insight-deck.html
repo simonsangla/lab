@@ -165,6 +165,7 @@
     return s;
   }
   function fmtPct(p) {
+    if (!isFinite(p)) return 'n/a';
     var s = (Math.round(Math.abs(p) * 10) / 10).toString();
     return s + '%';
   }

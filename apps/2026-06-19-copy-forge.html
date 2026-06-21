@@ -291,11 +291,6 @@
     if (score >= 40) return 'lab-mid';
     return 'lab-bad';
   }
-  function chipClass(score) {
-    // chips stay on the green tint, but flag a weak axis with a muted look via title
-    return 'lab-chip';
-  }
-
   function esc(s) {
     return String(s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
