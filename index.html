@@ -46,11 +46,17 @@
     overscroll-behavior-y: contain;
   }
   a, button { -webkit-tap-highlight-color: transparent; }
-  .topbar { max-width: 820px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .topbar .brand { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; color: var(--text); text-decoration: none; }
-  .topbar .brand b { color: var(--lab-green-text); }
-  .topbar .topbar-link { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--lab-green-text); text-decoration: none; }
-  .topbar .topbar-link:hover { text-decoration: underline; }
+  /* masthead — same header as the generated gallery (gallery.html): big lab.
+     wordmark + round SS avatar. */
+  .masthead { max-width: 820px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .masthead .brand { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); text-decoration: none; }
+  .masthead .brand .dot { color: var(--lab-green-text); }
+  .masthead .site-nav { display: flex; align-items: center; gap: 12px; }
+  .masthead .site-link { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--lab-green-text); text-decoration: none; }
+  .masthead .site-link:hover { text-decoration: underline; }
+  .masthead .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--lab-green), var(--lab-green-dark)); color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; text-decoration: none; }
+  @media (max-width: 460px) { .masthead .site-link { display: none; } }
+  @media (min-width: 720px) { .masthead .brand { font-size: 34px; } }
   .wrap { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
   /* .kicker / .section-kicker: file:// fallback only; the shared .lab-kicker
      (lab-theme.css, loaded later, equal single-class specificity) wins on live. */
@@ -112,9 +118,12 @@
 <link rel="stylesheet" href="/assets/lab-theme.css">
 </head>
 <body>
-  <nav class="topbar">
-    <a class="brand" href="/gallery.html">lab<b>.</b></a>
-    <a class="topbar-link" href="https://simonsangla.com" target="_blank" rel="noopener">simonsangla.com &#8599;</a>
+  <nav class="masthead" aria-label="Lab navigation">
+    <a class="brand" href="/gallery.html">lab<span class="dot">.</span></a>
+    <div class="site-nav">
+      <a class="site-link" href="https://simonsangla.com" target="_blank" rel="noopener">simonsangla.com &#8599;</a>
+      <a class="avatar" href="https://simonsangla.com" target="_blank" rel="noopener" aria-label="Simon Sangla &mdash; main site">SS</a>
+    </div>
   </nav>
   <div class="wrap">
 
