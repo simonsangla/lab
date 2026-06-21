@@ -4,9 +4,9 @@
  * (simon-platform: packages/@simon/tokens/src/themes/lab.css, the lab bridge,
  * which itself derives from theme.css). The structural neutral + status values
  * below are kept in sync with that bridge so the two surfaces can never silently
- * drift; the one intentional divergence is the brand accent - lab uses the vivid
- * Basque green #009A44 for green text/accents too (matching simonsangla.com),
- * not a darker AA-safe shade. Synced 2026-06-14.
+ * drift; the one intentional divergence is the brand accent - lab keeps the
+ * Basque green #009A44 for surfaces/buttons + large headline accents, with the
+ * AA-safe shade #007D37 for small green text. Synced 2026-06-14.
  *
  * Reusable component: apps keep their full inline dark theme as a built-in
  * fallback (standalone file:// opens still work); this sheet, linked after
@@ -25,7 +25,7 @@
 :root {
   /* brand - Basque green (deliberate ikurrina reference; kept on the re-skin) */
   --lab-green: #009A44;
-  --lab-green-text: #009A44;   /* vivid Basque green for ALL green text/accents (brand choice, matches simonsangla.com); large-text AA, ~3.4:1 on 12px labels */
+  --lab-green-text: #007D37;   /* AA-safe (>=4.5:1 on white) green for small text/labels; large accents + buttons use --lab-green */
   --lab-green-dark: #00702F;
   --lab-green-deep: #064E26;
   --lab-green-tint: #E5F5EC;
@@ -44,10 +44,10 @@
   /* brand accent - lab divergence kept text-safe: apps use var(--accent) as a
      text color on white, so it maps to the AA-safe green; --accent-text mirrors
      the bridge name, --lab-green (#009A44) is the surface/button green. */
-  --accent: var(--lab-green-text);        /* #009A44 - vivid Basque green */
-  --accent-text: var(--lab-green-text);   /* #009A44 */
+  --accent: var(--lab-green-text);        /* #007D37 - AA-safe on white */
+  --accent-text: var(--lab-green-text);   /* #007D37 */
   --accent2: var(--lab-green-dark);
-  --green: var(--lab-green-text);  /* #009A44 Basque green (surfaces also use --lab-green) */
+  --green: var(--lab-green-text);  /* #007D37 AA-safe text; surfaces/large accents use --lab-green #009A44 */
   --font-display: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 
