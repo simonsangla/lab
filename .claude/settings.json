@@ -4,7 +4,38 @@
       "Bash(npm run lint)",
       "Bash(npm run smoke)",
       "Bash(npm run gen)",
-      "mcp__github__pull_request_read"
+      "Bash(node scripts/lint-app.mjs:*)",
+      "Bash(node scripts/smoke.mjs:*)",
+      "Bash(node scripts/gen-index.mjs:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote -v)",
+      "Bash(git ls-files:*)",
+      "mcp__github__pull_request_read",
+      "mcp__github__actions_list",
+      "mcp__github__actions_get",
+      "mcp__github__get_commit",
+      "mcp__github__list_commits",
+      "mcp__github__search_pull_requests"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Linting app for brand drift...",
+            "command": "jq -r \".tool_input.file_path // .tool_response.filePath\" | { read -r f; case \"$f\" in *apps/*.html) o=$(node scripts/lint-app.mjs \"$f\" 2>&1); if printf \"%s\" \"$o\" | grep -qE \"^(ERROR|warn )\"; then printf \"%s\\n\" \"$o\" >&2; exit 2; fi;; esac; }"
+          }
+        ]
+      }
     ]
   }
 }
