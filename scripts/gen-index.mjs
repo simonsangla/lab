@@ -3,8 +3,6 @@ import { join } from 'node:path';
 
 const APPS_DIR = 'apps';
 const OUT = 'gallery.html';
-// Apps present in apps/ but deliberately omitted from the public gallery.
-const HIDDEN = new Set(['2026-06-19-ai-money-map.html']);
 const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const GRADIENT_COUNT = 7; // .g1 ... .g7 in the stylesheet below
@@ -50,28 +48,37 @@ function formatDate(iso) {
   return MONTHS[m - 1] + ' ' + d + ', ' + y;
 }
 
+// Unlisted apps opt out of the gallery with <meta name="app-visibility" content="private">.
+// The file still deploys (reachable by direct URL); it's just excluded from the index.
+function isPrivate(html) {
+  // Tolerate any attribute order / extra attributes on the meta tag.
+  return /<meta\s+[^>]*name=["']app-visibility["'][^>]*content=["']\s*private\s*["']/i.test(html) ||
+         /<meta\s+[^>]*content=["']\s*private\s*["'][^>]*name=["']app-visibility["']/i.test(html);
+}
+
 const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
-  .filter((f) => !HIDDEN.has(f))
   .sort((a, b) => b.localeCompare(a));
 
-const apps = files.map((filename) => {
-  const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
-  const date = filename.slice(0, 10);
-  const stem = filename.replace(/\.html$/i, '');
-  const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
-  const fallbackName = titleCase(rest.replace(/-/g, ' '));
-  const name = parseMeta(raw, 'app-name') || fallbackName;
-  const description = parseMeta(raw, 'app-description') || '';
-  if (description.length > 140) {
-    console.warn('[gen-index] WARN ' + filename + ': description is ' + description.length + ' chars (>140) and will clamp on the card');
-  }
-  const tagsRaw = parseMeta(raw, 'app-tags') || '';
-  const tags = tagsRaw
-    ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
-  return { filename, name, description, tags, date };
-});
+const apps = files
+  .map((filename) => ({ filename, raw: readFileSync(join(APPS_DIR, filename), 'utf8') }))
+  .filter(({ raw }) => !isPrivate(raw))
+  .map(({ filename, raw }) => {
+    const date = filename.slice(0, 10);
+    const stem = filename.replace(/\.html$/i, '');
+    const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+    const fallbackName = titleCase(rest.replace(/-/g, ' '));
+    const name = parseMeta(raw, 'app-name') || fallbackName;
+    const description = parseMeta(raw, 'app-description') || '';
+    if (description.length > 140) {
+      console.warn('[gen-index] WARN ' + filename + ': description is ' + description.length + ' chars (>140) and will clamp on the card');
+    }
+    const tagsRaw = parseMeta(raw, 'app-tags') || '';
+    const tags = tagsRaw
+      ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
+    return { filename, name, description, tags, date };
+  });
 
 const N = apps.length;
 const since = N ? apps[N - 1].date : '';

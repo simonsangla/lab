@@ -15,7 +15,7 @@ Static "One Day One App" showcase. Zero build step. The homepage `index.html` is
 
 3. Commit on a feature branch → push → open PR → merge. The post-merge push to `main` triggers `.github/workflows/gen-index.yml`, which regenerates `gallery.html` with the new card.
 
-Apps' "back to lab" link points to `/gallery.html` (the full list); the homepage (`index.html`) is reached via the gallery masthead. To keep an app out of the public gallery, add its filename to the `HIDDEN` set in `scripts/gen-index.mjs` (currently hides `2026-06-19-ai-money-map.html`); the file stays in `apps/` and remains directly linkable.
+Apps' "back to lab" link points to `/gallery.html` (the full list); the homepage (`index.html`) is reached via the gallery masthead. To keep an app out of the public gallery, add `<meta name="app-visibility" content="private">` to its `<head>` (currently set on `2026-06-19-ai-money-map.html`); the file stays in `apps/`, still deploys, and remains directly linkable.
 
 ## Conventions
 
