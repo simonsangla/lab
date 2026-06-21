@@ -5,7 +5,8 @@
  * which itself derives from theme.css). The structural neutral + status values
  * below are kept in sync with that bridge so the two surfaces can never silently
  * drift; the one intentional divergence is the brand accent - lab keeps the
- * Basque green #009A44 (text-safe #007D37). Synced 2026-06-14.
+ * Basque green #009A44 for surfaces/buttons + large headline accents, with the
+ * AA-safe shade #007D37 for small green text. Synced 2026-06-14.
  *
  * Reusable component: apps keep their full inline dark theme as a built-in
  * fallback (standalone file:// opens still work); this sheet, linked after
@@ -14,8 +15,9 @@
  * Identity (ported from simonsangla.com): white editorial surface, IBM Plex
  * Sans body/display + IBM Plex Mono labels, big confident type, mono UPPERCASE
  * green kicker labels, restrained Basque green (Pantone 348C #009A44) accent,
- * flat ~10px-radius buttons + hairline-bordered cards. Text-bearing greens use
- * the darker AA-safe shade (#007D37).
+ * flat ~10px-radius buttons + hairline-bordered cards. The vivid Basque green
+ * #009A44 is used for all green text/accents to match simonsangla.com (large
+ * text + buttons clear AA; 12px mono labels sit ~3.4:1 by deliberate choice).
  */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
@@ -23,7 +25,7 @@
 :root {
   /* brand - Basque green (deliberate ikurrina reference; kept on the re-skin) */
   --lab-green: #009A44;
-  --lab-green-text: #007D37;   /* >=4.5:1 on white */
+  --lab-green-text: #007D37;   /* AA-safe (>=4.5:1 on white) green for small text/labels; large accents + buttons use --lab-green */
   --lab-green-dark: #00702F;
   --lab-green-deep: #064E26;
   --lab-green-tint: #E5F5EC;
@@ -43,9 +45,9 @@
      text color on white, so it maps to the AA-safe green; --accent-text mirrors
      the bridge name, --lab-green (#009A44) is the surface/button green. */
   --accent: var(--lab-green-text);        /* #007D37 - AA-safe on white */
-  --accent-text: var(--lab-green-text);   /* bridge --accent-text #007D37 */
+  --accent-text: var(--lab-green-text);   /* #007D37 */
   --accent2: var(--lab-green-dark);
-  --green: var(--lab-green-text);  /* text-safe; surfaces use --lab-green */
+  --green: var(--lab-green-text);  /* #007D37 AA-safe text; surfaces/large accents use --lab-green #009A44 */
   --font-display: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 

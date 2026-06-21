@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const APPS_DIR = 'apps';
-const OUT = 'index.html';
+const OUT = 'gallery.html';
 const META_KEYS = ['app-name', 'app-description', 'app-tags'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const GRADIENT_COUNT = 7; // .g1 ... .g7 in the stylesheet below
@@ -48,27 +48,37 @@ function formatDate(iso) {
   return MONTHS[m - 1] + ' ' + d + ', ' + y;
 }
 
+// Unlisted apps opt out of the gallery with <meta name="app-visibility" content="private">.
+// The file still deploys (reachable by direct URL); it's just excluded from the index.
+function isPrivate(html) {
+  // Tolerate any attribute order / extra attributes on the meta tag.
+  return /<meta\s+[^>]*name=["']app-visibility["'][^>]*content=["']\s*private\s*["']/i.test(html) ||
+         /<meta\s+[^>]*content=["']\s*private\s*["'][^>]*name=["']app-visibility["']/i.test(html);
+}
+
 const files = readdirSync(APPS_DIR)
   .filter((f) => f.toLowerCase().endsWith('.html'))
   .sort((a, b) => b.localeCompare(a));
 
-const apps = files.map((filename) => {
-  const raw = readFileSync(join(APPS_DIR, filename), 'utf8');
-  const date = filename.slice(0, 10);
-  const stem = filename.replace(/\.html$/i, '');
-  const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
-  const fallbackName = titleCase(rest.replace(/-/g, ' '));
-  const name = parseMeta(raw, 'app-name') || fallbackName;
-  const description = parseMeta(raw, 'app-description') || '';
-  if (description.length > 140) {
-    console.warn('[gen-index] WARN ' + filename + ': description is ' + description.length + ' chars (>140) and will clamp on the card');
-  }
-  const tagsRaw = parseMeta(raw, 'app-tags') || '';
-  const tags = tagsRaw
-    ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
-  return { filename, name, description, tags, date };
-});
+const apps = files
+  .map((filename) => ({ filename, raw: readFileSync(join(APPS_DIR, filename), 'utf8') }))
+  .filter(({ raw }) => !isPrivate(raw))
+  .map(({ filename, raw }) => {
+    const date = filename.slice(0, 10);
+    const stem = filename.replace(/\.html$/i, '');
+    const rest = stem.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+    const fallbackName = titleCase(rest.replace(/-/g, ' '));
+    const name = parseMeta(raw, 'app-name') || fallbackName;
+    const description = parseMeta(raw, 'app-description') || '';
+    if (description.length > 140) {
+      console.warn('[gen-index] WARN ' + filename + ': description is ' + description.length + ' chars (>140) and will clamp on the card');
+    }
+    const tagsRaw = parseMeta(raw, 'app-tags') || '';
+    const tags = tagsRaw
+      ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
+    return { filename, name, description, tags, date };
+  });
 
 const N = apps.length;
 const since = N ? apps[N - 1].date : '';
@@ -139,10 +149,10 @@ const html =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
   '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">\n' +
-  '<title>lab. &mdash; Simon Sangla</title>\n' +
+  '<title>lab. &mdash; all apps</title>\n' +
   '<meta name="description" content="One day. One app. No excuses.">\n' +
   '<meta property="og:type" content="website">\n' +
-  '<meta property="og:url" content="https://lab.simonsangla.com/">\n' +
+  '<meta property="og:url" content="https://lab.simonsangla.com/gallery.html">\n' +
   '<meta property="og:title" content="lab. \u2014 One day. One app. No excuses.">\n' +
   '<meta property="og:description" content="' + N + ' micro-apps shipped, one per day, by Simon Sangla \u2014 Snowflake analytics consultant.">\n' +
   '<meta property="og:image" content="https://lab.simonsangla.com/og.png">\n' +
@@ -163,6 +173,7 @@ const html =
   '    --green-hero: #00853B;   /* darkest hero-gradient start that keeps white text AA (4.75:1) */\n' +
   '    --green-dark: #00702F;\n' +
   '    --green-deep: #064E26;\n' +
+  '    --green-text: #007D37;   /* AA-safe (>=4.5:1) green for small labels; large accents/buttons use --green */\n' +
   '    --green-tint: #E5F5EC;\n' +
   '    --bg: #ffffff;\n' +
   '    --card: #ffffff;\n' +
@@ -190,7 +201,7 @@ const html =
   '  .eyebrow {\n' +
   '    font-family: var(--font-mono);\n' +
   '    font-size: 12px; font-weight: 600; letter-spacing: 0.14em;\n' +
-  '    text-transform: uppercase; color: var(--green-dark); margin: 8px 0 2px;\n' +
+  '    text-transform: uppercase; color: var(--green-text); margin: 8px 0 2px;\n' +
   '  }\n' +
   '  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; }\n' +
   '  .masthead h1 {\n' +
@@ -198,6 +209,7 @@ const html =
   '    margin: 0; line-height: 1.1;\n' +
   '  }\n' +
   '  .masthead h1 .dot { color: var(--green); }\n' +
+  '  .masthead h1 a, .home-link { color: inherit; text-decoration: none; }\n' +
   '  .avatar {\n' +
   '    width: 44px; height: 44px; border-radius: 50%;\n' +
   '    background: linear-gradient(135deg, var(--green), var(--green-dark));\n' +
@@ -208,10 +220,12 @@ const html =
   '  .site-nav { display: flex; align-items: center; gap: 12px; }\n' +
   '  .site-link {\n' +
   '    font-family: var(--font-mono); font-size: 12px; font-weight: 600;\n' +
-  '    letter-spacing: 0.04em; color: var(--green-dark); text-decoration: none;\n' +
+  '    letter-spacing: 0.04em; color: var(--green-text); text-decoration: none;\n' +
   '  }\n' +
   '  .site-link:hover { text-decoration: underline; }\n' +
   '  @media (max-width: 460px) { .site-link { display: none; } }\n' +
+  '  .headline { color: var(--text); font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 6px 0 0; max-width: 16ch; }\n' +
+  '  .headline .accent { display: block; color: var(--green); }\n' +
   '  .lede { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 10px 0 0; max-width: 56ch; }\n' +
   '  .stats { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }\n' +
   '  .chip {\n' +
@@ -231,7 +245,7 @@ const html =
   '    animation: fadeUp 400ms ease both;\n' +
   '  }\n' +
   '  @media (hover: hover) { .hero:hover { border-color: var(--green); } }\n' +
-  '  .hero .kicker { font-family: var(--font-mono); color: var(--green-dark); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }\n' +
+  '  .hero .kicker { font-family: var(--font-mono); color: var(--green-text); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }\n' +
   '  .hero h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 10px 0 8px; line-height: 1.1; }\n' +
   '  .hero p { font-size: 15px; line-height: 1.5; margin: 0; color: var(--muted); max-width: 52ch; }\n' +
   '  .hero .bar { display: flex; align-items: center; gap: 12px; margin-top: 22px; }\n' +
@@ -254,7 +268,7 @@ const html =
   '    margin: 32px 0 8px;\n' +
   '  }\n' +
   '  .section-head h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }\n' +
-  '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green-dark); }\n' +
+  '  .section-head .count { font-size: 13px; font-weight: 600; color: var(--green-text); }\n' +
   '  .list {\n' +
   '    background: var(--card); border: 1px solid var(--hairline); border-radius: 16px;\n' +
   '    padding: 6px 16px;\n' +
@@ -279,7 +293,7 @@ const html =
   '    font-size: 13px; color: var(--muted); margin: 3px 0 0; line-height: 1.35;\n' +
   '    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;\n' +
   '  }\n' +
-  '  .row .cat { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-dark); margin-top: 4px; }\n' +
+  '  .row .cat { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-text); margin-top: 4px; }\n' +
   '  .open {\n' +
   '    background: var(--green-tint); color: var(--green-dark);\n' +
   '    font-family: var(--font-mono);\n' +
@@ -309,13 +323,14 @@ const html =
   '  .empty { text-align: center; padding: 64px 0; }\n' +
   '  .empty p { color: var(--muted); font-style: italic; }\n' +
   '  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 36px; line-height: 1.6; }\n' +
-  '  footer a { color: var(--green-dark); text-decoration: none; font-weight: 600; }\n' +
+  '  footer a { color: var(--green-text); text-decoration: none; font-weight: 600; }\n' +
   '  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }\n' +
   '  @media (prefers-reduced-motion: reduce) {\n' +
   '    .hero, .list { animation: none; transition: none; }\n' +
   '  }\n' +
   '  @media (min-width: 720px) {\n' +
   '    .masthead h1 { font-size: 40px; }\n' +
+  '    .headline { font-size: 46px; }\n' +
   '    .hero { padding: 32px; }\n' +
   '    .hero h2 { font-size: 36px; }\n' +
   '    .list { padding: 6px 24px; }\n' +
@@ -327,13 +342,15 @@ const html =
   '  <div class="wrap">\n' +
   '    <p class="eyebrow" id="eyebrow">One day. One app.</p>\n' +
   '    <header class="masthead">\n' +
-  '      <h1>lab<span class="dot">.</span></h1>\n' +
+  '      <h1><a class="home-link" href="/">lab<span class="dot">.</span></a></h1>\n' +
   '      <div class="site-nav">\n' +
+  '        <a class="site-link" href="/">Hire me</a>\n' +
   '        <a class="site-link" href="https://simonsangla.com">simonsangla.com</a>\n' +
   '        <a class="avatar" href="https://simonsangla.com" aria-label="Simon Sangla - main site">SS</a>\n' +
   '      </div>\n' +
   '    </header>\n' +
-  '    <p class="lede">One day. One app. No excuses. Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
+  '    <h2 class="headline">One day. One app. <span class="accent">No excuses.</span></h2>\n' +
+  '    <p class="lede">Daily micro-apps designed, built and shipped solo in under 24 hours &mdash; by Simon Sangla, Snowflake analytics consultant.</p>\n' +
   '    <div class="stats">\n' +
   '      <span class="chip">' + N + ' apps shipped</span>\n' +
   (since ? '      <span class="chip">since ' + escapeHtml(formatDate(since)) + '</span>\n' : '') +
