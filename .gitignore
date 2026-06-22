@@ -3,3 +3,4 @@ node_modules/
 .vercel/
 HANDOFF.md
 data/inbox/
+.claude/settings.local.json
