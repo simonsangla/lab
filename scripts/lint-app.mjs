@@ -72,10 +72,10 @@ function brandDrift(file, html) {
   }
   for (const src of scripts(html)) {
     for (const line of src.split('\n')) {
-      const hexes = line.match(/#[0-9a-fA-F]{6}\b/g);
+      const hexes = line.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g);
       if (!hexes || /lab-allow-hex/.test(line)) continue;
       if (/var\(\s*--|token\(/.test(line)) continue;                  // routed through a token
-      if (hexes.every((h) => /^#(?:ffffff|000000)$/i.test(h))) continue; // theme-agnostic ink/surface
+      if (hexes.every((h) => /^#(?:ffffff|000000|fff|000)$/i.test(h))) continue; // theme-agnostic ink/surface
       warn(file, 'raw color in <script> not routed through a token: ' + line.trim().slice(0, 72) + '  (use var(--token,#hex)/token(), or mark lab-allow-hex)');
     }
   }

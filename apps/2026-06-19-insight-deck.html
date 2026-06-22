@@ -252,8 +252,10 @@
   // inline-SVG sparkline (bars) — safe at load (no canvas getContext)
   function sparkline(m) {
     var vals = m.values, n = vals.length;
-    var w = 100, h = 34, gap = 2;
+    var w = 100, h = 34;
+    var gap = n > 30 ? 0.5 : 2;
     var bw = (w - gap * (n - 1)) / n;
+    if (bw < 1) { bw = w / n; gap = 0; }
     var lo = m.min, hi = m.max, span = (hi - lo) || 1;
     var bars = '';
     for (var i = 0; i < n; i++) {
